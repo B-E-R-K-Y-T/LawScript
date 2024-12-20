@@ -48,7 +48,7 @@ def preprocess(raw_code) -> list:
                 except FileNotFoundError:
                     kill_process(f"Файл для включения не найден: {path}")
                 except RecursionError:
-                    kill_process(f"Обнаружен циклический импорт {nested_file}")
+                    kill_process(f"Обнаружен циклический импорт {path}")
             case _:
                 preprocessed.append(line)
 
