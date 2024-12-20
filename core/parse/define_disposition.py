@@ -5,6 +5,7 @@ from core.types.dispositions import Disposition
 from core.parse.base import Parser, Metadata, Image
 from core.token import Token
 from core.util import is_ignore_line
+from util.console_worker import printer
 
 
 class DispositionMetadata(Metadata):
@@ -13,8 +14,10 @@ class DispositionMetadata(Metadata):
         self.right = right
         self.duty = duty
         self.rule = rule
+        printer.logging(f"Создано DispositionMetadata с stop_num={stop_num}, right={right}, duty={duty}, rule={rule}", level="INFO")
 
     def create_image(self) -> Image:
+        printer.logging(f"Создание образа Disposition с right={self.right}, duty={self.duty}, rule={self.rule}", level="INFO")
         return Image(
             name=self.right,
             obj=Disposition,
@@ -27,8 +30,10 @@ class DefineDispositionParser(Parser):
         self.right: Optional[str] = None
         self.duty: Optional[str] = None
         self.rule: Optional[str] = None
+        printer.logging("Инициализация DefineDispositionParser", level="INFO")
 
     def create_metadata(self, stop_num: int) -> Metadata:
+        printer.logging(f"Создание метаданных Disposition с stop_num={stop_num}, right={self.right}, duty={self.duty}, rule={self.rule}", level="INFO")
         return DispositionMetadata(
             stop_num,
             right=self.right,
@@ -37,27 +42,37 @@ class DefineDispositionParser(Parser):
         )
 
     def parse(self, body: list[str], jump: int) -> int:
+        printer.logging(f"Начало парсинга DefineDisposition с jump={jump}", level="INFO")
+
         for num, line in enumerate(body):
             if num < jump:
                 continue
 
             if is_ignore_line(line):
+                printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
             line = self.prepare_line(line)
 
             match line:
                 case [Token.disposition, Token.start_body]:
+                    printer.logging("Обнаружено начало определения disposition", level="INFO")
                     ...
                 case [Token.law, right, Token.comma]:
                     self.right = right
+                    printer.logging(f"Добавлено право: {self.right}", level="INFO")
                 case [Token.duty, duty, Token.comma]:
                     self.duty = duty
+                    printer.logging(f"Добавлено обязанность: {self.duty}", level="INFO")
                 case [Token.rule, rule, Token.comma]:
                     self.rule = rule
+                    printer.logging(f"Добавлено правило: {self.rule}", level="INFO")
                 case [Token.end_body]:
+                    printer.logging("Парсинг disposition завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:
+                    printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
                     raise InvalidSyntaxError(line=line)
 
+        printer.logging("Парсинг disposition завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

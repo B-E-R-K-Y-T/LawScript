@@ -1,3 +1,6 @@
+import datetime
+from pprint import pprint
+
 from rich.console import Console
 from rich.text import Text
 from rich.panel import Panel
@@ -8,6 +11,15 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 class Printer:
     def __init__(self):
         self.console = Console()
+        self.__debug = False
+
+    @property
+    def debug(self) -> bool:
+        return self.__debug
+
+    @debug.setter
+    def debug(self, new_value: bool):
+        self.__debug = new_value
 
     def print_error(self, exception: str):
         error_text = Text(exception, style="bold red")
@@ -37,7 +49,8 @@ class Printer:
 
         self.console.print(table)
 
-    def print_progress(self, task_name: str):
+    @staticmethod
+    def print_progress(task_name: str):
         with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}")) as progress:
             task = progress.add_task(task_name, total=100)
             while not progress.finished:
@@ -50,6 +63,22 @@ class Printer:
     def print_info(self, text: str, style: str = "bold white"):
         info_text = Text(text, style=style)
         self.console.print(Panel(info_text, title="Информация", title_align="left"))
+
+    def logging(self, message: str, level: str = "INFO"):
+        if self.debug:
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            log_message = Text(f"[{timestamp}] [{level}] {message}")
+
+            if level == "ERROR":
+                log_message.stylize("bold red")
+            elif level == "WARNING":
+                log_message.stylize("bold magenta")
+            elif level == "SUCCESS":
+                log_message.stylize("bold green")
+            elif level == "INFO":
+                log_message.stylize("bold blue")
+
+            self.console.print(log_message)
 
 
 printer = Printer()

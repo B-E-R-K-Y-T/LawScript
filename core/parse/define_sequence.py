@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 from core.parse.base import Parser
 from core.token import Token
+from util.console_worker import printer
 
 
 class SequenceMetadata:
@@ -12,15 +13,19 @@ class SequenceMetadata:
 class DefineSequenceParser(Parser):
     def __init__(self):
         self.sequence: Optional[list[Any]] = None
+        printer.logging("Инициализация DefineSequenceParser", level="INFO")
 
     def create_metadata(self) -> SequenceMetadata:
         if self.sequence is None:
-            raise Exception
+            printer.logging("Попытка создания метаданных без инициализированной последовательности", level="ERROR")
+            raise Exception("Sequence is not initialized")
 
+        printer.logging(f"Создание метаданных с последовательностью: {self.sequence}", level="INFO")
         return SequenceMetadata(self.sequence)
 
     def parse(self, body: list[str], jump: int) -> int:
         result = []
+        printer.logging(f"Начало парсинга тела с jump={jump}", level="INFO")
 
         for word in body:
             word = (
@@ -31,10 +36,12 @@ class DefineSequenceParser(Parser):
             )
 
             if not word:
+                printer.logging("Пропускаем пустое слово", level="DEBUG")
                 continue
 
             result.append(word)
 
         self.sequence = result
+        printer.logging(f"Парсинг завершен. Обнаруженные слова: {self.sequence}", level="INFO")
 
         return jump

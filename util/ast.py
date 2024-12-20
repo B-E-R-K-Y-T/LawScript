@@ -14,6 +14,7 @@ from core.parse.define_subject import DefineSubjectParser
 from core.parse.type_sanction import TypeSanctionParser
 from core.token import Token
 from core.util import is_ignore_line
+from util.console_worker import printer
 
 
 class AbstractSyntaxTreeBuilder:
@@ -21,19 +22,26 @@ class AbstractSyntaxTreeBuilder:
         self.code = code
         self.meta_code = []
         self.jump = -1
+        printer.logging("Инициализация AbstractSyntaxTreeBuilder", level="INFO")
 
     def create_meta(self, parser: Type[Parser], num: int):
         parser = parser()
         meta = parse_execute(parser, self.code, num)
         self.jump = meta.stop_num
         self.meta_code.append(meta)
+        printer.logging(
+            f"Создана мета-структура с использованием {parser.__class__.__name__} на строке {num}",
+            level="INFO"
+        )
 
     def build(self) -> list[Metadata]:
         for num, line in enumerate(self.code):
             if num <= self.jump:
+                printer.logging(f"Пропуск строки {num} (переход по jump)", level="DEBUG")
                 continue
 
             if is_ignore_line(line):
+                printer.logging(f"Игнорирование пустой или комментарий строки {num}", level="DEBUG")
                 continue
 
             match line.split():
@@ -58,6 +66,8 @@ class AbstractSyntaxTreeBuilder:
                 case [Token.define, Token.condition, *_]:
                     self.create_meta(DefineConditionParser, num)
                 case _:
+                    printer.logging(f"Ошибка синтаксиса в строке {num}: {line}", level="ERROR")
                     raise InvalidSyntaxError(f"Некорректная строка: {line}")
 
+        printer.logging("Построение AST завершено", level="INFO")
         return self.meta_code

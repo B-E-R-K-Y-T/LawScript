@@ -19,18 +19,22 @@ from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
 from core.types.severitys import Severity
 from core.types.subjects import Subject
+from util.console_worker import printer
 
 
 class Compiler:
     def __init__(self, ast: list[Metadata]):
         self.ast = ast
         self.compiled: dict[str, BaseType] = {}
+        printer.logging("Инициализация Compiler", level="INFO")
 
     def get_obj_by_name(self, name: str) -> BaseType:
         for obj_name, obj in self.compiled.items():
             if name == obj.name:
+                printer.logging(f"Найден объект по имени: {name}", level="INFO")
                 return obj
 
+        printer.logging(f"Объект с именем {name} не определен", level="ERROR")
         raise NameNotDefine(name)
 
     def __check_none_type(
@@ -39,6 +43,7 @@ class Compiler:
         compiled_obj = self.execute_compile(obj)
 
         if compiled_obj is None:
+            printer.logging(f"Поле {field_name} не определено для {object_name}", level="ERROR")
             raise FieldNotDefine(field_name, object_name)
 
         return compiled_obj
@@ -54,8 +59,10 @@ class Compiler:
         compiled_obj = self.get_obj_by_name(compiled_obj)
 
         if not isinstance(compiled_obj, type_check):
+            printer.logging(f"Ошибка типа: {compiled_obj.name} не является {type_check.__name__} для {field_name}", level="ERROR")
             raise InvalidType(compiled_obj.name, field_name)
 
+        printer.logging(f"Поле {field_name} успешно обработано как {type_check.__name__}", level="INFO")
         return compiled_obj
 
     def process_object_field(
@@ -68,15 +75,19 @@ class Compiler:
         compiled_obj: BaseType = self.__check_none_type(obj, field_name, object_name)
 
         if not isinstance(compiled_obj, type_check):
+            printer.logging(f"Ошибка типа: {compiled_obj.name} не является {type_check.__name__} для {field_name}", level="ERROR")
             raise InvalidType(compiled_obj.name, field_name)
 
+        printer.logging(f"Поле {field_name} успешно обработано как {type_check.__name__}", level="INFO")
         return compiled_obj
 
     def execute_compile(self, meta: Union[BaseType, Metadata]) -> Union[str, BaseType]:
         if not isinstance(meta, Metadata):
+            printer.logging("Объект не является метаданными, возвращаем его", level="INFO")
             return meta
 
         compiled_obj = meta.create_image().build()
+        printer.logging(f"Команда скомпилирована: {compiled_obj}", level="INFO")
 
         if isinstance(compiled_obj, (SanctionType, Rule, Law, Obligation, Severity, Criteria)):
             return compiled_obj
@@ -159,18 +170,21 @@ class Compiler:
             )
 
         else:
+            printer.logging(f"Невозможно скомпилировать: {compiled_obj}", level="ERROR")
             raise UnknownType(f"Невозможно скомпилировать {compiled_obj}")
 
         return compiled_obj
 
     def compile(self) -> dict[str, BaseType]:
         for idx, meta in enumerate(self.ast):
+            printer.logging(f"Команда компиляции №{idx + 1}", level="INFO")
             compiled = self.execute_compile(meta)
 
             if compiled.name in self.compiled:
+                printer.logging(f"Ошибка: {compiled.name} уже существует", level="ERROR")
                 raise NameAlreadyExist(compiled.name)
 
             self.compiled[compiled.name] = compiled
+            printer.logging(f"Скомпилировано: {compiled.name}", level="INFO")
 
         return self.compiled
-
