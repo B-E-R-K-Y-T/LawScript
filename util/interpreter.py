@@ -8,6 +8,7 @@ from core.types.conditions import ResultCondition
 from core.util import kill_process
 from util.ast import AbstractSyntaxTreeBuilder
 from util.compile import Compiler
+from util.console import print_console
 
 
 class Interpreter:
@@ -23,12 +24,14 @@ class Interpreter:
                     kill_process(f"{e}Имя проверки: {obj.name}")
                     return
 
-                print(f"Отчет проверки: {obj.name} об анализе соответствия ситуации: '{obj.fact_situation.name}' "
-                      f"документу '{obj.document.name}' "
-                      f"по следующим критериям:\n")
+                print_console(
+                    f"Отчет проверки: {obj.name} об анализе соответствия ситуации: '{obj.fact_situation.name}' "
+                    f"документу '{obj.document.name}' "
+                    f"по следующим критериям:\n"
+                )
 
                 for criteria, result_condition in check_result.items():
-                    print(
+                    print_console(
                         f"Название критерия: '{criteria}'\n"
                         f"Результат: '{obj.check_result_map[result_condition.result]}'\n"
                         f"Тип проверки: {result_condition.modify}\n"
