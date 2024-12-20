@@ -1,0 +1,8 @@
+# Для всех XML файлов используем LF
+*.xml text eol=lf
+
+# Для остальных текстовых файлов используем CRLF
+*.txt text eol=crlf
+*.html text eol=crlf
+*.css text eol=crlf
+*.js text eol=crlf
