@@ -36,6 +36,15 @@ class DefineCriteriaParser(Parser):
             criteria=self.criteria,
         )
 
+    @staticmethod
+    def convert_to_num(value: str, line):
+        if is_float(value):
+            return float(value)
+        elif is_integer(value):
+            return int(value)
+        else:
+            raise InvalidType(value, "число", line)
+
     def parse(self, body: list[str], jump) -> int:
         printer.logging(f"Начало парсинга DefineCriteria с jump={jump}", level="INFO")
 
@@ -59,35 +68,18 @@ class DefineCriteriaParser(Parser):
                     self.criteria[name_criteria] = NotOnly(self.parse_many_word_to_str(value))
                     printer.logging(f"Добавлено условие 'NotOnly' для {name_criteria} с значениями {value}", level="INFO")
                 case [name_criteria, Token.less, value, Token.comma]:
-                    if is_float(value):
-                        value = float(value)
-                    elif is_integer(value):
-                        value = int(value)
-                    else:
-                        raise InvalidType(value, "число", line)
-
+                    value = self.convert_to_num(value, line)
                     self.criteria[name_criteria] = LessThan(value)
                     printer.logging(f"Добавлено условие 'LessThan' для {name_criteria} с значением {value}", level="INFO")
                 case [name_criteria, Token.greater, value, Token.comma]:
-                    if is_float(value):
-                        value = float(value)
-                    elif is_integer(value):
-                        value = int(value)
-                    else:
-                        raise InvalidType(value, "число", line)
-
+                    value = self.convert_to_num(value, line)
                     self.criteria[name_criteria] = GreaterThan(value)
                     printer.logging(f"Добавлено условие 'GreaterThan' для {name_criteria} с значением {value}", level="INFO")
                 case [name_criteria, Token.between, value1, Token.and_, value2, Token.comma]:
                     values = []
 
                     for value in (value1, value2):
-                        if is_float(value):
-                            values.append(float(value))
-                        elif is_integer(value):
-                            values.append(int(value))
-                        else:
-                            raise InvalidType(value, "число", line)
+                        values.append(self.convert_to_num(value, line))
 
                     self.criteria[name_criteria] = Between(*values)
                     printer.logging(f"Добавлено условие 'Between' для {name_criteria} с значениями {values}", level="INFO")

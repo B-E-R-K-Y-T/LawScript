@@ -80,5 +80,19 @@ class Printer:
 
             self.console.print(log_message)
 
+    @staticmethod
+    def create_red_text(message: str) -> Text:
+        message = Text(message)
+        message.stylize("bold red")
+
+        return message
+
+    @staticmethod
+    def create_green_text(message: str) -> Text:
+        message = Text(message)
+        message.stylize("bold green")
+
+        return message
+
 
 printer = Printer()

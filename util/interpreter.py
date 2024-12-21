@@ -4,11 +4,10 @@ from core.parse.base import Metadata
 from core.token import Token
 from core.types.basetype import BaseType
 from core.types.checkers import CheckerSituation
-from core.types.conditions import ResultCondition
 from core.util import kill_process
 from util.ast import AbstractSyntaxTreeBuilder
 from util.compile import Compiler
-from util.console_worker import printer
+from util.executors.checker_execute import CheckerSituationExecute
 
 
 class Interpreter:
@@ -18,30 +17,8 @@ class Interpreter:
     def run(self):
         for name, obj in self.compiled.items():
             if isinstance(obj, CheckerSituation):
-                try:
-                    check_result: dict[str, ResultCondition] = obj.check()
-                except TypeError as e:
-                    kill_process(f"{e}Имя проверки: {obj.name}")
-                    return
-
-                printer.print_info(
-                    f"Отчет проверки: {obj.name} об анализе соответствия ситуации: '{obj.fact_situation.name}' "
-                    f"документу '{obj.document.name}' "
-                    f"по следующим критериям:\n"
-                )
-
-                table_data = {
-                    "Название критерия": [],
-                    "Результат": [],
-                    "Тип проверки": [],
-                }
-
-                for criteria, result_condition in check_result.items():
-                    table_data["Название критерия"].append(criteria)
-                    table_data["Результат"].append(obj.check_result_map[result_condition.result])
-                    table_data["Тип проверки"].append(result_condition.modify)
-
-                printer.print_table(table_data, title=f"Результаты анализа проверкой: '{obj.name}'")
+                executor = CheckerSituationExecute(obj)
+                executor.execute()
 
 
 def preprocess(raw_code) -> list:
