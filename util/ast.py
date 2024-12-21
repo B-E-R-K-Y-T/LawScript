@@ -14,6 +14,7 @@ from core.parse.define_subject import DefineSubjectParser
 from core.parse.type_sanction import TypeSanctionParser
 from core.token import Token
 from core.util import is_ignore_line
+from util.compile import Compiled
 from util.console_worker import printer
 
 
@@ -36,6 +37,10 @@ class AbstractSyntaxTreeBuilder:
 
     def build(self) -> list[Metadata]:
         for num, line in enumerate(self.code):
+            if isinstance(line, Compiled):
+                self.meta_code.append(line)
+                continue
+
             if num <= self.jump:
                 printer.logging(f"Пропуск строки {num} (переход по jump)", level="DEBUG")
                 continue

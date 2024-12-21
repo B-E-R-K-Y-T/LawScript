@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from core.parse.base import is_integer, is_float
 from core.types.basetype import BaseType
 from core.types.criteria import Criteria
 
@@ -21,23 +22,23 @@ class Only(Modify):
         return self.value == other
 
     def __repr__(self):
-        return "Равно"
+        return f"Равно {self.value}"
 
 
 class LessThan(Modify):
     def calculate(self, other: Any) -> bool:
-        return self.value < other
+        return other < self.value
 
     def __repr__(self):
-        return "Меньше чем"
+        return f"Меньше чем {self.value}"
 
 
 class GreaterThan(Modify):
     def calculate(self, other: Any) -> bool:
-        return self.value > other
+        return other > self.value
 
     def __repr__(self):
-        return "Больше чем"
+        return f"Больше чем {self.value}"
 
 
 class Between(Modify):
@@ -49,15 +50,15 @@ class Between(Modify):
         return self.lower_bound < other < self.upper_bound
 
     def __repr__(self):
-        return "Между"
+        return f"{self.lower_bound} Между {self.upper_bound}"
 
 
-class NotOnly(Modify):
+class NotEqual(Modify):
     def calculate(self, other: Any) -> bool:
         return self.value != other
 
     def __repr__(self):
-        return "Не равно"
+        return f"Исключая {self.value}"
 
 
 class ResultCondition:

@@ -5,7 +5,7 @@ from core.exceptions import BaseError
 from core.util import kill_process, success_process, yellow_print
 from util.build import build
 from util.console_worker import printer
-from util.interpreter import run_file
+from util.starter import run_file
 
 
 def main():
@@ -23,6 +23,7 @@ def main():
 
             if not filename.endswith('.txt'):  # Предполагаем, что источник текстовый файл
                 kill_process("Файл для сборки должен иметь расширение .txt.")
+
             build(filename)
         elif command == '--run':
             run_file(filename)
@@ -40,3 +41,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+    file = "test.txt"
+    # printer.debug = True
+    # build(file)
+    # run_file(file)

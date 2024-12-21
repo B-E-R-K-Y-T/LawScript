@@ -4,7 +4,7 @@ import pickle
 from util.ast import AbstractSyntaxTreeBuilder
 from util.compile import Compiler
 from core.parse.base import Metadata
-from util.interpreter import preprocess
+from util.starter import preprocess
 
 
 def build(path: str):

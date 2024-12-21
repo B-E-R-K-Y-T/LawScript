@@ -1,5 +1,4 @@
 import datetime
-from pprint import pprint
 
 from rich.console import Console
 from rich.text import Text

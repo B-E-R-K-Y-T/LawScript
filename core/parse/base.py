@@ -1,6 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Type, Any
+from typing import Type, Any, Sequence
 
 from core.exceptions import InvalidSyntaxError, NameNotDefine
 from core.types.basetype import BaseType
@@ -8,11 +8,11 @@ from core.token import Token
 
 
 def is_integer(s: str) -> bool:
-    return bool(re.match(r"^-?\d+$", s))
+    return bool(re.match(r"^-?\d+$", str(s)))
 
 
 def is_float(s: str) -> bool:
-    return bool(re.match(r"^-?\d+(\.\d+)?$", s))
+    return bool(re.match(r"^-?\d+(\.\d+)?$", str(s)))
 
 
 class Image:
@@ -48,7 +48,7 @@ class Parser(ABC):
         ...
 
     @staticmethod
-    def parse_many_word_to_str(words: tuple[str]):
+    def parse_many_word_to_str(words: Sequence[str]):
         return " ".join(words)
 
     def execute_parse(self, parser: Type["Parser"], code: list[str], num: int) -> Metadata:

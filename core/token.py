@@ -3,9 +3,11 @@ from enum import StrEnum
 
 class Token(StrEnum):
     comment = "#"
+    star = "*"
     start_body = "("
     end_body = ")"
     comma = ","
+    dot = "."
     quotation = "\""
     define = "ОПРЕДЕЛИТЬ"
     types = "ТИПЫ"
