@@ -16,7 +16,6 @@ def build(path: str):
 
         compiler = Compiler(ast)
 
-        # Заменяем расширение файла на .lawc
         new_path = os.path.splitext(path)[0] + ".law"
 
         with open(f"{new_path}", 'wb') as f:
