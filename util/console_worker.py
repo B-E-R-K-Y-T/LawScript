@@ -6,11 +6,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
+from config import DEBUG
+
 
 class Printer:
     def __init__(self):
         self.console = Console()
-        self.__debug = False
+        self.__debug = DEBUG
 
     @property
     def debug(self) -> bool:

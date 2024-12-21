@@ -12,4 +12,3 @@ class Interpreter:
             if isinstance(obj, CheckerSituation):
                 executor = CheckerSituationExecute(obj)
                 executor.execute()
-

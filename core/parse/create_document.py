@@ -1,8 +1,8 @@
-from typing import Optional, Type
+from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
 from core.types.documents import Document
-from core.parse.base import Parser, parse_execute, Metadata, Image
+from core.parse.base import Parser, Metadata, Image
 from core.parse.define_disposition import DefineDispositionParser
 from core.parse.define_hypothesis import DefineHypothesisParser
 from core.parse.define_sanction import DefineSanctionParser
@@ -58,7 +58,7 @@ class CreateDocumentParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            line = self.prepare_line(line)
+            line = self.separate_line_to_token(line)
 
             match line:
                 case [Token.create, Token.document, document_name, Token.start_body]:

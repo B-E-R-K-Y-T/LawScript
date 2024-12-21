@@ -1,5 +1,7 @@
 import os
 import pickle
+import re
+from typing import Optional, Union
 
 from core.parse.base import Metadata
 from core.token import Token
@@ -9,11 +11,18 @@ from util.compile import Compiler, Compiled
 from util.interpreter import Interpreter
 
 
-def import_preprocess(path) -> Compiled:
+def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled, str]:
     try:
-        with open(path, "rb") as file:
-            compiled = pickle.load(file)
-            return compiled
+        if byte_mode:
+            print(path)
+            with open(path, "rb") as file:
+                compiled = pickle.load(file)
+                return compiled
+
+        with open(path, "r", encoding="utf-8") as file:
+            raw_code = file.read()
+            return raw_code
+
     except FileNotFoundError:
         kill_process(f"Модуль для включения не найден: {path}")
     except RecursionError:
@@ -40,10 +49,18 @@ def preprocess(raw_code) -> list:
                         file_path = os.path.join(dir_path, filename)
                         preprocessed.append(import_preprocess(file_path))
 
+            case [Token.include, path] if re.search(r'\.\S+$', path):
+                path = path.replace(".", "/", path.count(".")-1)
+                try:
+                    preprocessed.extend(preprocess(import_preprocess(path, byte_mode=False)))
+                except RecursionError:
+                    kill_process(f"Обнаружен циклический импорт {path}")
+
             case [Token.include, path]:
                 path = path.replace(Token.dot, "/")
                 path = f"{path}.law"
                 preprocessed.append(import_preprocess(path))
+
             case _:
                 preprocessed.append(line)
 

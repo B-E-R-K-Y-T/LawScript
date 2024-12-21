@@ -1,7 +1,12 @@
 from typing import Type, Union
 
-from core.exceptions import NameNotDefine, InvalidType, UnknownType, NameAlreadyExist, \
-    FieldNotDefine, CompiledCode
+from core.exceptions import (
+    NameNotDefine,
+    InvalidType,
+    UnknownType,
+    NameAlreadyExist,
+    FieldNotDefine,
+)
 from core.parse.base import Metadata
 from core.token import Token
 from core.types.basetype import BaseType

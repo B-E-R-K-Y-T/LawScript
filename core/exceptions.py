@@ -64,7 +64,3 @@ class FieldNotDefine(BaseError):
 class NameAlreadyExist(BaseError):
     def __init__(self, name: str):
         super().__init__(f"Имя: '{name}' уже существует")
-
-
-class CompiledCode(BaseError):
-    pass

@@ -1,6 +1,7 @@
 import sys
 import time
 
+from config import DEBUG
 from core.exceptions import BaseError
 from core.util import kill_process, success_process, yellow_print
 from util.build import build
@@ -32,6 +33,10 @@ def main():
 
     except BaseError as e:
         kill_process(str(e))
+    except Exception as e:
+        if DEBUG:
+            raise
+        printer.print_error(str(e))
     else:
         success_process(f"Операция {command} завершена успешно.")
     finally:

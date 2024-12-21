@@ -63,7 +63,8 @@ class Parser(ABC):
         return num_line + 1
 
     @staticmethod
-    def prepare_line(line: str) -> list[str]:
+    def separate_line_to_token(line: str) -> list[str]:
+        # Убираем комментарии из строки
         for offset, symbol in enumerate(line):
             match symbol:
                 case Token.comment:

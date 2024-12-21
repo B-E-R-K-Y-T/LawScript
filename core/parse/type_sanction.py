@@ -52,7 +52,7 @@ class TypeSanctionParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="DEBUG")
                 continue
 
-            line = self.prepare_line(line)
+            line = self.separate_line_to_token(line)
 
             match line:
                 case [Token.define, Token.of_sanction, name, Token.start_body]:

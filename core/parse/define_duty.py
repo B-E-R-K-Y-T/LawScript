@@ -49,7 +49,7 @@ class DefineDutyParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            line = self.prepare_line(line)
+            line = self.separate_line_to_token(line)
 
             match line:
                 case [Token.define, Token.duty, name_obligation, Token.start_body]:
