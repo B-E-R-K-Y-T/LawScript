@@ -2,7 +2,7 @@ from core.types.checkers import CheckerSituation
 from core.types.conditions import ResultCondition
 from core.util import kill_process
 from util.console_worker import printer
-from util.executors.base import Executor
+from core.executors.base import Executor
 
 
 class CheckerSituationExecute(Executor):

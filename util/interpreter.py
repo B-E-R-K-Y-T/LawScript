@@ -1,6 +1,6 @@
 from core.types.checkers import CheckerSituation
 from util.compile import Compiled
-from util.executors.checker_execute import CheckerSituationExecute
+from core.executors.checker_execute import CheckerSituationExecute
 
 
 class Interpreter:
