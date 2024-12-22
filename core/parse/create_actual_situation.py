@@ -1,14 +1,14 @@
 from typing import Optional, Any
 
 from core.exceptions import InvalidSyntaxError, InvalidType
-from core.parse.base import Parser, Metadata, Image, is_integer, is_float
-from core.token import Token
+from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
+from core.tokens import Tokens
 from core.types.documents import FactSituation
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
-class ActualSituationMetadata(Metadata):
+class ActualSituationMetaObject(MetaObject):
     def __init__(
             self,
             stop_num: int,
@@ -38,9 +38,9 @@ class CreateActualSituationParser(Parser):
         self.jump = 0
         printer.logging("Инициализация CreateActualSituationParser", level="INFO")
 
-    def create_metadata(self, stop_num: int) -> Metadata:
+    def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(f"Создание метаданных с stop_num={stop_num}, fact_name='{self.fact_name}', name_object='{self.name_object}', name_subject='{self.name_subject}'", level="INFO")
-        return ActualSituationMetadata(
+        return ActualSituationMetaObject(
             stop_num,
             self.fact_name,
             self.name_object,
@@ -63,20 +63,20 @@ class CreateActualSituationParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.create, Token.the_actual, Token.the_situation, fact_name, Token.start_body]:
+                case [Tokens.create, Tokens.the_actual, Tokens.the_situation, fact_name, Tokens.left_bracket]:
                     self.fact_name = fact_name
                     printer.logging(f"Найдена секция 'create actual situation' с fact_name='{fact_name}'", level="INFO")
-                case [Token.object, name_object, Token.comma]:
+                case [Tokens.object, name_object, Tokens.comma]:
                     self.name_object = name_object
                     printer.logging(f"Найден объект с name_object='{name_object}'", level="INFO")
-                case [Token.subject, name_subject, Token.comma]:
+                case [Tokens.subject, name_subject, Tokens.comma]:
                     self.name_subject = name_subject
                     printer.logging(f"Найден субъект с name_subject='{name_subject}'", level="INFO")
-                case [Token.data, *_]:
+                case [Tokens.data, *_]:
                     meta = self.execute_parse(DataParser, body, num)
                     self.data = meta.data
                     printer.logging(f"Данные успешно парсены: {self.data}", level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:
@@ -87,7 +87,7 @@ class CreateActualSituationParser(Parser):
         raise InvalidSyntaxError
 
 
-class CollectionData(Metadata):
+class CollectionData(MetaObject):
     def __init__(
             self,
             stop_num: int,
@@ -130,10 +130,10 @@ class DataParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.data, Token.start_body]:
+                case [Tokens.data, Tokens.left_bracket]:
                     printer.logging("Начало секции данных, ожидается ввод", level="INFO")
                     ...
-                case [name_data, *data, Token.comma]:
+                case [name_data, *data, Tokens.comma]:
                     value = self.parse_many_word_to_str(data)
 
                     if is_float(value):
@@ -143,7 +143,7 @@ class DataParser(Parser):
 
                     self.collection_data[name_data] = value
                     printer.logging(f"Добавлено data: {name_data} = {value}", level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг данных завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:

@@ -1,14 +1,14 @@
 from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
-from core.parse.base import Parser, Metadata, Image
-from core.token import Token
+from core.parse.base import Parser, MetaObject, Image
+from core.tokens import Tokens
 from core.types.hypothesis import Hypothesis
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
-class HypothesisMetadata(Metadata):
+class HypothesisMetaObject(MetaObject):
     def __init__(self, stop_num: int, *args):
         super().__init__(stop_num)
         self.args = args
@@ -30,9 +30,9 @@ class DefineHypothesisParser(Parser):
         self.condition: Optional[str] = None
         printer.logging("Инициализация DefineHypothesisParser", level="INFO")
 
-    def create_metadata(self, stop_num: int) -> Metadata:
+    def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(f"Создание метаданных Hypothesis с stop_num={stop_num}, subject={self.subject}, object={self.object}, condition={self.condition}", level="INFO")
-        return HypothesisMetadata(
+        return HypothesisMetaObject(
             stop_num,
             self.subject,
             self.object,
@@ -53,18 +53,18 @@ class DefineHypothesisParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.hypothesis, Token.start_body]:
+                case [Tokens.hypothesis, Tokens.left_bracket]:
                     printer.logging("Обнаружено начало гипотезы", level="INFO")
-                case [Token.subject, subject, Token.comma]:
+                case [Tokens.subject, subject, Tokens.comma]:
                     self.subject = subject
                     printer.logging(f"Добавлен субъект гипотезы: {self.subject}", level="INFO")
-                case [Token.object, object, Token.comma]:
+                case [Tokens.object, object, Tokens.comma]:
                     self.object = object
                     printer.logging(f"Добавлен объект гипотезы: {self.object}", level="INFO")
-                case [Token.condition, condition, Token.comma]:
+                case [Tokens.condition, condition, Tokens.comma]:
                     self.condition = condition
                     printer.logging(f"Добавлено условие гипотезы: {self.condition}", level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг гипотезы завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:

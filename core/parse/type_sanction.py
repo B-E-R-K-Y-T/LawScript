@@ -2,13 +2,13 @@ from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
 from core.types.sanction_types import SanctionType
-from core.parse.base import Parser, Metadata, Image
-from core.token import Token
+from core.parse.base import Parser, MetaObject, Image
+from core.tokens import Tokens
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
-class TypeSanctionMetadata(Metadata):
+class TypeSanctionMetaObject(MetaObject):
     def __init__(self, stop_num: int, name: str, *args):
         super().__init__(stop_num)
         self.name = name
@@ -31,10 +31,10 @@ class TypeSanctionParser(Parser):
         self.name: Optional[str] = None
         printer.logging("Инициализация TypeSanctionParser", level="INFO")
 
-    def create_metadata(self, stop_num: int) -> Metadata:
+    def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(f"Создание метаданных TypeSanction: stop_num={stop_num}, name={self.name}, "
                         f"name_sanction_type={self.name_sanction_type}, article={self.article}", level="INFO")
-        return TypeSanctionMetadata(
+        return TypeSanctionMetaObject(
             stop_num,
             self.name,
             self.name_sanction_type,
@@ -55,14 +55,14 @@ class TypeSanctionParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.define, Token.of_sanction, name, Token.start_body]:
+                case [Tokens.define, Tokens.of_sanction, name, Tokens.left_bracket]:
                     self.name_sanction_type = name
                     self.name = name
                     printer.logging(f"Определен тип санкции: {self.name_sanction_type}", level="INFO")
-                case [Token.article, *article, Token.comma]:
+                case [Tokens.article, *article, Tokens.comma]:
                     self.article = self.parse_many_word_to_str(article)
                     printer.logging(f"Добавлена статья: {self.article}", level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг типа санкции завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:

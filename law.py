@@ -45,8 +45,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    file = "test.txt"
-    # printer.debug = True
-    # build(file)
+    # main()
+    file = "func.txt"
+    build(file)
     # run_file(file)

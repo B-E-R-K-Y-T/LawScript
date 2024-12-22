@@ -1,6 +1,6 @@
 from typing import Optional, Any
 
-from core.token import Token
+from core.tokens import Tokens
 from core.types.severitys import Levels
 
 
@@ -22,7 +22,7 @@ class InvalidSyntaxError(BaseError):
 class InvalidLevelDegree(BaseError):
     def __init__(self, degree: str):
         super().__init__(
-            f"Значение: '{degree}' запрещено для типа '{Token.degree} {Token.of_rigor}'. "
+            f"Значение: '{degree}' запрещено для типа '{Tokens.degree} {Tokens.of_rigor}'. "
             f"Используйте один из следующих типов: {[str(level) for level in Levels]}"
         )
 

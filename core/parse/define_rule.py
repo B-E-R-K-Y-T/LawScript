@@ -1,14 +1,14 @@
 from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
-from core.parse.base import Parser, Metadata, Image
-from core.token import Token
+from core.parse.base import Parser, MetaObject, Image
+from core.tokens import Tokens
 from core.types.rules import Rule
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
-class DefineRuleMetadata(Metadata):
+class DefineRuleMetaObject(MetaObject):
     def __init__(self, stop_num: int, name: str, description: str):
         super().__init__(stop_num)
         self.name = name
@@ -31,12 +31,12 @@ class DefineRuleParser(Parser):
         self.description: Optional[str] = None
         printer.logging("Инициализация DefineRuleParser", level="INFO")
 
-    def create_metadata(self, stop_num: int) -> Metadata:
+    def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(
             f"Создание метаданных Rule с stop_num={stop_num}, "
             f"name_rule={self.name_rule}, description={self.description}", level="INFO"
         )
-        return DefineRuleMetadata(
+        return DefineRuleMetaObject(
             stop_num,
             name=self.name_rule,
             description=self.description,
@@ -56,13 +56,13 @@ class DefineRuleParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.define, Token.rule, name_rule, Token.start_body]:
+                case [Tokens.define, Tokens.rule, name_rule, Tokens.left_bracket]:
                     self.name_rule = name_rule
                     printer.logging(f"Обнаружено определение правила: {self.name_rule}", level="INFO")
-                case [Token.description, *description, Token.comma]:
+                case [Tokens.description, *description, Tokens.comma]:
                     self.description = self.parse_many_word_to_str(description)
                     printer.logging(f"Добавлено описание правила: {self.description}", level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг правила завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:

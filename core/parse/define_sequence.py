@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from core.parse.base import Parser
-from core.token import Token
+from core.tokens import Tokens
 from util.console_worker import printer
 
 
@@ -32,7 +32,7 @@ class DefineSequenceParser(Parser):
                 word.
                 replace("[", "").
                 replace("]", "").
-                replace(Token.comma, "")
+                replace(Tokens.comma, "")
             )
 
             if not word:

@@ -2,15 +2,15 @@ from typing import Optional, List
 
 from core.exceptions import InvalidSyntaxError, InvalidLevelDegree
 from core.types.sanctions import Sanction
-from core.parse.base import Parser, Image, Metadata
+from core.parse.base import Parser, Image, MetaObject
 from core.parse.define_sequence import DefineSequenceParser
-from core.token import Token
+from core.tokens import Tokens
 from core.types.severitys import Levels
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
-class SanctionMetadata(Metadata):
+class SanctionMetaObject(MetaObject):
     def __init__(self, stop_num: int, types: Optional[List[str]], severity: Optional[str],
                  procedural_aspects: Optional[str]):
         super().__init__(stop_num)
@@ -37,10 +37,10 @@ class DefineSanctionParser(Parser):
         self.procedural_aspects: Optional[str] = None
         printer.logging("Инициализация DefineSanctionParser", level="INFO")
 
-    def create_metadata(self, stop_num: int) -> Metadata:
+    def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(f"Создание метаданных Sanction с stop_num={stop_num}, types={self.types}, "
                         f"severity={self.severity}, procedural_aspects={self.procedural_aspects}", level="INFO")
-        return SanctionMetadata(
+        return SanctionMetaObject(
             stop_num,
             types=self.types,
             severity=self.severity,
@@ -61,26 +61,26 @@ class DefineSanctionParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.sanction, Token.start_body]:
+                case [Tokens.sanction, Tokens.left_bracket]:
                     printer.logging("Обнаружено начало тела санкции", level="INFO")
                     ...
-                case [Token.types, *types, Token.comma]:
+                case [Tokens.types, *types, Tokens.comma]:
                     sequence = DefineSequenceParser()
                     stop_num = sequence.parse(types, num)
                     self.types = sequence.create_metadata().seq
                     jump = self.next_num_line(stop_num)
                     printer.logging(f"Определены типы санкции: {self.types}", level="INFO")
-                case [Token.degree, Token.of_rigor, degree, Token.comma]:
+                case [Tokens.degree, Tokens.of_rigor, degree, Tokens.comma]:
                     if degree not in Levels:
                         printer.logging(f"Некорректный уровень строгости: {degree}", level="ERROR")
                         raise InvalidLevelDegree(degree)
 
                     self.severity = degree
                     printer.logging(f"Уровень строгости установлен: {self.severity}", level="INFO")
-                case [Token.procedural, Token.aspect, *procedural_aspect, Token.comma]:
+                case [Tokens.procedural, Tokens.aspect, *procedural_aspect, Tokens.comma]:
                     self.procedural_aspects = self.parse_many_word_to_str(procedural_aspect)
                     printer.logging(f"Определены процедурные аспекты: {self.procedural_aspects}", level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг санкции завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:

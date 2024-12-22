@@ -1,15 +1,15 @@
 from typing import Optional
 
 from core.exceptions import InvalidSyntaxError, InvalidType
-from core.parse.base import Parser, Metadata, Image, is_integer, is_float
-from core.token import Token
+from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
+from core.tokens import Tokens
 from core.types.conditions import Modify, Only, LessThan, GreaterThan, Between, NotEqual
 from core.types.criteria import Criteria
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
-class DefineCriteriaMetadata(Metadata):
+class DefineCriteriaMetaObject(MetaObject):
     def __init__(self, stop_num: int, criteria: dict[str, Modify]):
         super().__init__(stop_num)
         self.criteria = criteria
@@ -29,10 +29,10 @@ class DefineCriteriaParser(Parser):
         self.criteria: Optional[dict[str, Modify]] = {}
         printer.logging("Инициализация DefineCriteriaParser", level="INFO")
 
-    def create_metadata(self, stop_num: int) -> Metadata:
+    def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(f"Создание метаданных DefineCriteria с stop_num={stop_num} и criteria={self.criteria}",
                         level="INFO")
-        return DefineCriteriaMetadata(
+        return DefineCriteriaMetaObject(
             stop_num,
             criteria=self.criteria,
         )
@@ -73,28 +73,28 @@ class DefineCriteriaParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.criteria, Token.start_body]:
+                case [Tokens.criteria, Tokens.left_bracket]:
                     printer.logging("Обнаружена секция 'criteria'", level="INFO")
-                case [name_criteria, Token.only, *value, Token.comma]:
+                case [name_criteria, Tokens.only, *value, Tokens.comma]:
                     self.criteria[name_criteria] = Only(self.parse_many_word_to_str(value))
                     printer.logging(f"Добавлено условие 'Only' для {name_criteria} с значениями {value}", level="INFO")
-                case [name_criteria, Token.not_, Token.may, Token.be, *value, Token.comma]:
+                case [name_criteria, Tokens.not_, Tokens.may, Tokens.be, *value, Tokens.comma]:
                     processed_value = self.process_not_may_be_case(name_criteria, value, line)
                     self.criteria[name_criteria] = NotEqual(processed_value)
                     printer.logging(
-                        f"Добавлено условие 'NotOnly' для {name_criteria} с значениями {value}", level="INFO"
+                        f"Добавлено условие 'NotEqual' для {name_criteria} с значениями {value}", level="INFO"
                     )
-                case [name_criteria, Token.less, value, Token.comma]:
+                case [name_criteria, Tokens.less, value, Tokens.comma]:
                     value = self.parse_to_num(value, line)
                     self.criteria[name_criteria] = LessThan(value)
                     printer.logging(f"Добавлено условие 'LessThan' для {name_criteria} с значением {value}",
                                     level="INFO")
-                case [name_criteria, Token.greater, value, Token.comma]:
+                case [name_criteria, Tokens.greater, value, Tokens.comma]:
                     value = self.parse_to_num(value, line)
                     self.criteria[name_criteria] = GreaterThan(value)
                     printer.logging(f"Добавлено условие 'GreaterThan' для {name_criteria} с значением {value}",
                                     level="INFO")
-                case [name_criteria, Token.between, value1, Token.and_, value2, Token.comma]:
+                case [name_criteria, Tokens.between, value1, Tokens.and_, value2, Tokens.comma]:
                     values = []
 
                     for value in (value1, value2):
@@ -103,7 +103,7 @@ class DefineCriteriaParser(Parser):
                     self.criteria[name_criteria] = Between(*values)
                     printer.logging(f"Добавлено условие 'Between' для {name_criteria} с значениями {values}",
                                     level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг criteria завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:

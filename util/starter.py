@@ -3,8 +3,8 @@ import pickle
 import re
 from typing import Optional, Union
 
-from core.parse.base import Metadata
-from core.token import Token
+from core.parse.base import MetaObject
+from core.tokens import Tokens
 from core.util import kill_process
 from util.ast import AbstractSyntaxTreeBuilder
 from util.compile import Compiler, Compiled
@@ -35,9 +35,9 @@ def preprocess(raw_code) -> list:
 
     for line in raw_code:
         match line.split(" "):
-            case [Token.include, path] if path.endswith(Token.star):
+            case [Tokens.include, path] if path.endswith(Tokens.star):
                 # Удаляем * из пути и получаем директорию
-                dir_path = path[:-1].replace(Token.dot, "/")
+                dir_path = path[:-1].replace(Tokens.dot, "/")
                 try:
                     files = os.listdir(dir_path)
                 except FileNotFoundError:
@@ -49,15 +49,15 @@ def preprocess(raw_code) -> list:
                         file_path = os.path.join(dir_path, filename)
                         preprocessed.append(import_preprocess(file_path))
 
-            case [Token.include, path] if re.search(r'\.\S+$', path):
+            case [Tokens.include, path] if re.search(r'\.\S+$', path):
                 path = path.replace(".", "/", path.count(".")-1)
                 try:
                     preprocessed.extend(preprocess(import_preprocess(path, byte_mode=False)))
                 except RecursionError:
                     kill_process(f"Обнаружен циклический импорт {path}")
 
-            case [Token.include, path]:
-                path = path.replace(Token.dot, "/")
+            case [Tokens.include, path]:
+                path = path.replace(Tokens.dot, "/")
                 path = f"{path}.law"
                 preprocessed.append(import_preprocess(path))
 
@@ -80,7 +80,7 @@ def run(raw_code: str):
     code = preprocess(raw_code)
 
     ast_builder = AbstractSyntaxTreeBuilder(code)
-    ast: list[Metadata] = ast_builder.build()
+    ast: list[MetaObject] = ast_builder.build()
 
     compiler = Compiler(ast)
     run_compiled_code(compiler.compile())

@@ -1,14 +1,14 @@
 from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
-from core.parse.base import Parser, Metadata, Image
-from core.token import Token
+from core.parse.base import Parser, MetaObject, Image
+from core.tokens import Tokens
 from core.types.laws import Law
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
-class DefineLawMetadata(Metadata):
+class DefineLawMetaObject(MetaObject):
     def __init__(self, stop_num: int, name: str, name_law: str, description: str):
         super().__init__(stop_num)
         self.name = name
@@ -32,9 +32,9 @@ class DefineLawParser(Parser):
         self.description: Optional[str] = None
         printer.logging("Инициализация DefineLawParser", level="INFO")
 
-    def create_metadata(self, stop_num: int) -> Metadata:
+    def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(f"Создание метаданных Law с stop_num={stop_num}, name={self.name}, name_law={self.name_law}, description={self.description}", level="INFO")
-        return DefineLawMetadata(
+        return DefineLawMetaObject(
             stop_num,
             name=self.name,
             name_law=self.name_law,
@@ -55,14 +55,14 @@ class DefineLawParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.define, Token.law, name_law, Token.start_body]:
+                case [Tokens.define, Tokens.law, name_law, Tokens.left_bracket]:
                     self.name_law = name_law
                     self.name = name_law
                     printer.logging(f"Обнаружено определение закона: {self.name_law}", level="INFO")
-                case [Token.description, *description, Token.comma]:
+                case [Tokens.description, *description, Tokens.comma]:
                     self.description = " ".join(description)
                     printer.logging(f"Добавлено описание закона: {self.description}", level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг закона завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:

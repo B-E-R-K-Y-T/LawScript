@@ -3,7 +3,7 @@ from tkinter import scrolledtext
 from tkinter import Menu, messagebox, filedialog
 from enum import StrEnum
 
-from util.interpreter import run_file
+from util.starter import run_file
 
 
 class Token(StrEnum):

@@ -1,14 +1,14 @@
 from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
-from core.parse.base import Parser, Metadata, Image
-from core.token import Token
+from core.parse.base import Parser, MetaObject, Image
+from core.tokens import Tokens
 from core.types.obligations import Obligation
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
-class DefineDutyMetadata(Metadata):
+class DefineDutyMetaObject(MetaObject):
     def __init__(self, stop_num: int, name: str, description: str):
         super().__init__(stop_num)
         self.name = name
@@ -30,9 +30,9 @@ class DefineDutyParser(Parser):
         self.description: Optional[str] = None
         printer.logging("Инициализация DefineDutyParser", level="INFO")
 
-    def create_metadata(self, stop_num: int) -> Metadata:
+    def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(f"Создание метаданных DefineDuty с stop_num={stop_num}, name={self.name_obligation}, description={self.description}", level="INFO")
-        return DefineDutyMetadata(
+        return DefineDutyMetaObject(
             stop_num,
             name=self.name_obligation,
             description=self.description,
@@ -52,13 +52,13 @@ class DefineDutyParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Token.define, Token.duty, name_obligation, Token.start_body]:
+                case [Tokens.define, Tokens.duty, name_obligation, Tokens.left_bracket]:
                     self.name_obligation = name_obligation
                     printer.logging(f"Обнаружено определение обязанности: {self.name_obligation}", level="INFO")
-                case [Token.description, *description, Token.comma]:
+                case [Tokens.description, *description, Tokens.comma]:
                     self.description = " ".join(description)
                     printer.logging(f"Добавлено описание обязанности: {self.description}", level="INFO")
-                case [Token.end_body]:
+                case [Tokens.right_bracket]:
                     printer.logging("Парсинг обязанности завершен: 'end_body' найден", level="INFO")
                     return num
                 case _:

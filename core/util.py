@@ -1,6 +1,6 @@
 import sys
 
-from core.token import Token
+from core.tokens import Tokens
 
 from colorama import init
 from colorama import Fore
@@ -11,7 +11,7 @@ init()
 
 
 def is_ignore_line(line: str) -> bool:
-    if line.startswith(Token.comment):
+    if line.startswith(Tokens.comment):
         return True
 
     if not line:

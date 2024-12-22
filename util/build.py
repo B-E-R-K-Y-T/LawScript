@@ -3,7 +3,7 @@ import pickle
 
 from util.ast import AbstractSyntaxTreeBuilder
 from util.compile import Compiler
-from core.parse.base import Metadata
+from core.parse.base import MetaObject
 from util.starter import preprocess
 
 
@@ -12,7 +12,7 @@ def build(path: str):
         code = preprocess(file.read())
 
         ast_builder = AbstractSyntaxTreeBuilder(code)
-        ast: list[Metadata] = ast_builder.build()
+        ast: list[MetaObject] = ast_builder.build()
 
         compiler = Compiler(ast)
 

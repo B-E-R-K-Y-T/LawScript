@@ -1,7 +1,7 @@
 from typing import Type
 
 from core.exceptions import InvalidSyntaxError
-from core.parse.base import parse_execute, Parser, Metadata
+from core.parse.base import parse_execute, Parser, MetaObject
 from core.parse.checker_actual_situation import CheckerParser
 from core.parse.create_document import CreateDocumentParser
 from core.parse.create_actual_situation import CreateActualSituationParser
@@ -11,8 +11,9 @@ from core.parse.define_object import DefineObjectParser
 from core.parse.define_law import DefineLawParser
 from core.parse.define_rule import DefineRuleParser
 from core.parse.define_subject import DefineSubjectParser
+from core.parse.procedure.define_procedure import DefineProcedureParser
 from core.parse.type_sanction import TypeSanctionParser
-from core.token import Token
+from core.tokens import Tokens
 from core.util import is_ignore_line
 from util.compile import Compiled
 from util.console_worker import printer
@@ -35,7 +36,7 @@ class AbstractSyntaxTreeBuilder:
             level="INFO"
         )
 
-    def build(self) -> list[Metadata]:
+    def build(self) -> list[MetaObject]:
         for num, line in enumerate(self.code):
             if isinstance(line, Compiled):
                 self.meta_code.append(line)
@@ -50,25 +51,27 @@ class AbstractSyntaxTreeBuilder:
                 continue
 
             match line.split():
-                case [Token.define, Token.of_sanction, *_]:
+                case [Tokens.define, Tokens.of_sanction, *_]:
                     self.create_meta(TypeSanctionParser, num)
-                case [Token.create, Token.document, *_]:
+                case [Tokens.define, Tokens.a_procedure, *_]:
+                    self.create_meta(DefineProcedureParser, num)
+                case [Tokens.create, Tokens.document, *_]:
                     self.create_meta(CreateDocumentParser, num)
-                case [Token.create, Token.the_actual, Token.the_situation, *_]:
+                case [Tokens.create, Tokens.the_actual, Tokens.the_situation, *_]:
                     self.create_meta(CreateActualSituationParser, num)
-                case [Token.check, *_]:
+                case [Tokens.check, *_]:
                     self.create_meta(CheckerParser, num)
-                case [Token.define, Token.law, *_]:
+                case [Tokens.define, Tokens.law, *_]:
                     self.create_meta(DefineLawParser, num)
-                case [Token.define, Token.duty, *_]:
+                case [Tokens.define, Tokens.duty, *_]:
                     self.create_meta(DefineDutyParser, num)
-                case [Token.define, Token.rule, *_]:
+                case [Tokens.define, Tokens.rule, *_]:
                     self.create_meta(DefineRuleParser, num)
-                case [Token.define, Token.subject, *_]:
+                case [Tokens.define, Tokens.subject, *_]:
                     self.create_meta(DefineSubjectParser, num)
-                case [Token.define, Token.object, *_]:
+                case [Tokens.define, Tokens.object, *_]:
                     self.create_meta(DefineObjectParser, num)
-                case [Token.define, Token.condition, *_]:
+                case [Tokens.define, Tokens.condition, *_]:
                     self.create_meta(DefineConditionParser, num)
                 case _:
                     printer.logging(f"Ошибка синтаксиса в строке {num}: {line}", level="ERROR")

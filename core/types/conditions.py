@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from core.parse.base import is_integer, is_float
 from core.types.basetype import BaseType
 from core.types.criteria import Criteria
 
