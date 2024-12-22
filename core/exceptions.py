@@ -52,10 +52,14 @@ class UnknownType(BaseError):
 
 
 class NameNotDefine(BaseError):
-    def __init__(self, name: str):
-        super().__init__(
-            f"Имя: '{name}' используется до его определения!"
-        )
+    def __init__(self, msg: Optional[str] = None, name: Optional[str] = None):
+        if msg is None:
+            msg = "Имя не определено!"
+
+        if name is not None:
+            msg = f"Ошибка: '{msg}' Имя: '{name}' используется до его определения!"
+
+        super().__init__(msg)
 
 
 class FieldNotDefine(BaseError):

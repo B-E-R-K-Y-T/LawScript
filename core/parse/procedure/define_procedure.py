@@ -46,7 +46,7 @@ class DefineProcedureParser(Parser):
 
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
-        printer.logging(f"Начало парсинга процедуры с jump={self.jump}", level="INFO")
+        printer.logging(f"Начало парсинга процедуры с jump={self.jump} {Procedure.__name__}", level="INFO")
 
         for num, line in enumerate(body):
             if num < self.jump:

@@ -49,7 +49,7 @@ class CheckerParser(Parser):
 
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
-        printer.logging(f"Начало парсинга с jump={jump}, строки: {body}", level="INFO")
+        printer.logging(f"Начало парсинга с jump={jump} {CheckerSituation.__name__}", level="INFO")
 
         for num, line in enumerate(body):
             if num < self.jump:

@@ -1,3 +1,5 @@
+from collections import OrderedDict
+from idlelib.configdialog import is_int
 from typing import Type, Union
 
 from core.exceptions import (
@@ -7,7 +9,7 @@ from core.exceptions import (
     NameAlreadyExist,
     FieldNotDefine,
 )
-from core.parse.base import MetaObject
+from core.parse.base import MetaObject, is_float
 from core.tokens import Tokens
 from core.types.basetype import BaseType
 from core.types.checkers import CheckerSituation
@@ -19,7 +21,7 @@ from core.types.hypothesis import Hypothesis
 from core.types.objects import Object
 from core.types.obligations import Obligation
 from core.types.laws import Law
-from core.types.procedure import Procedure
+from core.types.procedure import Procedure, CodeBlock, AssignField, Expression, Return, Print
 from core.types.rules import Rule
 from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
@@ -49,7 +51,7 @@ class Compiler:
                 return obj
 
         printer.logging(f"Объект с именем {name} не определен", level="ERROR")
-        raise NameNotDefine(name)
+        raise NameNotDefine(name=name)
 
     def __check_none_type(
             self, obj: Union[BaseType, MetaObject], field_name: str, object_name: str
@@ -139,8 +141,52 @@ class Compiler:
             return compiled_obj
 
         elif isinstance(compiled_obj, Procedure):
+            def get_all_uses_names(obj: Union[CodeBlock, BaseType]) -> list[tuple[BaseType, str]]:
+                names = []
+
+                if isinstance(obj, AssignField):
+                    return [(obj, obj.name)]
+
+                elif isinstance(obj, (Return, Print)):
+                    for op in obj.expression.operations:
+                        if op not in Tokens and not is_float(op) and not is_int(op):
+                            names.append((obj, op))
+
+                elif isinstance(obj, Expression):
+                    for op in obj.operations:
+                        if op not in Tokens and not is_float(op) and not is_int(op):
+                            names.append((obj, op))
+
+                elif isinstance(obj, (CodeBlock, Procedure)):
+                    for nested_obj in obj.body.commands:
+                        names.extend(get_all_uses_names(nested_obj))
+
+                return names
+
+
             for offset, command in enumerate(compiled_obj.body.commands):
                 compiled_obj.body.commands[offset] = self.execute_compile(command)
+
+            uses_names = get_all_uses_names(compiled_obj)
+            check_seq = set()
+
+            for obj, name in uses_names:
+                if isinstance(obj, AssignField):
+                    check_seq.add(name)
+                    continue
+
+                if name in compiled_obj.arguments_names:
+                    check_seq.add(name)
+                    continue
+
+                if name not in check_seq:
+                    printer.logging(
+                        f"Объект {name} используется до определения в процедуре {compiled_obj.name}",
+                        level="ERROR"
+                    )
+                    raise NameNotDefine(
+                        msg=f"Объект '{name}' используется до определения в процедуре '{compiled_obj.name}'"
+                    )
 
             return compiled_obj
 

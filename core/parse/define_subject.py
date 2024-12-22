@@ -40,7 +40,7 @@ class DefineSubjectParser(Parser):
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
-        printer.logging(f"Начало парсинга DefineSubject с jump={jump}", level="INFO")
+        printer.logging(f"Начало парсинга DefineSubject с jump={jump} {Subject.__name__}", level="INFO")
 
         for num, line in enumerate(body):
             if num < jump:

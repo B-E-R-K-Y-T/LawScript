@@ -10,6 +10,12 @@ class Body(BaseType):
 
         self.commands = commands
 
+class CodeBlock(BaseType):
+    def __init__(self, name: str, body: Body):
+        super().__init__(name)
+
+        self.body = body
+
 
 class Procedure(BaseType):
     def __init__(self, name: str, body: Body, arguments_names: list[Optional[str]]):
@@ -34,7 +40,7 @@ class Print(BaseType):
     def __init__(self, name: str, expression: Expression):
         super().__init__(name)
 
-        self.expression_from = expression
+        self.expression = expression
 
 
 class AssignField(BaseType):
@@ -44,19 +50,16 @@ class AssignField(BaseType):
         self.expression = expression
 
 
-class Else(BaseType):
+class Else(CodeBlock):
     def __init__(self, name: str, body: Body):
-        super().__init__(name)
-
-        self.body = body
+        super().__init__(name, body)
 
 
-class When(BaseType):
+class When(CodeBlock):
     def __init__(self, name: str, expression: Expression, body: Body, else_: Optional[Else] = None):
-        super().__init__(name)
+        super().__init__(name, body)
 
         self.expression = expression
-        self.body = body
         self.else_ = else_
 
 
@@ -67,10 +70,9 @@ class Return(BaseType):
         self.expression = expression
 
 
-class Loop(BaseType):
+class Loop(CodeBlock):
     def __init__(self, name: str, expression_from: Expression, expression_to: Expression, body: Body):
-        super().__init__(name)
+        super().__init__(name, body)
 
         self.expression_from = expression_from
         self.expression_to = expression_to
-        self.body = body

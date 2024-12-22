@@ -61,7 +61,7 @@ class DefineCriteriaParser(Parser):
             return self.parse_many_word_to_str([value])
 
     def parse(self, body: list[Line], jump) -> int:
-        printer.logging(f"Начало парсинга DefineCriteria с jump={jump}", level="INFO")
+        printer.logging(f"Начало парсинга DefineCriteria с jump={jump} {Criteria.__name__}", level="INFO")
 
         for num, line in enumerate(body):
             if num < jump:

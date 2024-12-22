@@ -46,7 +46,7 @@ class DefineConditionParser(Parser):
 
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
-        printer.logging(f"Начало парсинга DefineCondition с jump={jump}", level="INFO")
+        printer.logging(f"Начало парсинга DefineCondition с jump={jump} {Condition.__name__}", level="INFO")
 
         for num, line in enumerate(body):
             if num < self.jump:

@@ -42,7 +42,7 @@ class TypeSanctionParser(Parser):
         )
 
     def parse(self, body: list[str], jump: int) -> int:
-        printer.logging(f"Начало парсинга TypeSanction с jump={jump}", level="INFO")
+        printer.logging(f"Начало парсинга TypeSanction с jump={jump} {SanctionType.__name__}", level="INFO")
 
         for num, line in enumerate(body):
             if num < jump:

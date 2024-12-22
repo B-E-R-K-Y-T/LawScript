@@ -40,7 +40,7 @@ class BodyParser(Parser):
 
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
-        printer.logging(f"Начало парсинга тела с jump={self.jump}", level="INFO")
+        printer.logging(f"Начало парсинга тела с jump={self.jump} {Body.__name__}", level="INFO")
 
         for num, line in enumerate(body):
             if num < self.jump:
@@ -60,11 +60,12 @@ class BodyParser(Parser):
                     printer.logging(f"Добавлена команда Print с выражением: {expr}", level="INFO")
                 case [Tokens.else_, Tokens.left_bracket]:
                     err_msg = f"Перед '{Tokens.else_}' всегда должен быть блок '{Tokens.when}'"
+
                     if not self.commands:
-                        raise InvalidSyntaxError(err_msg, line=line)
+                        raise InvalidSyntaxError(err_msg, line=line, info=info)
 
                     if not isinstance(self.commands[len(self.commands) - 1], When):
-                        raise InvalidSyntaxError(err_msg, line=line)
+                        raise InvalidSyntaxError(err_msg, line=line, info=info)
 
                     self.commands.append(Else(str(), self.execute_parse(BodyParser, body, self.next_num_line(num))))
                     printer.logging("Добавлена команда Else", level="INFO")
@@ -88,7 +89,7 @@ class BodyParser(Parser):
                 case [Tokens.loop, Tokens.from_, *expr, Tokens.left_bracket]:
                     expr = list(expr)
 
-                    # Проверяю, что в подстроке: "1 ДО 100" строки: "ЦИКЛ ОТ 1 ДО 100 (" "ДО" встречается только 1 раз
+                    # Проверяю, что в подстроке: "a ДО b" строки: "ЦИКЛ ОТ a ДО b (" "ДО" встречается только 1 раз
                     if expr.count(Tokens.to) != 1:
                         raise InvalidSyntaxError(
                             f"Оператор '{Tokens.to}' должен встречаться в определении цикла только 1 раз!",
