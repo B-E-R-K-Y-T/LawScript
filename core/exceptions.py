@@ -14,7 +14,7 @@ class InvalidSyntaxError(BaseError):
             msg = "Некорректный синтаксис"
 
         if line is not None:
-            msg = f"{msg} Строка: {" ".join(line)}"
+            msg = f"{msg}\nСтрока: '{" ".join(line)}'"
 
         super().__init__(msg)
 

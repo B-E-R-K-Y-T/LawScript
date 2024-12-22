@@ -51,11 +51,13 @@ class BodyParser(Parser):
                 case [Tokens.print_, *expr, Tokens.end_expr]:
                     self.commands.append(Print(str(), Expression(str(), expr)))
                 case [Tokens.else_, Tokens.left_bracket]:
+                    err_msg = f"Перед '{Tokens.else_}' всегда должен быть блок '{Tokens.when}'"
+
                     if not self.commands:
-                        raise InvalidSyntaxError(line=line)
+                        raise InvalidSyntaxError(err_msg, line=line)
 
                     if not isinstance(self.commands[len(self.commands) - 1], When):
-                        raise InvalidSyntaxError(line=line)
+                        raise InvalidSyntaxError(err_msg, line=line)
 
                     self.commands.append(Else(str(), self.execute_parse(BodyParser, body, self.next_num_line(num))))
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
@@ -77,7 +79,10 @@ class BodyParser(Parser):
 
                     # Проверяю, что в подстроке: "1 ДО 100" строки: "ЦИКЛ ОТ 1 ДО 100 (" "ДО" встречается только 1 раз
                     if expr.count(Tokens.to) != 1:
-                        raise InvalidSyntaxError(line=line)
+                        raise InvalidSyntaxError(
+                            f"Оператор '{Tokens.to}' должен встречаться в определении цикла только 1 раз!",
+                            line=line
+                        )
 
                     sep_idx = expr.index(Tokens.to)
 
