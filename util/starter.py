@@ -5,6 +5,7 @@ from typing import Optional, Union
 
 from core.parse.base import MetaObject
 from core.tokens import Tokens
+from core.types.line import Line
 from core.util import kill_process
 from util.ast import AbstractSyntaxTreeBuilder
 from util.compile import Compiler, Compiled
@@ -14,7 +15,6 @@ from util.interpreter import Interpreter
 def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled, str]:
     try:
         if byte_mode:
-            print(path)
             with open(path, "rb") as file:
                 compiled = pickle.load(file)
                 return compiled
@@ -29,11 +29,17 @@ def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled,
         kill_process(f"Обнаружен циклический импорт {path}")
 
 
-def preprocess(raw_code) -> list:
-    raw_code = [line.strip() for line in raw_code.split("\n")]
+def preprocess(raw_code, path: str) -> list:
+    prepared_code = [line.strip() for line in raw_code.split("\n")]
+
+    code = []
+
+    for offset, line in enumerate(prepared_code):
+        code.append(Line(line.strip(), num=offset+1, file=path))
+
     preprocessed = []
 
-    for line in raw_code:
+    for line in code:
         match line.split(" "):
             case [Tokens.include, path] if path.endswith(Tokens.star):
                 # Удаляем * из пути и получаем директорию
@@ -50,7 +56,7 @@ def preprocess(raw_code) -> list:
                         preprocessed.append(import_preprocess(file_path))
 
             case [Tokens.include, path] if re.search(r'\.\S+$', path):
-                path = path.replace(".", "/", path.count(".")-1)
+                path = path.replace(".", "/", path.count(".") - 1)
                 try:
                     preprocessed.extend(preprocess(import_preprocess(path, byte_mode=False)))
                 except RecursionError:
@@ -67,17 +73,13 @@ def preprocess(raw_code) -> list:
     return [line for line in preprocessed if line]
 
 
-def preprocess_file(file) -> list:
-    return preprocess(file.read())
-
-
 def run_compiled_code(compiled: Compiled):
     interpreter = Interpreter(compiled)
     interpreter.run()
 
 
-def run(raw_code: str):
-    code = preprocess(raw_code)
+def run(raw_code: str, path: str):
+    code = preprocess(raw_code, path)
 
     ast_builder = AbstractSyntaxTreeBuilder(code)
     ast: list[MetaObject] = ast_builder.build()
@@ -93,4 +95,4 @@ def run_file(path: str):
             run_compiled_code(compiled)
     else:
         with open(path, "r", encoding="utf-8") as file:
-            run(file.read())
+            run(file.read(), path)

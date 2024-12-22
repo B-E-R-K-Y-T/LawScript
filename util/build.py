@@ -9,7 +9,7 @@ from util.starter import preprocess
 
 def build(path: str):
     with open(path, "r", encoding="utf-8") as file:
-        code = preprocess(file.read())
+        code = preprocess(file.read(), path)
 
         ast_builder = AbstractSyntaxTreeBuilder(code)
         ast: list[MetaObject] = ast_builder.build()

@@ -4,6 +4,7 @@ from core.exceptions import InvalidSyntaxError, NameNotDefine
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
 from core.types.checkers import CheckerSituation
+from core.types.line import Line
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -42,11 +43,13 @@ class CheckerParser(Parser):
             fact_situation_name=self.situation_name,
         )
 
-    def parse(self, body: list[str], jump) -> int:
+    def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга с jump={jump}, строки: {body}", level="INFO")
 
         for num, line in enumerate(body):
+            info = line.get_file_info()
+
             if num < self.jump:
                 continue
 
@@ -71,7 +74,7 @@ class CheckerParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line)
+                    raise InvalidSyntaxError(line=line, info=info)
 
         printer.logging("Парсинг завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

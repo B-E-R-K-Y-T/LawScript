@@ -1,6 +1,7 @@
 from typing import Optional, Any
 
 from core.tokens import Tokens
+from core.types.line import Line, Info
 from core.types.severitys import Levels
 
 
@@ -9,12 +10,15 @@ class BaseError(Exception):
 
 
 class InvalidSyntaxError(BaseError):
-    def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None):
+    def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Некорректный синтаксис"
 
         if line is not None:
             msg = f"{msg}\nСтрока: '{" ".join(line)}'"
+
+        if info is not None:
+            msg = f"Файл: {info.file}, Номер строки: {info.num}\n{msg}"
 
         super().__init__(msg)
 

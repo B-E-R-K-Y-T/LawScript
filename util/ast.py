@@ -14,13 +14,14 @@ from core.parse.define_subject import DefineSubjectParser
 from core.parse.procedure.define_procedure import DefineProcedureParser
 from core.parse.type_sanction import TypeSanctionParser
 from core.tokens import Tokens
+from core.types.line import Line
 from core.util import is_ignore_line
 from util.compile import Compiled
 from util.console_worker import printer
 
 
 class AbstractSyntaxTreeBuilder:
-    def __init__(self, code: list[str]):
+    def __init__(self, code: list[Line]):
         self.code = code
         self.meta_code = []
         self.jump = -1

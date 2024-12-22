@@ -5,6 +5,7 @@ from typing import Type, Any, Sequence
 from core.exceptions import InvalidSyntaxError, NameNotDefine
 from core.types.basetype import BaseType
 from core.tokens import Tokens
+from core.types.line import Line
 
 
 def is_integer(s: str) -> bool:
@@ -68,7 +69,7 @@ class Parser(ABC):
         return num_line - 1
 
     @staticmethod
-    def separate_line_to_token(line: str) -> list[str]:
+    def separate_line_to_token(line: Line) -> list[str]:
         # Убираем комментарии из строки
         for offset, symbol in enumerate(line):
             match symbol:
@@ -84,7 +85,8 @@ class Parser(ABC):
         else:
             raise InvalidSyntaxError(
                 f"Некорректная строка: '{line}', возможно Вы забыли один из этих знаков в конце: "
-                f"{", ".join([f"'{s}'" for s in end_symbols])}"
+                f"{", ".join([f"'{s}'" for s in end_symbols])}",
+                info=line.get_file_info()
             )
 
         separated_line = line.split()
@@ -126,13 +128,7 @@ class Parser(ABC):
         return tokens
 
 
-    # def parse_expression(self, expression: Sequence[str]):
-    #     print(expression)
-    #
-
-
-
-def parse_execute(parser: Parser, code: list[str], num_line: int) -> MetaObject:
+def parse_execute(parser: Parser, code: list[Line], num_line: int) -> MetaObject:
     stop_num = parser.parse(code, num_line)
     meta = parser.create_metadata(stop_num)
 

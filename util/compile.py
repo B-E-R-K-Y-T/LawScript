@@ -139,6 +139,9 @@ class Compiler:
             return compiled_obj
 
         elif isinstance(compiled_obj, Procedure):
+            for offset, command in enumerate(compiled_obj.body.commands):
+                compiled_obj.body.commands[offset] = self.execute_compile(command)
+
             return compiled_obj
 
         elif isinstance(compiled_obj, Object):

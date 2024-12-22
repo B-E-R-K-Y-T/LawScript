@@ -5,6 +5,7 @@ from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
 from core.tokens import Tokens
 from core.types.conditions import Modify, Only, LessThan, GreaterThan, Between, NotEqual
 from core.types.criteria import Criteria
+from core.types.line import Line
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -59,10 +60,12 @@ class DefineCriteriaParser(Parser):
         except InvalidType:
             return self.parse_many_word_to_str([value])
 
-    def parse(self, body: list[str], jump) -> int:
+    def parse(self, body: list[Line], jump) -> int:
         printer.logging(f"Начало парсинга DefineCriteria с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
+            info = line.get_file_info()
+
             if num < jump:
                 continue
 
@@ -108,7 +111,7 @@ class DefineCriteriaParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line)
+                    raise InvalidSyntaxError(line=line, info=info)
 
         printer.logging("Парсинг criteria завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

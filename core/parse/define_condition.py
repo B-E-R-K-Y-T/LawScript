@@ -5,6 +5,7 @@ from core.parse.base import Parser, MetaObject, Image
 from core.parse.criteria import DefineCriteriaParser
 from core.tokens import Tokens
 from core.types.conditions import Condition
+from core.types.line import Line
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -43,11 +44,13 @@ class DefineConditionParser(Parser):
             criteria=self.criteria,
         )
 
-    def parse(self, body: list[str], jump) -> int:
+    def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга DefineCondition с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
+            info = line.get_file_info()
+
             if num < self.jump:
                 continue
 
@@ -73,7 +76,7 @@ class DefineConditionParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line)
+                    raise InvalidSyntaxError(line=line, info=info)
 
         printer.logging("Парсинг условия завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

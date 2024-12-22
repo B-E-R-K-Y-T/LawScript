@@ -4,6 +4,7 @@ from core.exceptions import InvalidSyntaxError
 from core.types.dispositions import Disposition
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
+from core.types.line import Line
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -41,10 +42,12 @@ class DefineDispositionParser(Parser):
             rule=self.rule
         )
 
-    def parse(self, body: list[str], jump: int) -> int:
+    def parse(self, body: list[Line], jump: int) -> int:
         printer.logging(f"Начало парсинга DefineDisposition с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
+            info = line.get_file_info()
+
             if num < jump:
                 continue
 
@@ -72,7 +75,7 @@ class DefineDispositionParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line)
+                    raise InvalidSyntaxError(line=line, info=info)
 
         printer.logging("Парсинг disposition завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

@@ -1,6 +1,7 @@
 from typing import Optional, List
 
 from core.exceptions import InvalidSyntaxError, InvalidLevelDegree
+from core.types.line import Line
 from core.types.sanctions import Sanction
 from core.parse.base import Parser, Image, MetaObject
 from core.parse.define_sequence import DefineSequenceParser
@@ -47,10 +48,11 @@ class DefineSanctionParser(Parser):
             procedural_aspects=self.procedural_aspects
         )
 
-    def parse(self, body: list[str], jump: int) -> int:
+    def parse(self, body: list[Line], jump: int) -> int:
         printer.logging(f"Начало парсинга санкции с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
+            info = line.get_file_info()
             if num < jump:
                 continue
 
@@ -85,7 +87,7 @@ class DefineSanctionParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line)
+                    raise InvalidSyntaxError(line=line, info=info)
 
         printer.logging("Парсинг санкции завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

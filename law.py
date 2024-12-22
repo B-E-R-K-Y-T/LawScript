@@ -45,7 +45,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
+    main()
     file = "func.txt"
-    build(file)
+    # build(file)
     # run_file(file)

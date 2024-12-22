@@ -4,6 +4,7 @@ from core.exceptions import InvalidSyntaxError, InvalidType
 from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
 from core.tokens import Tokens
 from core.types.documents import FactSituation
+from core.types.line import Line
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -48,11 +49,13 @@ class CreateActualSituationParser(Parser):
             self.data,
         )
 
-    def parse(self, body: list[str], jump) -> int:
+    def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга с jump={jump}, строки: {body}", level="INFO")
 
         for num, line in enumerate(body):
+            info = line.get_file_info()
+
             if num < self.jump:
                 continue
 
@@ -81,7 +84,7 @@ class CreateActualSituationParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line)
+                    raise InvalidSyntaxError(line=line, info=info)
 
         printer.logging("Парсинг завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError
@@ -115,11 +118,13 @@ class DataParser(Parser):
             self.collection_data,
         )
 
-    def parse(self, body: list[str], jump) -> int:
+    def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга данных с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
+            info = line.get_file_info()
+
             if num < self.jump:
                 continue
 
@@ -132,7 +137,6 @@ class DataParser(Parser):
             match line:
                 case [Tokens.data, Tokens.left_bracket]:
                     printer.logging("Начало секции данных, ожидается ввод", level="INFO")
-                    ...
                 case [name_data, *data, Tokens.comma]:
                     value = self.parse_many_word_to_str(data)
 
@@ -148,7 +152,7 @@ class DataParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис в DataParser: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line)
+                    raise InvalidSyntaxError(line=line, info=info)
 
         printer.logging("Парсинг данных завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

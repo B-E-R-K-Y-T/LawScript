@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 from core.parse.base import Parser
 from core.tokens import Tokens
+from core.types.line import Line
 from util.console_worker import printer
 
 
@@ -23,7 +24,7 @@ class DefineSequenceParser(Parser):
         printer.logging(f"Создание метаданных с последовательностью: {self.sequence}", level="INFO")
         return SequenceMetadata(self.sequence)
 
-    def parse(self, body: list[str], jump: int) -> int:
+    def parse(self, body: list[Line], jump: int) -> int:
         result = []
         printer.logging(f"Начало парсинга тела с jump={jump}", level="INFO")
 

@@ -4,8 +4,10 @@ from core.exceptions import InvalidSyntaxError
 from core.parse.base import MetaObject, Image, Parser
 from core.parse.procedure.body import BodyParser
 from core.tokens import Tokens
-from core.types.procedure import Procedure, Body
+from core.types.line import Line
+from core.types.procedure import Procedure
 from core.util import is_ignore_line
+from util.console_worker import printer
 
 
 class DefineProcedureMetaObject(MetaObject):
@@ -29,8 +31,12 @@ class DefineProcedureParser(Parser):
         self.procedure_name: Optional[str] = None
         self.arguments_name: list[Optional[str]] = []
         self.body: Optional[MetaObject] = None
+        printer.logging("Инициализация DefineProcedureParser", level="INFO")
 
     def create_metadata(self, stop_num: int) -> MetaObject:
+        printer.logging(
+            f"Создание метаданных процедуры с stop_num={stop_num}, name={self.procedure_name}, body={self.body}, arguments_name={self.arguments_name}",
+            level="INFO")
         return DefineProcedureMetaObject(
             stop_num,
             name=self.procedure_name,
@@ -38,14 +44,18 @@ class DefineProcedureParser(Parser):
             arguments_name=self.arguments_name,
         )
 
-    def parse(self, body: list[str], jump) -> int:
+    def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
+        printer.logging(f"Начало парсинга процедуры с jump={self.jump}", level="INFO")
 
         for num, line in enumerate(body):
+            info = line.get_file_info()
+
             if num < self.jump:
                 continue
 
             if is_ignore_line(line):
+                printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
             line = self.separate_line_to_token(line)
@@ -54,15 +64,22 @@ class DefineProcedureParser(Parser):
                 case [Tokens.define, Tokens.a_procedure, name_condition, Tokens.left_bracket, *arguments, Tokens.right_bracket, Tokens.left_bracket]:
                     arguments = "".join(arguments).split(Tokens.comma)
                     if not all(arguments):
-                        raise InvalidSyntaxError(line=line)
+                        printer.logging(f"Неверный синтаксис: отсутствуют аргументы в строке: {line}", level="ERROR")
+                        raise InvalidSyntaxError(line=line, info=info)
 
                     self.procedure_name = name_condition
                     self.arguments_name = arguments
                     self.body = self.execute_parse(BodyParser, body, self.next_num_line(num))
                     self.jump = self.previous_num_line(self.jump)
+                    printer.logging(
+                        f"Добавлена процедура: name={self.procedure_name}, arguments_name={self.arguments_name}",
+                        level="INFO")
                 case [Tokens.right_bracket]:
+                    printer.logging("Парсинг процедуры завершен: 'right_bracket' найден", level="INFO")
                     return num
                 case _:
-                    raise InvalidSyntaxError(line=line)
+                    printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
+                    raise InvalidSyntaxError(line=line, info=info)
 
+        printer.logging("Парсинг процедуры завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError
