@@ -3,14 +3,17 @@ import sys
 from core.tokens import Tokens
 
 from colorama import init
-from colorama import Fore
 
+from util.compile import Compiled
 from util.console_worker import printer
 
 init()
 
 
 def is_ignore_line(line: str) -> bool:
+    if isinstance(line, Compiled):
+        return True
+
     if line.startswith(Tokens.comment):
         return True
 

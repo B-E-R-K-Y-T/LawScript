@@ -15,10 +15,14 @@ class CheckerActualSituationMetaObject(MetaObject):
         self.name = name
         self.document_name = document_name
         self.fact_situation_name = fact_situation_name
-        printer.logging(f"Создан объект CheckerActualSituationMetadata с stop_num={stop_num}, name='{name}', document_name='{document_name}', fact_situation_name='{fact_situation_name}'", level="INFO")
+        printer.logging(
+            f"Создан объект CheckerActualSituationMetadata с stop_num={stop_num}, name='{name}', document_name='{document_name}', fact_situation_name='{fact_situation_name}'",
+            level="INFO")
 
     def create_image(self) -> Image:
-        printer.logging(f"Создание образа с name='{self.name}', document_name='{self.document_name}', fact_situation_name='{self.fact_situation_name}'", level="INFO")
+        printer.logging(
+            f"Создание образа с name='{self.name}', document_name='{self.document_name}', fact_situation_name='{self.fact_situation_name}'",
+            level="INFO")
         return Image(
             name=self.name,
             obj=CheckerSituation,
@@ -48,8 +52,6 @@ class CheckerParser(Parser):
         printer.logging(f"Начало парсинга с jump={jump}, строки: {body}", level="INFO")
 
         for num, line in enumerate(body):
-            info = line.get_file_info()
-
             if num < self.jump:
                 continue
 
@@ -57,6 +59,7 @@ class CheckerParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
+            info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:

@@ -43,8 +43,6 @@ class BodyParser(Parser):
         printer.logging(f"Начало парсинга тела с jump={self.jump}", level="INFO")
 
         for num, line in enumerate(body):
-            info = line.get_file_info()
-
             if num < self.jump:
                 continue
 
@@ -52,6 +50,7 @@ class BodyParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
+            info = line.get_file_info()
             line = self.separate_line_to_token(line)
             printer.logging(f"Парсинг строки: {line}", level="INFO")
 

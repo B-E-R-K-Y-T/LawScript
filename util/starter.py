@@ -58,7 +58,7 @@ def preprocess(raw_code, path: str) -> list:
             case [Tokens.include, path] if re.search(r'\.\S+$', path):
                 path = path.replace(".", "/", path.count(".") - 1)
                 try:
-                    preprocessed.extend(preprocess(import_preprocess(path, byte_mode=False)))
+                    preprocessed.extend(preprocess(import_preprocess(path, byte_mode=False), path))
                 except RecursionError:
                     kill_process(f"Обнаружен циклический импорт {path}")
 

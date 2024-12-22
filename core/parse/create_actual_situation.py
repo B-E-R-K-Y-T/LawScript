@@ -19,7 +19,9 @@ class ActualSituationMetaObject(MetaObject):
         super().__init__(stop_num)
         self.fact_name = fact_name
         self.args = args
-        printer.logging(f"Создан объект ActualSituationMetadata с stop_num={stop_num}, fact_name='{fact_name}', args={args}", level="INFO")
+        printer.logging(
+            f"Создан объект ActualSituationMetadata с stop_num={stop_num}, fact_name='{fact_name}', args={args}",
+            level="INFO")
 
     def create_image(self):
         printer.logging(f"Создание образа факта с name='{self.fact_name}', args={self.args}", level="INFO")
@@ -40,7 +42,9 @@ class CreateActualSituationParser(Parser):
         printer.logging("Инициализация CreateActualSituationParser", level="INFO")
 
     def create_metadata(self, stop_num: int) -> MetaObject:
-        printer.logging(f"Создание метаданных с stop_num={stop_num}, fact_name='{self.fact_name}', name_object='{self.name_object}', name_subject='{self.name_subject}'", level="INFO")
+        printer.logging(
+            f"Создание метаданных с stop_num={stop_num}, fact_name='{self.fact_name}', name_object='{self.name_object}', name_subject='{self.name_subject}'",
+            level="INFO")
         return ActualSituationMetaObject(
             stop_num,
             self.fact_name,
@@ -54,8 +58,6 @@ class CreateActualSituationParser(Parser):
         printer.logging(f"Начало парсинга с jump={jump}, строки: {body}", level="INFO")
 
         for num, line in enumerate(body):
-            info = line.get_file_info()
-
             if num < self.jump:
                 continue
 
@@ -63,6 +65,7 @@ class CreateActualSituationParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
+            info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -112,7 +115,9 @@ class DataParser(Parser):
         printer.logging("Инициализация DataParser", level="INFO")
 
     def create_metadata(self, stop_num: int) -> CollectionData:
-        printer.logging(f"Создание метаданных CollectionData с stop_num={stop_num}, collection_data={self.collection_data}", level="INFO")
+        printer.logging(
+            f"Создание метаданных CollectionData с stop_num={stop_num}, collection_data={self.collection_data}",
+            level="INFO")
         return CollectionData(
             stop_num,
             self.collection_data,
@@ -123,8 +128,6 @@ class DataParser(Parser):
         printer.logging(f"Начало парсинга данных с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
-            info = line.get_file_info()
-
             if num < self.jump:
                 continue
 
@@ -132,6 +135,7 @@ class DataParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
+            info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:

@@ -43,8 +43,6 @@ class DefineObjectParser(Parser):
         printer.logging(f"Начало парсинга DefineObject с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
-            info = line.get_file_info()
-
             if num < jump:
                 continue
 
@@ -52,6 +50,7 @@ class DefineObjectParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
+            info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:

@@ -52,8 +52,6 @@ class CreateDocumentParser(Parser):
         printer.logging(f"Начало парсинга документа с jump={jump}, строки: {body}", level="INFO")
 
         for num, line in enumerate(body):
-            info = line.get_file_info()
-
             if num < self.jump:
                 continue
 
@@ -61,6 +59,7 @@ class CreateDocumentParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
+            info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:

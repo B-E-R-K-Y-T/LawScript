@@ -51,7 +51,6 @@ class TypeSanctionParser(Parser):
             if is_ignore_line(line):
                 printer.logging(f"Игнорируем строку: {line}", level="DEBUG")
                 continue
-
             line = self.separate_line_to_token(line)
 
             match line:
