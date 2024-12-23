@@ -1,7 +1,10 @@
 from typing import Optional, Union
 
+from core.exceptions import ErrorType
+from core.parse.base import is_float, is_integer
+from core.tokens import Tokens
 from core.types.basetype import BaseType
-from core.types.variable import Variable
+from core.types.variable import Variable, ScopeStack
 
 
 class Body(BaseType):
@@ -23,7 +26,7 @@ class Procedure(BaseType):
 
         self.body = body
         self.arguments_names = arguments_names
-        self.tree_variables: dict[str, Variable] = {}
+        self.tree_variables: Optional[ScopeStack] = None
 
 
 class Expression(BaseType):
@@ -32,8 +35,6 @@ class Expression(BaseType):
 
         self.operations: list[str] = operations
 
-    def evaluate_expression(self) -> Union[int, str, float, list]:
-        ...
 
 
 class Print(BaseType):

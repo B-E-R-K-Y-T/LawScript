@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 from core.types.basetype import BaseType
 from core.types.conditions import ResultCondition
 from core.types.documents import Document, FactSituation
+
+if TYPE_CHECKING:
+    from util.compile import Compiled
 
 
 class CheckerSituation(BaseType):
@@ -13,7 +18,8 @@ class CheckerSituation(BaseType):
             False: "Нарушено",
         }
 
-    def check(self) -> dict[str, ResultCondition]:
+    def check(self, compiled: "Compiled") -> dict[str, ResultCondition]:
         return self.document.hypothesis.condition.execute(
-            fact_data=self.fact_situation.data
+            fact_data=self.fact_situation.data,
+            compiled=compiled
         )

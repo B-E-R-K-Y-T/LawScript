@@ -45,7 +45,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    file = "func.txt"
+    # main()
+    file = "закон.txt"
     # build(file)
-    # run_file(file)
+    run_file(file)

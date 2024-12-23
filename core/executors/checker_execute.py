@@ -1,17 +1,19 @@
 from core.types.checkers import CheckerSituation
 from core.types.conditions import ResultCondition
 from core.util import kill_process
+from util.compile import Compiled
 from util.console_worker import printer
 from core.executors.base import Executor
 
 
 class CheckerSituationExecute(Executor):
-    def __init__(self, obj: CheckerSituation):
+    def __init__(self, obj: CheckerSituation, compiled: Compiled):
         self.obj = obj
+        self.compiled = compiled
 
     def execute(self):
         try:
-            check_result: dict[str, ResultCondition] = self.obj.check()
+            check_result: dict[str, ResultCondition] = self.obj.check(self.compiled)
         except TypeError as e:
             kill_process(f"{e}Имя проверки: {self.obj.name}")
             return

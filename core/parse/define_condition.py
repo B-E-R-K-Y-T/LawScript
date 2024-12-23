@@ -64,7 +64,7 @@ class DefineConditionParser(Parser):
                     self.name_condition = name_condition
                     printer.logging(f"Обнаружено определение условия: {name_condition}", level="INFO")
                 case [Tokens.description, *description, Tokens.comma]:
-                    self.description = self.parse_many_word_to_str(description)
+                    self.description = self.parse_sequence_words_to_str(description)
                     printer.logging(f"Добавлено описание условия: {self.description}", level="INFO")
                 case [Tokens.criteria, *_]:
                     meta = self.execute_parse(DefineCriteriaParser, body, num)

@@ -58,7 +58,7 @@ class DefineSubjectParser(Parser):
                     self.name_subject_define = name_subject
                     printer.logging(f"Обнаружено определение субъекта: {self.name_subject_define}", level="INFO")
                 case [Tokens.name, *name_subject, Tokens.comma]:
-                    self.name_subject = self.parse_many_word_to_str(name_subject)
+                    self.name_subject = self.parse_sequence_words_to_str(name_subject)
                     printer.logging(f"Добавлено имя субъекта: {self.name_subject}", level="INFO")
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг субъекта завершен: 'end_body' найден", level="INFO")

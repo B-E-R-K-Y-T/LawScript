@@ -65,6 +65,10 @@ class Printer:
         info_text = Text(text, style=style)
         self.console.print(Panel(info_text, title="Информация", title_align="left"))
 
+    @staticmethod
+    def raw_print(*args, sep=' ', end='\n', file=None):
+        print(*args, sep=sep, end=end, file=file)
+
     def logging(self, message: str, level: str = "INFO"):
         if self.debug:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')

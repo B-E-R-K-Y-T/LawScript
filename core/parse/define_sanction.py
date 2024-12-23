@@ -80,7 +80,7 @@ class DefineSanctionParser(Parser):
                     self.severity = degree
                     printer.logging(f"Уровень строгости установлен: {self.severity}", level="INFO")
                 case [Tokens.procedural, Tokens.aspect, *procedural_aspect, Tokens.comma]:
-                    self.procedural_aspects = self.parse_many_word_to_str(procedural_aspect)
+                    self.procedural_aspects = self.parse_sequence_words_to_str(procedural_aspect)
                     printer.logging(f"Определены процедурные аспекты: {self.procedural_aspects}", level="INFO")
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг санкции завершен: 'end_body' найден", level="INFO")

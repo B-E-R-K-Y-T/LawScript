@@ -59,7 +59,7 @@ class TypeSanctionParser(Parser):
                     self.name = name
                     printer.logging(f"Определен тип санкции: {self.name_sanction_type}", level="INFO")
                 case [Tokens.article, *article, Tokens.comma]:
-                    self.article = self.parse_many_word_to_str(article)
+                    self.article = self.parse_sequence_words_to_str(article)
                     printer.logging(f"Добавлена статья: {self.article}", level="INFO")
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг типа санкции завершен: 'end_body' найден", level="INFO")

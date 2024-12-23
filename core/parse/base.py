@@ -50,7 +50,7 @@ class Parser(ABC):
         ...
 
     @staticmethod
-    def parse_many_word_to_str(words: Sequence[str]):
+    def parse_sequence_words_to_str(words: Sequence[str]):
         return " ".join(words)
 
     def execute_parse(self, parser: Type["Parser"], code: list[str], num: int) -> MetaObject:

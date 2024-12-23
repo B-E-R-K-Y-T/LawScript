@@ -3,7 +3,7 @@ from typing import Optional
 from core.exceptions import InvalidSyntaxError, InvalidType
 from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
 from core.tokens import Tokens
-from core.types.conditions import Modify, Only, LessThan, GreaterThan, Between, NotEqual
+from core.types.conditions import Modify, Only, LessThan, GreaterThan, Between, NotEqual, ProcedureModifyWrapper
 from core.types.criteria import Criteria
 from core.types.line import Line
 from core.util import is_ignore_line
@@ -51,14 +51,14 @@ class DefineCriteriaParser(Parser):
         """Обрабатывает случай с 'not may be'."""
         if len(value) == 1:
             return self.parse_single_value(value[0], line)
-        return self.parse_many_word_to_str(value)
+        return self.parse_sequence_words_to_str(value)
 
     def parse_single_value(self, value: str, line):
         """Попытка преобразовать одно значение в число, иначе в строку."""
         try:
             return self.parse_to_num(value, line)
         except InvalidType:
-            return self.parse_many_word_to_str([value])
+            return self.parse_sequence_words_to_str([value])
 
     def parse(self, body: list[Line], jump) -> int:
         printer.logging(f"Начало парсинга DefineCriteria с jump={jump} {Criteria.__name__}", level="INFO")
@@ -78,7 +78,7 @@ class DefineCriteriaParser(Parser):
                 case [Tokens.criteria, Tokens.left_bracket]:
                     printer.logging("Обнаружена секция 'criteria'", level="INFO")
                 case [name_criteria, Tokens.only, *value, Tokens.comma]:
-                    self.criteria[name_criteria] = Only(self.parse_many_word_to_str(value))
+                    self.criteria[name_criteria] = Only(self.parse_sequence_words_to_str(value))
                     printer.logging(f"Добавлено условие 'Only' для {name_criteria} с значениями {value}", level="INFO")
                 case [name_criteria, Tokens.not_, Tokens.may, Tokens.be, *value, Tokens.comma]:
                     processed_value = self.process_not_may_be_case(name_criteria, value, line)
@@ -90,6 +90,24 @@ class DefineCriteriaParser(Parser):
                     value = self.parse_to_num(value, line)
                     self.criteria[name_criteria] = LessThan(value)
                     printer.logging(f"Добавлено условие 'LessThan' для {name_criteria} с значением {value}",
+                                    level="INFO")
+                case [name_criteria, Tokens.procedure, procedure_name, *modify_type, Tokens.comma]:
+                    modify_type = self.parse_sequence_words_to_str(modify_type)
+
+                    modify_map = {
+                        Tokens.only: Only,
+                        f"{Tokens.not_} {Tokens.may} {Tokens.be}": NotEqual,
+                        Tokens.less: LessThan,
+                        Tokens.greater: GreaterThan,
+                    }
+
+                    if modify_type not in modify_map:
+                        raise InvalidSyntaxError(msg=f"Неверный тип условия: {modify_type}", line=line, info=info)
+
+                    modify = modify_map[modify_type]
+
+                    self.criteria[name_criteria] = ProcedureModifyWrapper(modify(procedure_name))
+                    printer.logging(f"Добавлено условие '{modify_type}' для {name_criteria} с значением {procedure_name}",
                                     level="INFO")
                 case [name_criteria, Tokens.greater, value, Tokens.comma]:
                     value = self.parse_to_num(value, line)

@@ -62,7 +62,7 @@ class DefineRuleParser(Parser):
                     self.name_rule = name_rule
                     printer.logging(f"Обнаружено определение правила: {self.name_rule}", level="INFO")
                 case [Tokens.description, *description, Tokens.comma]:
-                    self.description = self.parse_many_word_to_str(description)
+                    self.description = self.parse_sequence_words_to_str(description)
                     printer.logging(f"Добавлено описание правила: {self.description}", level="INFO")
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг правила завершен: 'end_body' найден", level="INFO")

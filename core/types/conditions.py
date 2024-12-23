@@ -1,8 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
+from core.exceptions import NameNotDefine
+from core.executors.procedure import ProcedureExecute
 from core.types.basetype import BaseType
 from core.types.criteria import Criteria
+from core.types.procedure import Procedure
+from core.types.variable import Variable, ScopeStack
+
+if TYPE_CHECKING:
+    from util.compile import Compiled
 
 
 class Modify(ABC):
@@ -60,6 +67,17 @@ class NotEqual(Modify):
         return f"Исключая {self.value}"
 
 
+class ProcedureModifyWrapper(Modify):
+    def __init__(self, modify: Modify):
+        super().__init__(modify)
+        self.nested_modify = modify
+
+    def calculate(self, other: Any) -> bool:
+        return self.nested_modify.calculate(other)
+
+    def __repr__(self):
+        return self.nested_modify.__repr__()
+
 class ResultCondition:
     def __init__(self, name_criteria: str, result: bool, modify: Modify):
         self.name_criteria = name_criteria
@@ -76,14 +94,31 @@ class Condition(BaseType):
     def __repr__(self) -> str:
         return f"Condition(description='{self.description}')"
 
-    def execute(self, fact_data: dict[str, Any]) -> dict[str, ResultCondition]:
+    def execute(self, fact_data: dict[str, Any], compiled: "Compiled") -> dict[str, ResultCondition]:
         result = {}
 
         for name_fact_data, value_fact_data in fact_data.items():
             if name_fact_data not in self.criteria.modify:
                 continue
 
-            modify = self.criteria.modify[name_fact_data]
+            modify = self.criteria.modify.get(name_fact_data)
+
+            if isinstance(self.criteria.modify[name_fact_data], ProcedureModifyWrapper):
+                name = modify.nested_modify.value
+
+                if name not in compiled.compiled_code:
+                    raise NameNotDefine(name=name)
+
+                procedure: Procedure = compiled.compiled_code[name]
+
+                arg = Variable(procedure.arguments_names[0], value_fact_data)
+
+                procedure.tree_variables = ScopeStack()
+                procedure.tree_variables.set(arg)
+
+                executor = ProcedureExecute(procedure, compiled)
+
+                modify.nested_modify.value = executor.execute()
 
             try:
                 result[name_fact_data] = ResultCondition(

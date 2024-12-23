@@ -51,6 +51,14 @@ class UnknownType(BaseError):
         super().__init__(msg)
 
 
+class ErrorType(BaseError):
+    def __init__(self, msg: Optional[str] = None):
+        if msg is None:
+            msg = "Ошибка типа!"
+
+        super().__init__(msg)
+
+
 class NameNotDefine(BaseError):
     def __init__(self, msg: Optional[str] = None, name: Optional[str] = None):
         if msg is None:

@@ -113,6 +113,9 @@ class Compiler:
         if isinstance(compiled_obj, (SanctionType, Rule, Law, Obligation, Severity, Criteria)):
             return compiled_obj
 
+        if isinstance(compiled_obj, Criteria):
+            return compiled_obj
+
         elif isinstance(compiled_obj, CheckerSituation):
             compiled_obj.document = self.process_literal_field(
                 compiled_obj.document, Tokens.document, Tokens.check, Document
