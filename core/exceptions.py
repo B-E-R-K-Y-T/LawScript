@@ -80,3 +80,19 @@ class FieldNotDefine(BaseError):
 class NameAlreadyExist(BaseError):
     def __init__(self, name: str):
         super().__init__(f"Имя: '{name}' уже существует")
+
+
+class EmptyReturn(BaseError):
+    def __init__(self, msg: Optional[str] = None):
+        if msg is None:
+           msg = "Возвращаемое значение пусто"
+
+        super().__init__(msg)
+
+
+class InvalidExpression(BaseError):
+    def __init__(self, msg: Optional[str] = None):
+        if msg is None:
+           msg = "Некорректное выражение"
+
+        super().__init__(msg)

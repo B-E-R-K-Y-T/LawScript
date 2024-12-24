@@ -104,7 +104,7 @@ class Parser(ABC):
                 if symbol in (
                         Tokens.left_bracket, Tokens.right_bracket, Tokens.comma, Tokens.star,
                         Tokens.left_square_bracket, Tokens.right_square_bracket, Tokens.equal,
-                        Tokens.plus, Tokens.minus, Tokens.div
+                        Tokens.plus, Tokens.minus, Tokens.div, Tokens.quotation
                 ):
                     if unknown_token:
                         tokens.append(unknown_token)

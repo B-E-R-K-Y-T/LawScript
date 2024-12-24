@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, TYPE_CHECKING
 
 from core.exceptions import NameNotDefine
-from core.executors.procedure import ProcedureExecute
+from core.executors.procedure import ProcedureExecutor
 from core.types.basetype import BaseType
 from core.types.criteria import Criteria
 from core.types.procedure import Procedure
@@ -116,7 +116,7 @@ class Condition(BaseType):
                 procedure.tree_variables = ScopeStack()
                 procedure.tree_variables.set(arg)
 
-                executor = ProcedureExecute(procedure, compiled)
+                executor = ProcedureExecutor(procedure, compiled)
 
                 modify.nested_modify.value = executor.execute()
 

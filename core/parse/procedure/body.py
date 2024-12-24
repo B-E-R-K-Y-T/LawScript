@@ -108,7 +108,7 @@ class BodyParser(Parser):
                         )
                     )
                     printer.logging("Добавлена команда Loop", level="INFO")
-                case [Tokens.return_, *expr]:
+                case [Tokens.return_, *expr, Tokens.end_expr]:
                     self.commands.append(Return(str(), Expression(str(), expr)))
                     printer.logging(f"Добавлена команда Return с выражением: {expr}", level="INFO")
                     return self.next_num_line(num)

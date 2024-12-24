@@ -34,9 +34,6 @@ class Compiled:
     def __init__(self, compiled: dict[str, BaseType]):
         self.compiled_code = compiled
 
-    def __iter__(self):
-        return 0, self.compiled_code
-
 
 class Compiler:
     def __init__(self, ast: list[MetaObject]):
@@ -152,11 +149,26 @@ class Compiler:
 
                 elif isinstance(obj, (Return, Print)):
                     for op in obj.expression.operations:
+                        if (
+                                obj.expression.operations[0] == Tokens.quotation and
+                                obj.expression.operations[-1] == Tokens.quotation
+                        ):
+                            continue
+
                         if op not in Tokens and not is_float(op) and not is_int(op):
                             names.append((obj, op))
 
                 elif isinstance(obj, Expression):
                     for op in obj.operations:
+                        if (
+                                obj.operations[0] == Tokens.quotation and
+                                obj.operations[-1] == Tokens.quotation
+                        ):
+                            continue
+
+                        if op[0] == Tokens.quotation and op[-1] == Tokens.quotation:
+                            continue
+
                         if op not in Tokens and not is_float(op) and not is_int(op):
                             names.append((obj, op))
 
