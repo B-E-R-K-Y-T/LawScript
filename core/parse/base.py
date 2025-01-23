@@ -1,8 +1,8 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Type, Any, Sequence
+from typing import Type, Sequence
 
-from core.exceptions import InvalidSyntaxError, NameNotDefine
+from core.exceptions import InvalidSyntaxError
 from core.types.basetype import BaseType
 from core.tokens import Tokens
 from core.types.line import Line
@@ -42,12 +42,10 @@ class Parser(ABC):
         self.jump: int = -1
 
     @abstractmethod
-    def parse(self, body: list[str], jump: int) -> int:
-        ...
+    def parse(self, body: list[str], jump: int) -> int: ...
 
     @abstractmethod
-    def create_metadata(self, stop_num: int) -> MetaObject:
-        ...
+    def create_metadata(self, stop_num: int) -> MetaObject: ...
 
     @staticmethod
     def parse_sequence_words_to_str(words: Sequence[str]):

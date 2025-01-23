@@ -1,5 +1,3 @@
-from collections import OrderedDict
-from idlelib.configdialog import is_int
 from typing import Type, Union
 
 from core.exceptions import (
@@ -9,7 +7,7 @@ from core.exceptions import (
     NameAlreadyExist,
     FieldNotDefine,
 )
-from core.parse.base import MetaObject, is_float
+from core.parse.base import MetaObject, is_float, is_integer
 from core.tokens import Tokens
 from core.types.basetype import BaseType
 from core.types.checkers import CheckerSituation
@@ -155,7 +153,7 @@ class Compiler:
                         ):
                             continue
 
-                        if op not in Tokens and not is_float(op) and not is_int(op):
+                        if op not in Tokens and not is_float(op) and not is_integer(op):
                             names.append((obj, op))
 
                 elif isinstance(obj, Expression):
@@ -169,7 +167,7 @@ class Compiler:
                         if op[0] == Tokens.quotation and op[-1] == Tokens.quotation:
                             continue
 
-                        if op not in Tokens and not is_float(op) and not is_int(op):
+                        if op not in Tokens and not is_float(op) and not is_integer(op):
                             names.append((obj, op))
 
                 elif isinstance(obj, (CodeBlock, Procedure)):

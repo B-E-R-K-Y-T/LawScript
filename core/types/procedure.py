@@ -1,10 +1,6 @@
-from typing import Optional, Union
-
-from core.exceptions import ErrorType
-from core.parse.base import is_float, is_integer
-from core.tokens import Tokens
+from typing import Optional
 from core.types.basetype import BaseType
-from core.types.variable import Variable, ScopeStack
+from core.types.variable import ScopeStack
 
 
 class Body(BaseType):

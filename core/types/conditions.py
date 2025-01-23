@@ -125,7 +125,6 @@ class Condition(BaseType):
                     name_criteria=name_fact_data,
                     result=modify.calculate(value_fact_data),
                     modify=modify
-
                 )
             except TypeError:
                 raise TypeError(f"Произошла ошибка при проверке критерия: '{name_fact_data}'. Не верный тип!\n")
