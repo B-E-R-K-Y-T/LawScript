@@ -44,7 +44,9 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     if stack[-1] == str(Tokens.left_bracket):
                         break
                 except IndexError:
-                    raise InvalidExpression(f"В выражении: '{' '.join(expr)}' не хватает закрывающей скобки")
+                    raise InvalidExpression(
+                        f"В выражении: '{' '.join(expr)}' не хватает открывающей скобки: '{Tokens.left_bracket}'"
+                    )
 
                 op_ = stack.pop()
 
