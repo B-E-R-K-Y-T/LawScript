@@ -37,13 +37,14 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
 
         if operators_map[op] == Operators.LPAR:
             stack.append(op)
-        elif operators_map[op] == Operators.RPAR:
-            if len(stack) == 0:
-                raise InvalidExpression(f"В выражении: '{''.join(expr)}' нет закрывающей скобки")
 
+        elif operators_map[op] == Operators.RPAR:
             while True:
-                if stack[-1] == str(Tokens.left_bracket):
-                    break
+                try:
+                    if stack[-1] == str(Tokens.left_bracket):
+                        break
+                except IndexError:
+                    raise InvalidExpression(f"В выражении: '{' '.join(expr)}' не хватает закрывающей скобки")
 
                 op_ = stack.pop()
 
@@ -51,7 +52,8 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     continue
 
                 result_stack.append(op_)
-        elif operators_map[op] in (Operators.MUL, Operators.DIV, Operators.ADD, Operators.SUB):
+
+        elif operators_map[op] in [Operators.MUL, Operators.DIV, Operators.ADD, Operators.SUB]:
             while True:
                 if len(stack) == 0:
                     stack.append(op)
