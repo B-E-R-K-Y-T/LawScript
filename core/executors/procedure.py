@@ -1,9 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Union
 
-from asteval import Interpreter
-
-from core.exceptions import EmptyReturn, InvalidExpression
-from core.parse.base import is_integer
+from core.exceptions import EmptyReturn
 from core.tokens import Tokens
 from core.types.procedure import Procedure, Expression, Print, Return
 from core.executors.base import Executor
@@ -57,7 +54,6 @@ class ProcedureExecutor(Executor):
     def __init__(self, procedure: Procedure, compiled: "Compiled"):
         self.procedure = procedure
         self.compiled = compiled
-        self.aeval = Interpreter()
 
     def prepare_expression(self, expression: list[str]) -> list[str]:
         for scope in self.procedure.tree_variables.scopes:

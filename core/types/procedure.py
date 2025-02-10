@@ -1,4 +1,6 @@
 from typing import Optional
+
+from core.parse.base import build_rpn_stack
 from core.types.basetype import BaseType
 from core.types.variable import ScopeStack
 
@@ -29,7 +31,7 @@ class Expression(BaseType):
     def __init__(self, name: str, operations):
         super().__init__(name)
 
-        self.operations: list[str] = operations
+        self.operations: list[str] = build_rpn_stack(operations)
 
 
 

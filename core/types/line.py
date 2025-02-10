@@ -1,7 +1,9 @@
-class Info:
-    def __init__(self, num, file):
-        self.num = num
-        self.file = file
+from typing_extensions import NamedTuple
+
+
+class Info(NamedTuple):
+    num: int
+    file: str
 
 
 class Line(str):
@@ -13,8 +15,8 @@ class Line(str):
 
     def get_file_info(self) -> Info:
         return Info(
-            self.num,
-            self.file
+            num=self.num,
+            file=self.file
         )
 
     def __repr__(self):

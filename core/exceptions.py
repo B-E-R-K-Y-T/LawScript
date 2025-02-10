@@ -1,7 +1,7 @@
 from typing import Optional, Any
 
 from core.tokens import Tokens
-from core.types.line import Line, Info
+from core.types.line import Info
 from core.types.severitys import Levels
 
 

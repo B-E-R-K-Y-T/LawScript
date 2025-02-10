@@ -1,11 +1,77 @@
 import re
 from abc import ABC, abstractmethod
 from typing import Type, Sequence
+from enum import Enum
 
-from core.exceptions import InvalidSyntaxError
+from core.exceptions import InvalidSyntaxError, InvalidExpression
 from core.types.basetype import BaseType
 from core.tokens import Tokens
 from core.types.line import Line
+
+
+class Operators(Enum):
+    ADD = str(Tokens.plus)
+    SUB = str(Tokens.minus)
+    MUL = str(Tokens.star)
+    DIV = str(Tokens.div)
+    LPAR = str(Tokens.left_bracket)
+    RPAR = str(Tokens.right_bracket)
+
+
+def build_rpn_stack(expr: list[str]) -> list[str]:
+    stack = []
+    result_stack = []
+    operators_map = {
+        str(Tokens.left_bracket): Operators.LPAR,
+        str(Tokens.right_bracket): Operators.RPAR,
+        str(Tokens.star): Operators.MUL,
+        str(Tokens.div): Operators.DIV,
+        str(Tokens.plus): Operators.ADD,
+        str(Tokens.minus): Operators.SUB,
+    }
+    print(expr)
+    for op in expr:
+        if op in operators_map:
+            if operators_map[op] == Operators.LPAR:
+                stack.append(op)
+            elif operators_map[op] == Operators.RPAR:
+                if len(stack) == 0:
+                    raise InvalidExpression(f"В выражении: '{''.join(expr)}' нет закрывающей скобки")
+
+                while True:
+                    if stack[-1] == str(Tokens.left_bracket):
+                        break
+
+                    op_ = stack.pop()
+
+                    if op_ in [str(Tokens.left_bracket), str(Tokens.right_bracket)]:
+                        continue
+
+                    result_stack.append(op_)
+            elif operators_map[op] in (Operators.MUL, Operators.DIV, Operators.ADD, Operators.SUB):
+                while True:
+                    if len(stack) == 0:
+                        stack.append(op)
+                        break
+
+                    if stack[-1] in [str(Tokens.star), str(Tokens.div)]:
+                        result_stack.append(stack.pop())
+                        stack.append(op)
+                        break
+                    else:
+                        stack.append(op)
+                        break
+        else:
+            result_stack.append(op)
+
+    for op in reversed(stack):
+        if op in [str(Tokens.left_bracket), str(Tokens.right_bracket)]:
+            continue
+
+        result_stack.append(op)
+
+    print(result_stack)
+    return result_stack
 
 
 def is_integer(s: str) -> bool:
