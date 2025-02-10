@@ -7,7 +7,7 @@ from core.executors.base import Executor
 from util.console_worker import printer
 
 if TYPE_CHECKING:
-    from util.compile import Compiled
+    from util.build_tools.compile import Compiled
 
 
 class Operation:

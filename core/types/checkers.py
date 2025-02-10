@@ -5,7 +5,7 @@ from core.types.conditions import ResultCondition
 from core.types.documents import Document, FactSituation
 
 if TYPE_CHECKING:
-    from util.compile import Compiled
+    from util.build_tools.compile import Compiled
 
 
 class CheckerSituation(BaseType):

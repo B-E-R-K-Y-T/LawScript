@@ -9,7 +9,7 @@ from core.types.procedure import Procedure
 from core.types.variable import Variable, ScopeStack
 
 if TYPE_CHECKING:
-    from util.compile import Compiled
+    from util.build_tools.compile import Compiled
 
 
 class Modify(ABC):

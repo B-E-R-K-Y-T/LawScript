@@ -4,7 +4,7 @@ from core.tokens import Tokens
 
 from colorama import init
 
-from util.compile import Compiled
+from util.build_tools.compile import Compiled
 from util.console_worker import printer
 
 init()

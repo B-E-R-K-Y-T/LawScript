@@ -1,5 +1,5 @@
 from core.types.checkers import CheckerSituation
-from util.compile import Compiled
+from util.build_tools.compile import Compiled
 from core.executors.checker_execute import CheckerSituationExecute
 
 

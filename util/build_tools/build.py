@@ -1,10 +1,10 @@
 import os
 import pickle
 
-from util.ast import AbstractSyntaxTreeBuilder
-from util.compile import Compiler
+from util.build_tools.ast import AbstractSyntaxTreeBuilder
+from util.build_tools.compile import Compiler
 from core.parse.base import MetaObject
-from util.starter import preprocess
+from util.build_tools.starter import preprocess
 
 
 def build(path: str):

@@ -7,9 +7,9 @@ from core.parse.base import MetaObject
 from core.tokens import Tokens
 from core.types.line import Line
 from core.util import kill_process
-from util.ast import AbstractSyntaxTreeBuilder
-from util.compile import Compiler, Compiled
-from util.interpreter import Interpreter
+from util.build_tools.ast import AbstractSyntaxTreeBuilder
+from util.build_tools.compile import Compiler, Compiled
+from util.build_tools.interpreter import Interpreter
 
 
 def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled, str]:

@@ -16,7 +16,7 @@ from core.parse.type_sanction import TypeSanctionParser
 from core.tokens import Tokens
 from core.types.line import Line
 from core.util import is_ignore_line
-from util.compile import Compiled
+from util.build_tools.compile import Compiled
 from util.console_worker import printer
 
 
