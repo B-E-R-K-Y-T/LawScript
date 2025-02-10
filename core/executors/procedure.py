@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 
 class Operation:
     def __init__(
-            self, operand1: Optional[Union[str, float]] = None,
+            self,
+            operand1: Optional[Union[str, float]] = None,
             operand2: Optional["Operation"] = None,
             operation: Optional[str] = None
     ):
@@ -63,10 +64,6 @@ class ProcedureExecutor(Executor):
                         expression[offset] = str(variable.value)
 
         return  expression
-
-        # print(expression)
-        #
-        # return self.aeval(expression)
 
     def execute(self):
         for command in self.procedure.body.commands:
