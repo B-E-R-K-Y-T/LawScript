@@ -31,38 +31,39 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
     }
     print(expr)
     for op in expr:
-        if op in operators_map:
-            if operators_map[op] == Operators.LPAR:
-                stack.append(op)
-            elif operators_map[op] == Operators.RPAR:
-                if len(stack) == 0:
-                    raise InvalidExpression(f"В выражении: '{''.join(expr)}' нет закрывающей скобки")
-
-                while True:
-                    if stack[-1] == str(Tokens.left_bracket):
-                        break
-
-                    op_ = stack.pop()
-
-                    if op_ in [str(Tokens.left_bracket), str(Tokens.right_bracket)]:
-                        continue
-
-                    result_stack.append(op_)
-            elif operators_map[op] in (Operators.MUL, Operators.DIV, Operators.ADD, Operators.SUB):
-                while True:
-                    if len(stack) == 0:
-                        stack.append(op)
-                        break
-
-                    if stack[-1] in [str(Tokens.star), str(Tokens.div)]:
-                        result_stack.append(stack.pop())
-                        stack.append(op)
-                        break
-                    else:
-                        stack.append(op)
-                        break
-        else:
+        if op not in operators_map:
             result_stack.append(op)
+            continue
+
+        if operators_map[op] == Operators.LPAR:
+            stack.append(op)
+        elif operators_map[op] == Operators.RPAR:
+            if len(stack) == 0:
+                raise InvalidExpression(f"В выражении: '{''.join(expr)}' нет закрывающей скобки")
+
+            while True:
+                if stack[-1] == str(Tokens.left_bracket):
+                    break
+
+                op_ = stack.pop()
+
+                if op_ in [str(Tokens.left_bracket), str(Tokens.right_bracket)]:
+                    continue
+
+                result_stack.append(op_)
+        elif operators_map[op] in (Operators.MUL, Operators.DIV, Operators.ADD, Operators.SUB):
+            while True:
+                if len(stack) == 0:
+                    stack.append(op)
+                    break
+
+                if stack[-1] in [str(Tokens.star), str(Tokens.div)]:
+                    result_stack.append(stack.pop())
+                    stack.append(op)
+                    break
+                else:
+                    stack.append(op)
+                    break
 
     for op in reversed(stack):
         if op in [str(Tokens.left_bracket), str(Tokens.right_bracket)]:
@@ -71,6 +72,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
         result_stack.append(op)
 
     print(result_stack)
+
     return result_stack
 
 
