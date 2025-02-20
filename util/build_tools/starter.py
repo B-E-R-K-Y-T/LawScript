@@ -24,9 +24,9 @@ def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled,
             return raw_code
 
     except FileNotFoundError:
-        kill_process(f"Модуль для включения не найден: {path}")
+        kill_process(f"Невозможно включить модуль. Модуль '{path}' не найден.")
     except RecursionError:
-        kill_process(f"Обнаружен циклический импорт {path}")
+        kill_process(f"Обнаружен циклический импорт '{path}'")
 
 
 def preprocess(raw_code, path: str) -> list:
@@ -47,10 +47,9 @@ def preprocess(raw_code, path: str) -> list:
                 try:
                     files = os.listdir(dir_path)
                 except FileNotFoundError:
-                    kill_process(f"Модуль для включения не найден: {path}")
-                    return
+                    kill_process(f"Модуль для включения не найден: '{path}'")
 
-                for filename in files:
+                for filename in files: # noqa
                     if filename.endswith(".law"):  # Проверка на нужное расширение
                         file_path = os.path.join(dir_path, filename)
                         preprocessed.append(import_preprocess(file_path))
@@ -60,7 +59,7 @@ def preprocess(raw_code, path: str) -> list:
                 try:
                     preprocessed.extend(preprocess(import_preprocess(path, byte_mode=False), path))
                 except RecursionError:
-                    kill_process(f"Обнаружен циклический импорт {path}")
+                    kill_process(f"Обнаружен циклический импорт '{path}'")
 
             case [Tokens.include, path]:
                 path = path.replace(Tokens.dot, "/")
@@ -89,10 +88,13 @@ def run(raw_code: str, path: str):
 
 
 def run_file(path: str):
-    if path.endswith('.law'):
-        with open(path, "rb") as file:
-            compiled = pickle.load(file)
-            run_compiled_code(compiled)
-    else:
-        with open(path, "r", encoding="utf-8") as file:
-            run(file.read(), path)
+    try:
+        if path.endswith('.law'):
+            with open(path, "rb") as file:
+                compiled = pickle.load(file)
+                run_compiled_code(compiled)
+        else:
+            with open(path, "r", encoding="utf-8") as file:
+                run(file.read(), path)
+    except FileNotFoundError:
+        kill_process(f"Файл '{path}' не найден.")
