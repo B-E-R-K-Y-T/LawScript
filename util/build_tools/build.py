@@ -8,8 +8,8 @@ from util.build_tools.starter import preprocess
 
 
 def build(path: str):
-    with open(path, "r", encoding="utf-8") as file:
-        code = preprocess(file.read(), path)
+    with open(path, "r", encoding="utf-8") as read_file:
+        code = preprocess(read_file.read(), path)
 
         ast_builder = AbstractSyntaxTreeBuilder(code)
         ast: list[MetaObject] = ast_builder.build()
@@ -18,5 +18,5 @@ def build(path: str):
 
         new_path = os.path.splitext(path)[0] + ".law"
 
-        with open(f"{new_path}", 'wb') as f:
-            pickle.dump(compiler.compile(), f)
+        with open(f"{new_path}", 'wb') as write_file:
+            pickle.dump(compiler.compile(), write_file)
