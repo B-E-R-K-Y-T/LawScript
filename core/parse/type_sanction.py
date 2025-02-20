@@ -1,6 +1,7 @@
 from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
+from core.types.line import Line
 from core.types.sanction_types import SanctionType
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
@@ -41,7 +42,7 @@ class TypeSanctionParser(Parser):
             self.article
         )
 
-    def parse(self, body: list[str], jump: int) -> int:
+    def parse(self, body: list[Line], jump: int) -> int:
         printer.logging(f"Начало парсинга TypeSanction с jump={jump} {SanctionType.__name__}", level="INFO")
 
         for num, line in enumerate(body):
@@ -51,6 +52,8 @@ class TypeSanctionParser(Parser):
             if is_ignore_line(line):
                 printer.logging(f"Игнорируем строку: {line}", level="DEBUG")
                 continue
+
+            info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
