@@ -18,7 +18,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
     )
 
     for offset, op in enumerate(expr):
-        printer.logging(f"Текущий оператор: {op}, стек: {stack}, результат стек: {result_stack}", level="DEBUG")
+        printer.logging(f"Текущий оператор: {op}, стек: {stack}, результирующий стек: {result_stack}", level="DEBUG")
 
         if op not in allow_operators:
             if 0 <= offset < len(expr) - 1:
@@ -31,7 +31,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     continue
 
             result_stack.append(op)
-            printer.logging(f"Оператор '{op}' добавлен в результат стек", level="INFO")
+            printer.logging(f"Оператор '{op}' добавлен в результирующий стек", level="INFO")
             continue
 
         if op == Tokens.left_bracket:
@@ -61,7 +61,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     continue
 
                 result_stack.append(op_)
-                printer.logging(f"Оператор '{op_}' добавлен в результат стек", level="INFO")
+                printer.logging(f"Оператор '{op_}' добавлен в результирующий стек", level="INFO")
 
         elif op in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus]:
             while True:
@@ -74,7 +74,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     result_stack.append(stack.pop())
                     result_stack.append(op)
                     printer.logging(
-                        f"Добавлен оператор '{op}' в результат стек, так как верхний элемент стека '{stack[-1]}' имеет больший приоритет",
+                        f"Добавлен оператор '{op}' в результирующий стек, так как верхний элемент стека '{stack[-1]}' имеет больший приоритет",
                         level="INFO")
                     break
                 elif stack[-1].isalnum():
@@ -93,7 +93,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
             continue
 
         result_stack.append(op)
-        printer.logging(f"Оператор '{op}' добавлен в результат стек из оставшегося стека", level="INFO")
+        printer.logging(f"Оператор '{op}' добавлен в результирующий стек из оставшегося стека", level="INFO")
 
     printer.logging(f"Завершено построение RPN-стека. Результат: {result_stack}", level="INFO")
 
