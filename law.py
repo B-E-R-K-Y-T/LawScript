@@ -47,8 +47,8 @@ class Law:
 
 
 if __name__ == '__main__':
-    law = Law()
-    law.run()
-#     file = "закон.txt"
-#     build(file)
-#     run_file(file)
+    # law = Law()
+    # law.run()
+    file = "new_1.txt"
+    build(file)
+    # run_file(file)

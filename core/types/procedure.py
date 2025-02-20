@@ -1,6 +1,6 @@
 from typing import Optional
 
-from core.parse.base import build_rpn_stack
+from core.parse.util.rpn import build_rpn_stack
 from core.types.basetype import BaseType
 from core.types.variable import ScopeStack
 
