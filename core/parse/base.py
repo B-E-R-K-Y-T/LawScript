@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Type, Sequence
 
-from core.exceptions import InvalidSyntaxError, InvalidExpression
+from core.exceptions import InvalidSyntaxError
 from core.types.basetype import BaseType
 from core.tokens import Tokens
 from core.types.line import Line
