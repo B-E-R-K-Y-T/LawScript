@@ -9,43 +9,46 @@ from util.console_worker import printer
 from util.build_tools.starter import run_file
 
 
-def main():
-    start = time.perf_counter()
+class Law:
+    @staticmethod
+    def run():
+        start = time.perf_counter()
 
-    try:
-        if len(sys.argv) < 3:
-            kill_process("Используйте --build <название файла> или --run <название файла>")
+        try:
+            if len(sys.argv) < 3:
+                kill_process("Используйте --build <название файла> или --run <название файла>")
 
-        command = sys.argv[1]
-        filename = sys.argv[2]
+            command = sys.argv[1]
+            filename = sys.argv[2]
 
-        if command == '--build':
-            printer.debug = True
+            if command == '--build':
+                printer.debug = True
 
-            if not filename.endswith('.txt'):  # Предполагаем, что источник текстовый файл
-                kill_process("Файл для сборки должен иметь расширение .txt.")
+                if not filename.endswith('.txt'):  # Предполагаем, что источник текстовый файл
+                    kill_process("Файл для сборки должен иметь расширение .txt.")
 
-            build(filename)
-        elif command == '--run':
-            run_file(filename)
+                build(filename)
+            elif command == '--run':
+                run_file(filename)
+            else:
+                kill_process("Неизвестная команда. Используйте --build или --run.")
+
+        except BaseError as e:
+            kill_process(str(e))
+        except Exception as e:
+            if DEBUG:
+                raise
+            printer.print_error(str(e))
         else:
-            kill_process("Неизвестная команда. Используйте --build или --run.")
-
-    except BaseError as e:
-        kill_process(str(e))
-    except Exception as e:
-        if DEBUG:
-            raise
-        printer.print_error(str(e))
-    else:
-        success_process(f"Операция {command} завершена успешно.")
-    finally:
-        working_time = time.perf_counter() - start
-        yellow_print(f"Затрачено времени: {working_time:.5f}ms")
+            success_process(f"Операция {command} завершена успешно.")
+        finally:
+            working_time = time.perf_counter() - start
+            yellow_print(f"Затрачено времени: {working_time:.5f}ms")
 
 
 if __name__ == '__main__':
-    main()
+    law = Law()
+    law.run()
 #     file = "закон.txt"
 #     build(file)
 #     run_file(file)
