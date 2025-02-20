@@ -140,17 +140,19 @@ class Parser(ABC):
 
     @staticmethod
     def separate_line_to_token(line: Line) -> list[str]:
+        raw_line = line.raw_data
+
         # Убираем комментарии из строки
-        for offset, symbol in enumerate(line):
+        for offset, symbol in enumerate(raw_line):
             match symbol:
                 case Tokens.comment:
-                    line = line[:offset].rstrip()
+                    raw_line = raw_line[:offset].rstrip()
                     break
 
         end_symbols = (Tokens.left_bracket, Tokens.right_bracket, Tokens.comma, Tokens.end_expr)
 
         for end_symbol in end_symbols:
-            if line.endswith(end_symbol):
+            if raw_line.endswith(end_symbol):
                 break
         else:
             raise InvalidSyntaxError(
@@ -159,7 +161,7 @@ class Parser(ABC):
                 info=line.get_file_info()
             )
 
-        separated_line = line.split()
+        separated_line = raw_line.split()
 
         tokens = []
 

@@ -9,6 +9,7 @@ class Info(NamedTuple):
 class Line(str):
     def __new__(cls, value: str, num: int = 0, file: str = ""):
         obj = str.__new__(cls, value)
+        obj.raw_data = value
         obj.num = num
         obj.file = file
         return obj
