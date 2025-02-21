@@ -20,9 +20,6 @@ class ProcedureExecutor(Executor):
     def execute(self):
         for command in self.procedure.body.commands:
             if isinstance(command, Return):
-                # if not command.expression.operations:
-                #     raise EmptyReturn
-
                 executor = ExpressionExecutor(command.expression, self.procedure.tree_variables)
 
                 return executor.execute()
