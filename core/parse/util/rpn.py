@@ -10,17 +10,17 @@ def check_bracket(expr: list[str]):
     count_right_bracket = sum(1 for op in expr if op == Tokens.right_bracket)
 
     if count_left_bracket > count_right_bracket:
-        dif = count_left_bracket - count_right_bracket
+        diff = count_left_bracket - count_right_bracket
 
         raise InvalidExpression(
-            f"В выражении: '{' '.join(expr)}' не хватает {dif} закрывающих скобок: '{Tokens.right_bracket}'"
+            f"В выражении: '{' '.join(expr)}' не хватает {diff} закрывающих скобок: '{Tokens.right_bracket}'"
         )
 
     if count_right_bracket > count_left_bracket:
-        dif = count_right_bracket - count_left_bracket
+        diff = count_right_bracket - count_left_bracket
 
         raise InvalidExpression(
-            f"В выражении: '{' '.join(expr)}' не хватает {dif} открывающих скобок: '{Tokens.left_bracket}'"
+            f"В выражении: '{' '.join(expr)}' не хватает {diff} открывающих скобок: '{Tokens.left_bracket}'"
         )
 
 
@@ -164,10 +164,10 @@ def compile_rpn(expr):
             continue
 
         if is_integer(op):
-            compiled_stack.append(Number(str(), int(op)))
+            compiled_stack.append(Number(int(op)))
             continue
         elif is_float(op):
-            compiled_stack.append(Number(str(), float(op)))
+            compiled_stack.append(Number(float(op)))
             continue
 
         if op == Tokens.quotation:
@@ -188,7 +188,7 @@ def compile_rpn(expr):
                     f"В выражении: '{' '.join(expr)}' не хватает закрывающей кавычки: '{Tokens.quotation}'"
                 )
 
-            compiled_stack.append(String(str(), res_op))
+            compiled_stack.append(String(res_op))
             continue
 
         compiled_stack.append(op)

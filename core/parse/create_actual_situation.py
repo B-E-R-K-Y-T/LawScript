@@ -146,11 +146,11 @@ class DataParser(Parser):
                     value = self.parse_sequence_words_to_str(data)
 
                     if is_integer(value):
-                        value = Number(str(), int(value))
+                        value = Number(int(value))
                     elif is_float(value):
-                        value = Number(str(), float(value))
+                        value = Number(float(value))
                     else:
-                        value = String(str(), value)
+                        value = String(value)
 
                     self.collection_data[name_data] = value
                     printer.logging(f"Добавлено data: {name_data} = {value}", level="INFO")

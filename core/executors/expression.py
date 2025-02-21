@@ -70,21 +70,21 @@ class ExpressionExecutor(Executor):
 
             if operation == Tokens.minus:
                 operands = self.get_operands(execute_stack)
-                execute_stack.append(operands.atomic_type(str(), operands.left.sub(operands.right)))
+                execute_stack.append(operands.atomic_type(operands.left.sub(operands.right)))
 
             if operation == Tokens.plus:
                 operands = self.get_operands(execute_stack)
-                execute_stack.append(operands.atomic_type(str(), operands.left.add(operands.right)))
+                execute_stack.append(operands.atomic_type(operands.left.add(operands.right)))
 
             if operation == Tokens.star:
                 operands = self.get_operands(execute_stack)
-                execute_stack.append(operands.atomic_type(str(), operands.left.mul(operands.right)))
+                execute_stack.append(operands.atomic_type(operands.left.mul(operands.right)))
 
             if operation == Tokens.div:
                 operands = self.get_operands(execute_stack)
-                execute_stack.append(operands.atomic_type(str(), operands.left.div(operands.right)))
+                execute_stack.append(operands.atomic_type(operands.left.div(operands.right)))
 
         if execute_stack:
             return execute_stack[0]
 
-        return Void(str())
+        return Void()

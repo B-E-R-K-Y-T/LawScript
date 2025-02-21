@@ -38,9 +38,7 @@ class InvalidType(BaseError):
         if line is not None:
             msg = f"Ошибка в строке: '{" ".join(line)} ' \n{msg}"
 
-        super().__init__(
-            msg
-        )
+        super().__init__(msg)
 
 
 class UnknownType(BaseError):
