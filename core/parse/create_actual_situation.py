@@ -3,6 +3,7 @@ from typing import Optional, Any
 from core.exceptions import InvalidSyntaxError, InvalidType
 from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
 from core.tokens import Tokens
+from core.types.atoms import Number, String
 from core.types.documents import FactSituation
 from core.types.line import Line
 from core.util import is_ignore_line
@@ -144,10 +145,12 @@ class DataParser(Parser):
                 case [name_data, *data, Tokens.comma]:
                     value = self.parse_sequence_words_to_str(data)
 
-                    if is_float(value):
-                        value = float(value)
-                    elif is_integer(value):
-                        value = int(value)
+                    if is_integer(value):
+                        value = Number(str(), int(value))
+                    elif is_float(value):
+                        value = Number(str(), float(value))
+                    else:
+                        value = String(str(), value)
 
                     self.collection_data[name_data] = value
                     printer.logging(f"Добавлено data: {name_data} = {value}", level="INFO")

@@ -1,18 +1,21 @@
-from typing import Any
+from typing import Any, TypeVar, Generic
 
 from core.types.basetype import BaseType
 
 
-class Variable(BaseType):
-    def __init__(self, name: str, value: Any):
+_T = TypeVar("_T")
+
+
+class Variable(BaseType, Generic[_T]):
+    def __init__(self, name: str, val: _T):
         super().__init__(name)
-        self.value = value
+        self.value = val
 
     def get_value(self):
         return self.value
 
-    def set_value(self, value: Any):
-        self.value = value
+    def set_value(self, val: _T):
+        self.value = val
 
     def __repr__(self):
         return f"{Variable.__name__}({self.name=}, {self.value=})"

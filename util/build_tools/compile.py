@@ -139,28 +139,28 @@ class Compiler:
             return compiled_obj
 
         elif isinstance(compiled_obj, Procedure):
-            def get_all_uses_names(obj: Union[CodeBlock, BaseType]) -> list[tuple[BaseType, str]]:
+            def get_all_uses_names(obj_: Union[CodeBlock, BaseType]) -> list[tuple[BaseType, str]]:
                 names = []
 
-                if isinstance(obj, AssignField):
-                    return [(obj, obj.name)]
+                if isinstance(obj_, AssignField):
+                    return [(obj_, obj_.name)]
 
-                elif isinstance(obj, (Return, Print)):
-                    for op in obj.expression.operations:
+                elif isinstance(obj_, (Return, Print)):
+                    for op in obj_.expression.operations:
                         if (
-                                obj.expression.operations[0] == Tokens.quotation and
-                                obj.expression.operations[-1] == Tokens.quotation
+                                obj_.expression.operations[0] == Tokens.quotation and
+                                obj_.expression.operations[-1] == Tokens.quotation
                         ):
                             continue
 
                         if op not in Tokens and not is_float(op) and not is_integer(op):
-                            names.append((obj, op))
+                            names.append((obj_, op))
 
-                elif isinstance(obj, Expression):
-                    for op in obj.operations:
+                elif isinstance(obj_, Expression):
+                    for op in obj_.operations:
                         if (
-                                obj.operations[0] == Tokens.quotation and
-                                obj.operations[-1] == Tokens.quotation
+                                obj_.operations[0] == Tokens.quotation and
+                                obj_.operations[-1] == Tokens.quotation
                         ):
                             continue
 
@@ -168,13 +168,21 @@ class Compiler:
                             continue
 
                         if op not in Tokens and not is_float(op) and not is_integer(op):
-                            names.append((obj, op))
+                            names.append((obj_, op))
 
-                elif isinstance(obj, (CodeBlock, Procedure)):
-                    for nested_obj in obj.body.commands:
+                elif isinstance(obj_, (CodeBlock, Procedure)):
+                    for nested_obj in obj_.body.commands:
                         names.extend(get_all_uses_names(nested_obj))
 
-                return names
+                filtered_names = []
+
+                for item in names:
+                    _, name_ = item
+
+                    if isinstance(name_, str):
+                        filtered_names.append(item)
+
+                return filtered_names
 
 
             for offset, command in enumerate(compiled_obj.body.commands):

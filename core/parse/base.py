@@ -66,8 +66,7 @@ class Parser(ABC):
     def previous_num_line(num_line: int) -> int:
         return num_line - 1
 
-    @staticmethod
-    def separate_line_to_token(line: Line) -> list[str]:
+    def separate_line_to_token(self, line: Line) -> list[str]:
         raw_line = line.raw_data
 
         # Убираем комментарии из строки
@@ -89,7 +88,7 @@ class Parser(ABC):
                 info=line.get_file_info()
             )
 
-        separated_line = raw_line.split()
+        separated_line = self.__split(raw_line)
 
         tokens = []
 
@@ -126,6 +125,38 @@ class Parser(ABC):
                     tokens[-1] = end
 
         return tokens
+
+    @staticmethod
+    def __split(raw_line: str) -> list[str]:
+        result = []
+        token = ""
+        jump = 0
+
+        for offset, symbol in enumerate(raw_line):
+            if offset < jump:
+                continue
+
+            if symbol == Tokens.quotation:
+                for sub_offset, sub_symbol in enumerate(raw_line[offset + 1:]):
+                    if sub_symbol == Tokens.quotation:
+                        result.append(f'"{token}"')
+                        token = ""
+                        jump = offset + sub_offset + 2
+                        break
+
+                    token += sub_symbol
+                continue
+
+            if symbol == " ":
+                if token:
+                    result.append(token)
+                    token = ""
+                continue
+
+            token += symbol
+
+        result.append(token)
+        return result
 
 
 def parse_execute(parser: Parser, code: list[Line], num_line: int) -> MetaObject:
