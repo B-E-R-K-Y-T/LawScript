@@ -3,11 +3,13 @@ from typing import Union, NamedTuple, Type
 from core.exceptions import ErrorType
 from core.executors.base import Executor
 from core.tokens import Tokens
+from core.types.atomic import Void
 from core.types.basetype import BaseAtomicType
 from core.types.procedure import Expression
 from core.types.variable import ScopeStack, Variable
 
-class Operation(NamedTuple):
+
+class Operands(NamedTuple):
     left: Union[BaseAtomicType, str]
     right: Union[BaseAtomicType, str]
     atomic_type: Type[BaseAtomicType]
@@ -33,19 +35,19 @@ class ExpressionExecutor(Executor):
         return new_expression_stack
 
     @staticmethod
-    def get_operands(execute_stack: list) -> Operation:
+    def get_operands(execute_stack: list) -> Operands:
         l, r = execute_stack.pop(-2), execute_stack.pop(-1)
-        atomic_type = type(l)
 
         type_l = type(l)
         type_r = type(r)
+        atomic_type = type_l
 
         if type_l != type_r:
             raise ErrorType(
                 f"Операнды '{l}'({type_l.type_name()}) и '{r}'({type_r.type_name()}) должны быть одного типа!"
             )
 
-        return Operation(
+        return Operands(
             left=l,
             right=r,
             atomic_type=atomic_type,
@@ -84,3 +86,5 @@ class ExpressionExecutor(Executor):
 
         if execute_stack:
             return execute_stack[0]
+
+        return Void(str())

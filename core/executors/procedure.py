@@ -34,4 +34,4 @@ class ProcedureExecutor(Executor):
 
             if isinstance(command, Print):
                 executor = ExpressionExecutor(command.expression, self.procedure.tree_variables)
-                printer.raw_print(executor.execute().value)
+                printer.raw_print(executor.execute())

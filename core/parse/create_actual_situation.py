@@ -3,7 +3,7 @@ from typing import Optional, Any
 from core.exceptions import InvalidSyntaxError, InvalidType
 from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
 from core.tokens import Tokens
-from core.types.atoms import Number, String
+from core.types.atomic import Number, String
 from core.types.documents import FactSituation
 from core.types.line import Line
 from core.util import is_ignore_line

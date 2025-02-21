@@ -1,7 +1,7 @@
 from core.exceptions import InvalidExpression
 from core.parse.base import is_integer, is_float
 from core.tokens import Tokens
-from core.types.atoms import Number, String
+from core.types.atomic import Number, String
 from util.console_worker import printer
 
 
