@@ -32,6 +32,11 @@ class ProcedureExecutor(Executor):
 
             if isinstance(command, Print):
                 executor = ExpressionExecutor(command.expression, self.procedure.tree_variables)
-                printer.raw_print(executor.execute())
+                result = executor.execute()
+
+                if isinstance(result, Void):
+                    printer.raw_print("")
+                else:
+                    printer.raw_print(result)
 
         return Void()

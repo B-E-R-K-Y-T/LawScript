@@ -201,13 +201,13 @@ class Compiler:
                     continue
 
                 if name not in check_seq:
-                    printer.logging(
-                        f"Объект {name} используется до определения в процедуре {compiled_obj.name}",
-                        level="ERROR"
+                    msg = (
+                        f"Объект '{name}' используется до определения в процедуре '{compiled_obj.name}'. "
+                        f"Файл: {compiled_obj.info_line.file}"
                     )
-                    raise NameNotDefine(
-                        msg=f"Объект '{name}' используется до определения в процедуре '{compiled_obj.name}'"
-                    )
+
+                    printer.logging(msg, level="ERROR")
+                    raise NameNotDefine(msg=msg)
 
             return compiled_obj
 

@@ -1,4 +1,4 @@
-from typing import Any, TypeVar, Generic
+from typing import TypeVar, Generic
 
 from core.types.basetype import BaseType
 

@@ -1,11 +1,11 @@
-from typing import Any
+from typing import Any, Optional
 
 from core.types.line import Info
 
 
 class BaseType:
     def __init__(self, name: str):
-        self.info_line = None
+        self.info_line: Optional[Info] = None
         self.name = name
 
     def set_info(self, info_line: Info):
