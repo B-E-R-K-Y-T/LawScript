@@ -1,5 +1,6 @@
 from typing import Union
 
+from core.tokens import Tokens
 from core.types.basetype import BaseAtomicType
 
 
@@ -20,6 +21,17 @@ class Number(BaseAtomicType):
                 return "Отрицательная бесконечность."
 
         return str(self.value)
+
+
+class Boolean(BaseAtomicType):
+    def __init__(self, value: bool):
+        super().__init__(str(), value)
+
+    def __str__(self):
+        if self.value:
+            return Tokens.true
+        else:
+            return Tokens.false
 
 
 class Void(BaseAtomicType):

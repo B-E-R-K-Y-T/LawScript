@@ -1,8 +1,21 @@
 from core.exceptions import InvalidExpression
 from core.parse.base import is_integer, is_float
 from core.tokens import Tokens
-from core.types.atomic import Number, String
+from core.types.atomic import Number, String, Boolean
 from util.console_worker import printer
+
+ALLOW_OPERATORS = (
+    Tokens.left_bracket,
+    Tokens.right_bracket,
+    Tokens.star,
+    Tokens.div,
+    Tokens.plus,
+    Tokens.minus,
+    Tokens.and_,
+    Tokens.or_,
+    Tokens.not_,
+    Tokens.bool_equal,
+)
 
 
 def check_bracket(expr: list[str]):
@@ -31,19 +44,11 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
 
     stack = []
     result_stack = []
-    allow_operators = (
-        Tokens.left_bracket,
-        Tokens.right_bracket,
-        Tokens.star,
-        Tokens.div,
-        Tokens.plus,
-        Tokens.minus,
-    )
 
     for offset, op in enumerate(expr):
         printer.logging(f"Текущий оператор: {op}, стек: {stack}, результирующий стек: {result_stack}", level="DEBUG")
 
-        if op not in allow_operators:
+        if op not in ALLOW_OPERATORS:
             if 0 <= offset < len(expr) - 1:
                 next_op = expr[offset + 1]
 
@@ -96,7 +101,10 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                 if op in [Tokens.plus, Tokens.minus]:
                     if stack[-1] in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus]:
                         for _ in range(len(stack)):
-                            if stack[-1] in [Tokens.left_bracket, Tokens.right_bracket]:
+                            if stack[-1] in [
+                                Tokens.left_bracket, Tokens.right_bracket,
+                                Tokens.and_, Tokens.or_,  Tokens.not_, Tokens.bool_equal
+                            ]:
                                break
 
                             op_ = stack.pop(-1)
@@ -112,7 +120,10 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
 
                     elif stack[-1] in [Tokens.star, Tokens.div]:
                         for _ in range(len(stack)):
-                            if stack[-1] not in [Tokens.plus, Tokens.minus]:
+                            if stack[-1] not in [
+                                Tokens.plus, Tokens.minus,
+                                Tokens.left_bracket, Tokens.right_bracket,
+                            ]:
                                 break
                             op_ = stack.pop(-1)
                             result_stack.append(op_)
@@ -131,6 +142,76 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     printer.logging(f"Оператор '{op}' добавлен в стек", level="INFO")
                     break
 
+        elif op in [Tokens.and_, Tokens.or_,  Tokens.not_, Tokens.bool_equal]:
+            while True:
+                if len(stack) == 0:
+                    stack.append(op)
+                    printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
+                    break
+
+                if op == Tokens.not_:
+                    if stack[-1] in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_]:
+                        for _ in range(len(stack)):
+                            if stack[-1] in [
+                                Tokens.left_bracket, Tokens.right_bracket, Tokens.and_, Tokens.or_, Tokens.bool_equal
+                            ]:
+                               break
+
+                            op_ = stack.pop(-1)
+                            result_stack.append(op_)
+
+                    stack.append(op)
+                    break
+
+                if op == Tokens.and_:
+                    if stack[-1] in [
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.and_
+                    ]:
+                        for _ in range(len(stack)):
+                            if stack[-1] in [
+                                Tokens.left_bracket, Tokens.right_bracket, Tokens.or_, Tokens.bool_equal
+                            ]:
+                               break
+
+                            op_ = stack.pop(-1)
+                            result_stack.append(op_)
+
+                    stack.append(op)
+                    break
+
+                if op == Tokens.or_:
+                    if stack[-1] in [
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.and_, Tokens.or_
+                    ]:
+                        for _ in range(len(stack)):
+                            if stack[-1] in [
+                                Tokens.left_bracket, Tokens.right_bracket, Tokens.bool_equal
+                            ]:
+                               break
+
+                            op_ = stack.pop(-1)
+                            result_stack.append(op_)
+
+                    stack.append(op)
+                    break
+
+                if op == Tokens.bool_equal:
+                    if stack[-1] in [
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
+                        Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,
+                    ]:
+                        for _ in range(len(stack)):
+                            if stack[-1] in [
+                                Tokens.left_bracket, Tokens.right_bracket, Tokens.or_, Tokens.bool_equal
+                            ]:
+                               break
+
+                            op_ = stack.pop(-1)
+                            result_stack.append(op_)
+
+                    stack.append(op)
+                    break
+
     for op in reversed(stack):
         if op in [Tokens.left_bracket, Tokens.right_bracket]:
             continue
@@ -144,22 +225,13 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
 
 def compile_rpn(expr):
     compiled_stack = []
-    allow_operators = (
-        Tokens.left_bracket,
-        Tokens.right_bracket,
-        Tokens.star,
-        Tokens.div,
-        Tokens.plus,
-        Tokens.minus,
-    )
-
     jump = 0
 
     for offset, op in enumerate(expr):
         if offset < jump:
             continue
 
-        if op in allow_operators:
+        if op in ALLOW_OPERATORS:
             compiled_stack.append(op)
             continue
 
@@ -168,6 +240,13 @@ def compile_rpn(expr):
             continue
         elif is_float(op):
             compiled_stack.append(Number(float(op)))
+            continue
+
+        if op == Tokens.true:
+            compiled_stack.append(Boolean(True))
+            continue
+        elif op == Tokens.false:
+            compiled_stack.append(Boolean(False))
             continue
 
         if op == Tokens.quotation:
