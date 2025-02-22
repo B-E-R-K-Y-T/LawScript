@@ -1,6 +1,6 @@
 from typing import Union, NamedTuple, Type
 
-from core.exceptions import ErrorType, BaseError
+from core.exceptions import ErrorType, InvalidExpression
 from core.executors.base import Executor
 from core.tokens import Tokens
 from core.types.atomic import Void, Boolean
@@ -47,18 +47,10 @@ class ExpressionExecutor(Executor):
 
         return new_expression_stack
 
-    def get_operands(self, execute_stack: list[BaseAtomicType], check_types: bool = True) -> Operands:
+    @staticmethod
+    def get_operands(execute_stack: list[BaseAtomicType]) -> Operands:
         l, r = execute_stack.pop(-2), execute_stack.pop(-1)
-
-        type_l = type(l)
-        type_r = type(r)
-        atomic_type = type_l
-
-        if type_l != type_r and check_types:
-            raise ErrorType(
-                f"Операнды '{l}'({type_l.type_name()}) и '{r}'({type_r.type_name()}) должны быть одного типа!",
-                info=self.expression.info_line
-            )
+        atomic_type = type(l)
 
         return Operands(
             left=l,
@@ -68,65 +60,66 @@ class ExpressionExecutor(Executor):
 
     def evaluate(self) -> BaseAtomicType:
         prepared_operations: list[Union[BaseAtomicType, str]] = self.prepare_operations()
-        execute_stack: list[Union[BaseAtomicType, str]] = []
+        evaluate_stack: list[Union[BaseAtomicType, str]] = []
 
         for operation in prepared_operations:
             if operation not in ALLOW_OPERATORS:
-                execute_stack.append(operation)
+                evaluate_stack.append(operation)
                 continue
 
             if operation == Tokens.minus:
-                operands = self.get_operands(execute_stack)
-                execute_stack.append(operands.atomic_type(operands.left.sub(operands.right)))
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.sub(operands.right)))
 
             elif operation == Tokens.plus:
-                operands = self.get_operands(execute_stack)
-                execute_stack.append(operands.atomic_type(operands.left.add(operands.right)))
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.add(operands.right)))
 
             elif operation == Tokens.star:
-                operands = self.get_operands(execute_stack)
-                execute_stack.append(operands.atomic_type(operands.left.mul(operands.right)))
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.mul(operands.right)))
 
             elif operation == Tokens.div:
-                operands = self.get_operands(execute_stack)
-                execute_stack.append(operands.atomic_type(operands.left.div(operands.right)))
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.div(operands.right)))
 
             elif operation == Tokens.and_:
-                operands = self.get_operands(execute_stack, check_types=False)
-                execute_stack.append(Boolean(operands.left.and_(operands.right)))
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.and_(operands.right)))
 
             elif operation == Tokens.or_:
-                operands = self.get_operands(execute_stack, check_types=False)
-                execute_stack.append(Boolean(operands.left.or_(operands.right)))
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.or_(operands.right)))
 
             elif operation == Tokens.not_:
-                operand: BaseAtomicType = execute_stack.pop(-1)
-                execute_stack.append(Boolean(operand.not_()))
+                operand: BaseAtomicType = evaluate_stack.pop(-1)
+                evaluate_stack.append(Boolean(operand.not_()))
 
             elif operation == Tokens.bool_equal:
-                operands = self.get_operands(execute_stack, check_types=False)
-                execute_stack.append(Boolean(operands.left.eq(operands.right)))
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.eq(operands.right)))
 
             else:
                 raise ErrorType(
                     f"Операция '{operation}' не поддерживается!",
-                    info=self.expression.info_line
+                    info=self.expression.meta_info
                 )
 
-        if execute_stack:
-            return execute_stack[0]
+        if evaluate_stack:
+            return evaluate_stack[0]
 
         return Void()
-
 
     def execute(self) -> BaseAtomicType:
         try:
             return self.evaluate()
         except TypeError as _:
             raise ErrorType(
-                f"Ошибка выполнения операции между операндами в выражении '{self.expression.info_line.raw_line}'!.",
+                f"Ошибка выполнения операции между операндами в выражении '{self.expression.meta_info.raw_line}'!",
+                info=self.expression.meta_info
             )
         except Exception as _:
-            raise BaseError(
-                f"Возникла неизвестная ошибка при вычислении выражения '{self.expression.info_line.raw_line}'!",
+            raise InvalidExpression(
+                f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                info=self.expression.meta_info
             )

@@ -19,8 +19,21 @@ ALLOW_OPERATORS = (
 
 
 def check_bracket(expr: list[str]):
-    count_left_bracket = sum(1 for op in expr if op == Tokens.left_bracket)
-    count_right_bracket = sum(1 for op in expr if op == Tokens.right_bracket)
+    filtered_expr = []
+    filter_on = False
+
+    for op in expr:
+        if op == Tokens.quotation:
+            if filter_on:
+                filter_on = False
+            else:
+                filter_on = True
+
+        if not filter_on:
+            filtered_expr.append(op)
+
+    count_left_bracket = sum(1 for op in filtered_expr if op == Tokens.left_bracket)
+    count_right_bracket = sum(1 for op in filtered_expr if op == Tokens.right_bracket)
 
     if count_left_bracket > count_right_bracket:
         diff = count_left_bracket - count_right_bracket
@@ -44,9 +57,25 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
 
     stack = []
     result_stack = []
+    jump = 0
 
     for offset, op in enumerate(expr):
+        if offset < jump:
+            continue
+
         printer.logging(f"Текущий оператор: {op}, стек: {stack}, результирующий стек: {result_stack}", level="DEBUG")
+
+        if op == Tokens.quotation:
+            result_stack.append(op)
+
+            for sub_offset, sub_op in enumerate(expr[offset+1:]):
+                result_stack.append(sub_op)
+
+                if sub_op == Tokens.quotation:
+                    jump = sub_offset + offset + 2
+                    break
+
+            continue
 
         if op not in ALLOW_OPERATORS:
             if 0 <= offset < len(expr) - 1:

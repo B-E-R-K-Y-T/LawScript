@@ -138,7 +138,7 @@ class Parser(ABC):
 
         if count_quotes % 2 == 1:
             raise InvalidSyntaxError(
-                f"Некорректная строка: '{raw_line}', возможно Вы забыли одну из кавычек",
+                f"Некорректная строка: '{raw_line}', возможно Вы забыли закрывающую кавычку",
                 info=line.get_file_info()
             )
 
@@ -153,6 +153,9 @@ class Parser(ABC):
                 continue
 
             if symbol == Tokens.quotation:
+                result.append(token)
+                token = ""
+
                 for sub_offset, sub_symbol in enumerate(raw_line[offset + 1:]):
                     if sub_symbol == Tokens.quotation:
                         result.append(f'"{token}"')

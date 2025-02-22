@@ -203,7 +203,7 @@ class Compiler:
                 if name not in check_seq:
                     msg = (
                         f"Объект '{name}' используется до определения в процедуре '{compiled_obj.name}'. "
-                        f"Файл: {compiled_obj.info_line.file}"
+                        f"Файл: {compiled_obj.meta_info.file}"
                     )
 
                     printer.logging(msg, level="ERROR")

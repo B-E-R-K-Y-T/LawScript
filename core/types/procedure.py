@@ -29,9 +29,9 @@ class Procedure(BaseType):
 
 
 class Expression(BaseType):
-    def __init__(self, name: str, operations, info_line: Info):
+    def __init__(self, name: str, operations, meta_info: Info):
         super().__init__(name)
-        self.info_line = info_line
+        self.meta_info = meta_info
         self.operations: list[str] = build_rpn_stack(operations)
 
 

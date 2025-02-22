@@ -5,11 +5,11 @@ from core.types.line import Info
 
 class BaseType:
     def __init__(self, name: str):
-        self.info_line: Optional[Info] = None
+        self.meta_info: Optional[Info] = None
         self.name = name
 
-    def set_info(self, info_line: Info):
-        self.info_line = info_line
+    def set_info(self, meta_info: Info):
+        self.meta_info = meta_info
 
 
 class BaseAtomicType(BaseType):
