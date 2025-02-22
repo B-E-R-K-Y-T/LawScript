@@ -3,17 +3,18 @@ from typing import Optional
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.types.obligations import Obligation
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
 class DefineDutyMetaObject(MetaObject):
-    def __init__(self, stop_num: int, name: str, description: str):
+    def __init__(self, stop_num: int, name: str, description: str, info: Info):
         super().__init__(stop_num)
         self.name = name
         self.description = description
+        self.info = info
         printer.logging(f"Создано DefineDutyMetadata с stop_num={stop_num}, name={name}, description={description}", level="INFO")
 
     def create_image(self) -> Image:
@@ -21,12 +22,15 @@ class DefineDutyMetaObject(MetaObject):
         return Image(
             name=self.name,
             obj=Obligation,
-            image_args=(self.description,)
+            image_args=(self.description,),
+            info=self.info
         )
 
 
 class DefineDutyParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.name_obligation: Optional[str] = None
         self.description: Optional[str] = None
         printer.logging("Инициализация DefineDutyParser", level="INFO")
@@ -37,6 +41,7 @@ class DefineDutyParser(Parser):
             stop_num,
             name=self.name_obligation,
             description=self.description,
+            info=self.info
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
@@ -50,7 +55,7 @@ class DefineDutyParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -65,7 +70,7 @@ class DefineDutyParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг обязанности завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

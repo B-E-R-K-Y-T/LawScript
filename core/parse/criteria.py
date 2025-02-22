@@ -5,15 +5,16 @@ from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
 from core.tokens import Tokens
 from core.types.conditions import Modify, Only, LessThan, GreaterThan, Between, NotEqual, ProcedureModifyWrapper
 from core.types.criteria import Criteria
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
 class DefineCriteriaMetaObject(MetaObject):
-    def __init__(self, stop_num: int, criteria: dict[str, Modify]):
+    def __init__(self, stop_num: int, criteria: dict[str, Modify], info: Info):
         super().__init__(stop_num)
         self.criteria = criteria
+        self.info = info
         printer.logging(f"Создано DefineCriteriaMetadata с stop_num={stop_num} и criteria={criteria}", level="INFO")
 
     def create_image(self) -> Image:
@@ -21,12 +22,15 @@ class DefineCriteriaMetaObject(MetaObject):
         return Image(
             name=str(id(self)),
             obj=Criteria,
-            image_args=(self.criteria,)
+            image_args=(self.criteria,),
+            info=self.info
         )
 
 
 class DefineCriteriaParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.criteria: Optional[dict[str, Modify]] = {}
         printer.logging("Инициализация DefineCriteriaParser", level="INFO")
 
@@ -36,6 +40,7 @@ class DefineCriteriaParser(Parser):
         return DefineCriteriaMetaObject(
             stop_num,
             criteria=self.criteria,
+            info=self.info
         )
 
     @staticmethod
@@ -71,7 +76,7 @@ class DefineCriteriaParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -102,7 +107,7 @@ class DefineCriteriaParser(Parser):
                     }
 
                     if modify_type not in modify_map:
-                        raise InvalidSyntaxError(msg=f"Неверный тип условия: {modify_type}", line=line, info=info)
+                        raise InvalidSyntaxError(msg=f"Неверный тип условия: {modify_type}", line=line, info=self.info)
 
                     modify = modify_map[modify_type]
 
@@ -128,7 +133,7 @@ class DefineCriteriaParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг criteria завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.types.sanction_types import SanctionType
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
@@ -10,9 +10,10 @@ from util.console_worker import printer
 
 
 class TypeSanctionMetaObject(MetaObject):
-    def __init__(self, stop_num: int, name: str, *args):
+    def __init__(self, stop_num: int, name: str, info: Info, *args):
         super().__init__(stop_num)
         self.name = name
+        self.info = info
         self.args = args
         printer.logging(f"Создано TypeSanctionMetadata: stop_num={stop_num}, name={name}, args={args}", level="INFO")
 
@@ -21,12 +22,15 @@ class TypeSanctionMetaObject(MetaObject):
         return Image(
             name=self.name,
             obj=SanctionType,
-            image_args=self.args
+            image_args=self.args,
+            info=self.info
         )
 
 
 class TypeSanctionParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.name_sanction_type: Optional[str] = None
         self.article: Optional[str] = None
         self.name: Optional[str] = None
@@ -38,6 +42,7 @@ class TypeSanctionParser(Parser):
         return TypeSanctionMetaObject(
             stop_num,
             self.name,
+            self.info,
             self.name_sanction_type,
             self.article
         )
@@ -53,7 +58,7 @@ class TypeSanctionParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="DEBUG")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -69,7 +74,7 @@ class TypeSanctionParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг типа санкции завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

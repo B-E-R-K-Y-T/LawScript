@@ -4,17 +4,18 @@ from core.exceptions import InvalidSyntaxError
 from core.types.dispositions import Disposition
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
 class DispositionMetaObject(MetaObject):
-    def __init__(self, stop_num: int, right: Optional[str], duty: Optional[str], rule: Optional[str]):
+    def __init__(self, stop_num: int, right: Optional[str], duty: Optional[str], rule: Optional[str], info: Info):
         super().__init__(stop_num)
         self.right = right
         self.duty = duty
         self.rule = rule
+        self.info = info
         printer.logging(f"Создано DispositionMetadata с stop_num={stop_num}, right={right}, duty={duty}, rule={rule}", level="INFO")
 
     def create_image(self) -> Image:
@@ -22,12 +23,15 @@ class DispositionMetaObject(MetaObject):
         return Image(
             name=self.right,
             obj=Disposition,
-            image_args=(self.right, self.duty, self.rule)
+            image_args=(self.right, self.duty, self.rule),
+            info=self.info,
         )
 
 
 class DefineDispositionParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.right: Optional[str] = None
         self.duty: Optional[str] = None
         self.rule: Optional[str] = None
@@ -39,7 +43,8 @@ class DefineDispositionParser(Parser):
             stop_num,
             right=self.right,
             duty=self.duty,
-            rule=self.rule
+            rule=self.rule,
+            info=self.info
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
@@ -53,7 +58,7 @@ class DefineDispositionParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -74,7 +79,7 @@ class DefineDispositionParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг disposition завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

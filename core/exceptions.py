@@ -50,9 +50,12 @@ class UnknownType(BaseError):
 
 
 class ErrorType(BaseError):
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Ошибка типа!"
+
+        if info is not None:
+            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         super().__init__(msg)
 

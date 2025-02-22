@@ -5,14 +5,15 @@ from core.parse.base import Parser, MetaObject, Image
 from core.parse.criteria import DefineCriteriaParser
 from core.tokens import Tokens
 from core.types.conditions import Condition
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
 class DefineConditionMetaObject(MetaObject):
-    def __init__(self, stop_num: int, name: str, description: str, criteria: MetaObject):
+    def __init__(self, stop_num: int, name: str, description: str, criteria: MetaObject, info: Info):
         super().__init__(stop_num)
+        self.info = info
         self.name = name
         self.description = description
         self.criteria = criteria
@@ -23,12 +24,15 @@ class DefineConditionMetaObject(MetaObject):
         return Image(
             name=self.name,
             obj=Condition,
-            image_args=(self.description, self.criteria,)
+            image_args=(self.description, self.criteria,),
+            info=self.info,
         )
 
 
 class DefineConditionParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.name_condition: Optional[str] = None
         self.description: Optional[str] = None
         self.criteria: Optional[MetaObject] = None
@@ -42,6 +46,7 @@ class DefineConditionParser(Parser):
             name=self.name_condition,
             description=self.description,
             criteria=self.criteria,
+            info=self.info,
         )
 
     def parse(self, body: list[Line], jump) -> int:
@@ -56,7 +61,7 @@ class DefineConditionParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -75,7 +80,7 @@ class DefineConditionParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг условия завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

@@ -3,17 +3,18 @@ from typing import Optional
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.types.rules import Rule
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
 class DefineRuleMetaObject(MetaObject):
-    def __init__(self, stop_num: int, name: str, description: str):
+    def __init__(self, stop_num: int, name: str, description: str, info: Info):
         super().__init__(stop_num)
         self.name = name
         self.description = description
+        self.info = info
         printer.logging(f"Создано DefineRuleMetadata с stop_num={stop_num}, name={name}, description={description}",
                         level="INFO")
 
@@ -22,12 +23,15 @@ class DefineRuleMetaObject(MetaObject):
         return Image(
             name=self.name,
             obj=Rule,
-            image_args=(self.description,)
+            image_args=(self.description,),
+            info=self.info,
         )
 
 
 class DefineRuleParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.name_rule: Optional[str] = None
         self.description: Optional[str] = None
         printer.logging("Инициализация DefineRuleParser", level="INFO")
@@ -41,6 +45,7 @@ class DefineRuleParser(Parser):
             stop_num,
             name=self.name_rule,
             description=self.description,
+            info=self.info,
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
@@ -54,7 +59,7 @@ class DefineRuleParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -69,7 +74,7 @@ class DefineRuleParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг правила завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

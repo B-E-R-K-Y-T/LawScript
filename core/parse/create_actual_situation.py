@@ -1,11 +1,11 @@
 from typing import Optional, Any
 
-from core.exceptions import InvalidSyntaxError, InvalidType
+from core.exceptions import InvalidSyntaxError
 from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
 from core.tokens import Tokens
 from core.types.atomic import Number, String
 from core.types.documents import FactSituation
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -15,11 +15,13 @@ class ActualSituationMetaObject(MetaObject):
             self,
             stop_num: int,
             fact_name: str,
+            info: Info,
             *args
     ):
         super().__init__(stop_num)
         self.fact_name = fact_name
         self.args = args
+        self.info = info
         printer.logging(
             f"Создан объект ActualSituationMetadata с stop_num={stop_num}, fact_name='{fact_name}', args={args}",
             level="INFO")
@@ -29,12 +31,15 @@ class ActualSituationMetaObject(MetaObject):
         return Image(
             name=self.fact_name,
             obj=FactSituation,
-            image_args=self.args
+            image_args=self.args,
+            info=self.info,
         )
 
 
 class CreateActualSituationParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.fact_name: Optional[str] = None
         self.name_object: Optional[str] = None
         self.name_subject: Optional[str] = None
@@ -49,6 +54,7 @@ class CreateActualSituationParser(Parser):
         return ActualSituationMetaObject(
             stop_num,
             self.fact_name,
+            self.info,
             self.name_object,
             self.name_subject,
             self.data,
@@ -66,7 +72,7 @@ class CreateActualSituationParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -88,7 +94,7 @@ class CreateActualSituationParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError
@@ -111,6 +117,7 @@ class CollectionData(MetaObject):
 
 class DataParser(Parser):
     def __init__(self):
+        super().__init__()
         self.collection_data: dict[str, Any] = {}
         self.jump = 0
         printer.logging("Инициализация DataParser", level="INFO")
@@ -151,6 +158,8 @@ class DataParser(Parser):
                         value = Number(float(value))
                     else:
                         value = String(value)
+
+                    value.set_info(info)
 
                     self.collection_data[name_data] = value
                     printer.logging(f"Добавлено data: {name_data} = {value}", level="INFO")

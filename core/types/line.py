@@ -4,6 +4,7 @@ from typing_extensions import NamedTuple
 class Info(NamedTuple):
     num: int
     file: str
+    raw_line: str
 
 
 class Line(str):
@@ -12,12 +13,14 @@ class Line(str):
         obj.raw_data = value
         obj.num = num
         obj.file = file
+
         return obj
 
     def get_file_info(self) -> Info:
         return Info(
             num=self.num,
-            file=self.file
+            file=self.file,
+            raw_line=self.raw_data
         )
 
     def __str__(self) -> str:

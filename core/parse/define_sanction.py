@@ -1,7 +1,7 @@
 from typing import Optional, List
 
 from core.exceptions import InvalidSyntaxError, InvalidLevelDegree
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.types.sanctions import Sanction
 from core.parse.base import Parser, Image, MetaObject
 from core.parse.define_sequence import DefineSequenceParser
@@ -12,12 +12,16 @@ from util.console_worker import printer
 
 
 class SanctionMetaObject(MetaObject):
-    def __init__(self, stop_num: int, types: Optional[List[str]], severity: Optional[str],
-                 procedural_aspects: Optional[str]):
+    def __init__(
+            self, stop_num: int, types: Optional[List[str]],
+            severity: Optional[str], procedural_aspects: Optional[str],
+            info: Info
+    ):
         super().__init__(stop_num)
         self.types = types
         self.severity = severity
-        self.procedural_aspects = procedural_aspects
+        self.procedural_aspects = procedural_aspects,
+        self.info = info
         printer.logging(f"Создано SanctionMetadata с stop_num={stop_num}, types={types}, severity={severity}, "
                         f"procedural_aspects={procedural_aspects}", level="INFO")
 
@@ -27,12 +31,15 @@ class SanctionMetaObject(MetaObject):
         return Image(
             name=str(id(self)),
             obj=Sanction,
-            image_args=(self.types, self.severity, self.procedural_aspects)
+            image_args=(self.types, self.severity, self.procedural_aspects),
+            info=self.info
         )
 
 
 class DefineSanctionParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.types: Optional[str] = None
         self.severity: Optional[str] = None
         self.procedural_aspects: Optional[str] = None
@@ -45,7 +52,8 @@ class DefineSanctionParser(Parser):
             stop_num,
             types=self.types,
             severity=self.severity,
-            procedural_aspects=self.procedural_aspects
+            procedural_aspects=self.procedural_aspects,
+            info=self.info
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
@@ -59,13 +67,12 @@ class DefineSanctionParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
                 case [Tokens.sanction, Tokens.left_bracket]:
                     printer.logging("Обнаружено начало тела санкции", level="INFO")
-                    ...
                 case [Tokens.types, *types, Tokens.comma]:
                     sequence = DefineSequenceParser()
                     stop_num = sequence.parse(types, num)
@@ -87,7 +94,7 @@ class DefineSanctionParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг санкции завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

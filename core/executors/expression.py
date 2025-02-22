@@ -34,8 +34,7 @@ class ExpressionExecutor(Executor):
 
         return new_expression_stack
 
-    @staticmethod
-    def get_operands(execute_stack: list) -> Operands:
+    def get_operands(self, execute_stack: list[BaseAtomicType]) -> Operands:
         l, r = execute_stack.pop(-2), execute_stack.pop(-1)
 
         type_l = type(l)
@@ -44,7 +43,8 @@ class ExpressionExecutor(Executor):
 
         if type_l != type_r:
             raise ErrorType(
-                f"Операнды '{l}'({type_l.type_name()}) и '{r}'({type_r.type_name()}) должны быть одного типа!"
+                f"Операнды '{l}'({type_l.type_name()}) и '{r}'({type_r.type_name()}) должны быть одного типа!",
+                info=self.expression.info_line
             )
 
         return Operands(

@@ -3,30 +3,37 @@ from typing import Optional
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.types.subjects import Subject
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
 class DefineSubjectMetaObject(MetaObject):
-    def __init__(self, stop_num: int, name: str, name_subject: str):
+    def __init__(self, stop_num: int, name: str, name_subject: str, info: Info):
         super().__init__(stop_num)
         self.name = name
         self.name_subject = name_subject
-        printer.logging(f"Создано DefineSubjectMetadata с stop_num={stop_num}, name={name}, name_subject={name_subject}", level="INFO")
+        self.info = info
+        printer.logging(
+            f"Создано DefineSubjectMetadata с stop_num={stop_num}, name={name}, name_subject={name_subject}",
+            level="INFO"
+        )
 
     def create_image(self) -> Image:
         printer.logging(f"Создание образа Subject с name={self.name}, name_subject={self.name_subject}", level="INFO")
         return Image(
             name=self.name,
             obj=Subject,
-            image_args=(self.name_subject,)
+            image_args=(self.name_subject,),
+            info=self.info,
         )
 
 
 class DefineSubjectParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.name_subject_define: Optional[str] = None
         self.name_subject: Optional[str] = None
         printer.logging("Инициализация DefineSubjectParser", level="INFO")
@@ -37,6 +44,7 @@ class DefineSubjectParser(Parser):
             stop_num,
             name=self.name_subject_define,
             name_subject=self.name_subject,
+            info=self.info,
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
@@ -50,7 +58,7 @@ class DefineSubjectParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="DEBUG")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -65,7 +73,7 @@ class DefineSubjectParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг субъекта завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

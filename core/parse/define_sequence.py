@@ -13,6 +13,7 @@ class SequenceMetadata:
 
 class DefineSequenceParser(Parser):
     def __init__(self):
+        super().__init__()
         self.sequence: Optional[list[Any]] = None
         printer.logging("Инициализация DefineSequenceParser", level="INFO")
 

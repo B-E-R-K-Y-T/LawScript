@@ -1,9 +1,15 @@
 from typing import Any
 
+from core.types.line import Info
+
 
 class BaseType:
     def __init__(self, name: str):
+        self.info_line = None
         self.name = name
+
+    def set_info(self, info_line: Info):
+        self.info_line = info_line
 
 
 class BaseAtomicType(BaseType):

@@ -5,7 +5,7 @@ from typing import Type, Sequence
 from core.exceptions import InvalidSyntaxError
 from core.types.basetype import BaseType
 from core.tokens import Tokens
-from core.types.line import Line
+from core.types.line import Line, Info
 
 
 def is_integer(s: str) -> bool:
@@ -17,13 +17,17 @@ def is_float(s: str) -> bool:
 
 
 class Image:
-    def __init__(self, name: str, obj: Type[BaseType], image_args: tuple):
+    def __init__(self, name: str, obj: Type[BaseType], image_args: tuple, *, info: Info):
         self.name = name
         self.obj = obj
         self.image_args = image_args
+        self.info = info
 
     def build(self) -> BaseType:
-        return self.obj(self.name, *self.image_args)
+        unpacked_obj = self.obj(self.name, *self.image_args)
+        unpacked_obj.set_info(self.info)
+
+        return unpacked_obj
 
 
 class MetaObject(ABC):

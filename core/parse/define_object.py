@@ -3,17 +3,18 @@ from typing import Optional
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import Parser, MetaObject, Image
 from core.tokens import Tokens
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.types.objects import Object
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
 class DefineObjectMetaObject(MetaObject):
-    def __init__(self, stop_num: int, name: str, name_object: str):
+    def __init__(self, stop_num: int, name: str, name_object: str, info: Info):
         super().__init__(stop_num)
         self.name = name
         self.name_object = name_object
+        self.info = info
         printer.logging(f"Создано DefineObjectMetadata с stop_num={stop_num}, name={name}, name_object={name_object}", level="INFO")
 
     def create_image(self) -> Image:
@@ -21,12 +22,15 @@ class DefineObjectMetaObject(MetaObject):
         return Image(
             name=self.name,
             obj=Object,
-            image_args=(self.name_object,)
+            image_args=(self.name_object,),
+            info=self.info,
         )
 
 
 class DefineObjectParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.name_object_define: Optional[str] = None
         self.name_object: Optional[str] = None
         printer.logging("Инициализация DefineObjectParser", level="INFO")
@@ -37,6 +41,7 @@ class DefineObjectParser(Parser):
             stop_num,
             name=self.name_object_define,
             name_object=self.name_object,
+            info=self.info,
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
@@ -50,7 +55,7 @@ class DefineObjectParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -65,7 +70,7 @@ class DefineObjectParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг объекта завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

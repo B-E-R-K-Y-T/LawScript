@@ -2,6 +2,7 @@ from typing import Optional
 
 from core.parse.util.rpn import build_rpn_stack
 from core.types.basetype import BaseType
+from core.types.line import Info
 from core.types.variable import ScopeStack
 
 
@@ -28,9 +29,9 @@ class Procedure(BaseType):
 
 
 class Expression(BaseType):
-    def __init__(self, name: str, operations):
+    def __init__(self, name: str, operations, info_line: Info):
         super().__init__(name)
-
+        self.info_line = info_line
         self.operations: list[str] = build_rpn_stack(operations)
 
 

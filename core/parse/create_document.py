@@ -7,16 +7,17 @@ from core.parse.define_disposition import DefineDispositionParser
 from core.parse.define_hypothesis import DefineHypothesisParser
 from core.parse.define_sanction import DefineSanctionParser
 from core.tokens import Tokens
-from core.types.line import Line
+from core.types.line import Line, Info
 from core.util import is_ignore_line
 from util.console_worker import printer
 
 
 class DocumentMetaObject(MetaObject):
-    def __init__(self, stop_num: int, name: str, *args):
+    def __init__(self, stop_num: int, name: str, info: Info, *args):
         super().__init__(stop_num)
         self.name = name
         self.args = args
+        self.info = info
         printer.logging(f"Создан объект DocumentMetadata с stop_num={stop_num}, name='{name}', args={args}", level="INFO")
 
     def create_image(self):
@@ -24,12 +25,15 @@ class DocumentMetaObject(MetaObject):
         return Image(
             name=self.name,
             obj=Document,
-            image_args=self.args
+            image_args=self.args,
+            info=self.info
         )
 
 
 class CreateDocumentParser(Parser):
     def __init__(self):
+        super().__init__()
+        self.info = None
         self.document_name: Optional[str] = None
         self.hypothesis: Optional[MetaObject] = None
         self.disposition: Optional[MetaObject] = None
@@ -42,6 +46,7 @@ class CreateDocumentParser(Parser):
         return DocumentMetaObject(
             stop_num,
             self.document_name,
+            self.info,
             self.hypothesis,
             self.disposition,
             self.sanction
@@ -59,7 +64,7 @@ class CreateDocumentParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            info = line.get_file_info()
+            self.info = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -86,7 +91,7 @@ class CreateDocumentParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг документа завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError
