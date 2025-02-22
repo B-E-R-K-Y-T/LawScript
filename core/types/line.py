@@ -20,5 +20,8 @@ class Line(str):
             file=self.file
         )
 
+    def __str__(self) -> str:
+        return f"Файл: '{self.file}', номер строки: '{self.num}', значение: '{self.raw_data}'"
+
     def __repr__(self):
         return f"{Line.__name__}(num={self.num}, value='{self}', file='{self.file}')"
