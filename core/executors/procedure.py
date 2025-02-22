@@ -1,12 +1,9 @@
 from typing import TYPE_CHECKING
 
-from core.exceptions import EmptyReturn
-from core.executors.expression import ExpressionExecutor
-from core.types.atomic import Void
-from core.types.procedure import Procedure, Print, Return, AssignField
+from core.executors.body import BodyExecutor
+from core.types.basetype import BaseAtomicType
+from core.types.procedure import Procedure
 from core.executors.base import Executor
-from core.types.variable import Variable
-from util.console_worker import printer
 
 if TYPE_CHECKING:
     from util.build_tools.compile import Compiled
@@ -17,26 +14,6 @@ class ProcedureExecutor(Executor):
         self.procedure = procedure
         self.compiled = compiled
 
-    def execute(self):
-        for command in self.procedure.body.commands:
-            if isinstance(command, Return):
-                executor = ExpressionExecutor(command.expression, self.procedure.tree_variables)
-
-                return executor.execute()
-
-            if isinstance(command, AssignField):
-                executor = ExpressionExecutor(command.expression, self.procedure.tree_variables)
-                var = Variable(command.name, executor.execute())
-
-                self.procedure.tree_variables.set(var)
-
-            if isinstance(command, Print):
-                executor = ExpressionExecutor(command.expression, self.procedure.tree_variables)
-                result = executor.execute()
-
-                if isinstance(result, Void):
-                    printer.raw_print("")
-                else:
-                    printer.raw_print(result)
-
-        return Void()
+    def execute(self) -> BaseAtomicType:
+        body = BodyExecutor(self.procedure.body, self.procedure.tree_variables, self.compiled)
+        return body.execute()
