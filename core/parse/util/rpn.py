@@ -15,10 +15,12 @@ ALLOW_OPERATORS = (
     Tokens.or_,
     Tokens.not_,
     Tokens.bool_equal,
+    Tokens.greater,
+    Tokens.less,
 )
 
 
-def check_bracket(expr: list[str]):
+def check_correct_expr(expr: list[str]):
     filtered_expr = []
     filter_on = False
 
@@ -49,9 +51,35 @@ def check_bracket(expr: list[str]):
             f"В выражении: '{' '.join(expr)}' не хватает {diff} открывающих скобок: '{Tokens.left_bracket}'"
         )
 
+    previous_op = None
+
+    not_repeated_ops = (
+        Tokens.minus,
+        Tokens.plus,
+        Tokens.div,
+        Tokens.star,
+        Tokens.and_,
+        Tokens.or_,
+        Tokens.not_,
+        Tokens.bool_equal,
+        Tokens.greater,
+        Tokens.less,
+    )
+
+    for op in filtered_expr:
+        if op == previous_op:
+            raise InvalidExpression(
+                f"В выражении: '{' '.join(expr)}' не может быть подряд два оператора: '{op}'"
+            )
+
+        if op in not_repeated_ops:
+            previous_op = op
+        else:
+            previous_op = None
+
 
 def build_rpn_stack(expr: list[str]) -> list[str]:
-    check_bracket(expr)
+    check_correct_expr(expr)
 
     printer.logging(f"Начало построения RPN-стека из выражения: {expr}", level="INFO")
 
@@ -171,7 +199,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     printer.logging(f"Оператор '{op}' добавлен в стек", level="INFO")
                     break
 
-        elif op in [Tokens.and_, Tokens.or_,  Tokens.not_, Tokens.bool_equal]:
+        elif op in [Tokens.and_, Tokens.or_,  Tokens.not_, Tokens.bool_equal, Tokens.greater, Tokens.less]:
             while True:
                 if len(stack) == 0:
                     stack.append(op)
@@ -182,7 +210,9 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     if stack[-1] in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
-                                Tokens.left_bracket, Tokens.right_bracket, Tokens.and_, Tokens.or_, Tokens.bool_equal
+                                Tokens.left_bracket, Tokens.right_bracket,
+                                Tokens.and_, Tokens.or_, Tokens.bool_equal,
+                                Tokens.greater, Tokens.less
                             ]:
                                break
 
@@ -198,7 +228,9 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
-                                Tokens.left_bracket, Tokens.right_bracket, Tokens.or_, Tokens.bool_equal
+                                Tokens.left_bracket, Tokens.right_bracket,
+                                Tokens.or_, Tokens.bool_equal,
+                                Tokens.greater, Tokens.less
                             ]:
                                break
 
@@ -214,7 +246,8 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
-                                Tokens.left_bracket, Tokens.right_bracket, Tokens.bool_equal
+                                Tokens.left_bracket, Tokens.right_bracket,
+                                Tokens.bool_equal, Tokens.greater, Tokens.less
                             ]:
                                break
 
@@ -224,14 +257,15 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     stack.append(op)
                     break
 
-                if op == Tokens.bool_equal:
+                if op in [Tokens.bool_equal, Tokens.greater, Tokens.less]:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
                         Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,
+                        Tokens.greater, Tokens.less
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
-                                Tokens.left_bracket, Tokens.right_bracket, Tokens.or_, Tokens.bool_equal
+                                Tokens.left_bracket, Tokens.right_bracket
                             ]:
                                break
 

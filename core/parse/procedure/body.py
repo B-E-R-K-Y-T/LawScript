@@ -82,7 +82,8 @@ class BodyParser(Parser):
                     else_ = None
 
                     if body[self.jump].startswith(Tokens.else_):
-                        else_ = self.execute_parse(BodyParser, body, self.next_num_line(num))
+                        body_else_ = self.execute_parse(BodyParser, body, self.next_num_line(self.jump))
+                        else_ = Else(str(), body_else_)
 
                     self.commands.append(
                         When(
@@ -105,12 +106,13 @@ class BodyParser(Parser):
                     start_expr = expr[:sep_idx]
                     end_expr = expr[sep_idx + 1:]
 
-                    self.commands.append(
-                        Loop(
-                            str(), Expression(str(), start_expr, self.info), Expression(str(), end_expr, self.info),
-                            self.execute_parse(BodyParser, body, self.next_num_line(num))
-                        )
+                    loop = Loop(
+                        str(), Expression(str(), start_expr, self.info), Expression(str(), end_expr, self.info),
+                        self.execute_parse(BodyParser, body, self.next_num_line(num))
                     )
+                    loop.set_info(self.info)
+
+                    self.commands.append(loop)
                     printer.logging("Добавлена команда Loop", level="INFO")
                 case [Tokens.return_, *expr, Tokens.end_expr]:
                     self.commands.append(Return(str(), Expression(str(), expr, self.info)))

@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, Iterable
 
 from core.types.basetype import BaseType
 
@@ -56,6 +56,25 @@ class ScopeStack:
 
     def get(self, name) -> Variable:
         return self.scopes[-1].get(name)
+
+
+class VariableContextCreator:
+    def __init__(self, tree_variables: ScopeStack):
+        self.tree_variables = tree_variables
+
+    def __enter__(self):
+        self.tree_variables.push()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.tree_variables.pop()
+
+
+def traverse_scope(scope: Scope) -> Iterable[Variable]:
+    for variable in scope.variables.values():
+        yield variable
+
+    if scope.parent is not None:
+        yield from traverse_scope(scope.parent)
 
 
 if __name__ == '__main__':

@@ -2,8 +2,8 @@ import sys
 
 from core.tokens import Tokens
 
-from util.build_tools.compile import Compiled
-from util.console_worker import printer
+from util.build_tools.compile import Compiled # noqa
+from util.console_worker import printer # noqa
 
 
 def is_ignore_line(line: str) -> bool:

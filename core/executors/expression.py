@@ -1,12 +1,12 @@
 from typing import Union, NamedTuple, Type
 
-from core.exceptions import ErrorType, InvalidExpression
+from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefine
 from core.executors.base import Executor
 from core.tokens import Tokens
 from core.types.atomic import Void, Boolean
 from core.types.basetype import BaseAtomicType
 from core.types.procedure import Expression
-from core.types.variable import ScopeStack, Variable
+from core.types.variable import ScopeStack, Variable, traverse_scope
 
 ALLOW_OPERATORS = (
     Tokens.left_bracket,
@@ -19,6 +19,9 @@ ALLOW_OPERATORS = (
     Tokens.or_,
     Tokens.not_,
     Tokens.bool_equal,
+    Tokens.greater,
+    Tokens.less,
+
 )
 
 
@@ -37,13 +40,19 @@ class ExpressionExecutor(Executor):
         new_expression_stack = []
 
         for operation in self.expression.operations:
-            if operation in self.tree_variable.scopes[-1].variables:
-                variable: Variable[BaseAtomicType] = self.tree_variable.scopes[-1].variables[operation]
-                new_expression_stack.append(variable.value)
+            for variable in traverse_scope(self.tree_variable.scopes[-1]):
+                if operation == variable.name:
+                    new_expression_stack.append(variable.value)
+                    break
+            else:
+                new_expression_stack.append(operation)
 
-                continue
-
-            new_expression_stack.append(operation)
+        for operation in new_expression_stack:
+            if not isinstance(operation, BaseAtomicType):
+                if operation not in Tokens:
+                    raise NameNotDefine(
+                        f"Имя переменной {operation} не определено."
+                    )
 
         return new_expression_stack
 
@@ -99,6 +108,14 @@ class ExpressionExecutor(Executor):
                 operands = self.get_operands(evaluate_stack)
                 evaluate_stack.append(Boolean(operands.left.eq(operands.right)))
 
+            elif operation == Tokens.greater:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.gt(operands.right)))
+
+            elif operation == Tokens.less:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.lt(operands.right)))
+
             else:
                 raise ErrorType(
                     f"Операция '{operation}' не поддерживается!",
@@ -113,6 +130,8 @@ class ExpressionExecutor(Executor):
     def execute(self) -> BaseAtomicType:
         try:
             return self.evaluate()
+        except BaseError as e:
+            raise e
         except TypeError as _:
             raise ErrorType(
                 f"Ошибка выполнения операции между операндами в выражении '{self.expression.meta_info.raw_line}'!",
