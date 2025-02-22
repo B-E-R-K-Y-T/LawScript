@@ -13,8 +13,8 @@ class BaseType:
 
 
 class BaseAtomicType(BaseType):
-    def __init__(self, name: str, value: Any):
-        super().__init__(name)
+    def __init__(self, value: Any):
+        super().__init__(str())
         self.value = value
 
     def add(self, other: "BaseAtomicType"):

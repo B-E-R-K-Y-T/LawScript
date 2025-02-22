@@ -61,7 +61,7 @@ class TextEditor:
 
         # Создаем меню
         menu = Menu(root)
-        root.config(menu=menu)
+        root.settings(menu=menu)
 
         # Подменю "Файл"
         file_menu = Menu(menu)

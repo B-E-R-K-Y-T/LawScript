@@ -1,7 +1,7 @@
 import sys
 import time
 
-from config import DEBUG
+from config import settings
 from core.exceptions import BaseError
 from core.util import kill_process, success_process, yellow_print
 from util.build_tools.build import build
@@ -36,7 +36,7 @@ class Law:
         except BaseError as e:
             kill_process(str(e))
         except Exception as e:
-            if DEBUG:
+            if settings.debug:
                 raise
             printer.print_error(str(e))
         else:
@@ -52,4 +52,3 @@ if __name__ == '__main__':
     # file = "new_1.txt"
     # build(file)
     # run_file(file)
-

@@ -170,3 +170,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 test*
+law_config.env
