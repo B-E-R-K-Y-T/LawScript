@@ -13,6 +13,7 @@ class Tokens(StrEnum):
     equal = "="
     plus = "+"
     minus = "-"
+    exponentiation = "^"
     percent = "%"
     div = "/"
     end_expr = ";"

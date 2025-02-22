@@ -64,6 +64,9 @@ class BodyExecutor(Executor):
                     )
 
                 with VariableContextCreator(self.tree_variables):
+                    if not command.body.commands:
+                        continue
+
                     body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
 
                     for _ in range(result_from.value, result_to.value + 1):

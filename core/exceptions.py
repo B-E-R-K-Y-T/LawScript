@@ -15,10 +15,10 @@ class InvalidSyntaxError(BaseError):
             msg = "Некорректный синтаксис"
 
         if line is not None:
-            msg = f"{msg}\nСтрока: '{" ".join(line)}'"
+            msg = f"{msg} Строка: '{" ".join(line)}'"
 
         if info is not None:
-            msg = f"Файл: {info.file}, Номер строки: {info.num}\n{msg}"
+            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}"
 
         super().__init__(msg)
 

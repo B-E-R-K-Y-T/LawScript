@@ -21,7 +21,7 @@ ALLOW_OPERATORS = (
     Tokens.bool_equal,
     Tokens.greater,
     Tokens.less,
-
+    Tokens.exponentiation,
 )
 
 
@@ -91,6 +91,10 @@ class ExpressionExecutor(Executor):
             elif operation == Tokens.div:
                 operands = self.get_operands(evaluate_stack)
                 evaluate_stack.append(operands.atomic_type(operands.left.div(operands.right)))
+
+            elif operation == Tokens.exponentiation:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.pow(operands.right)))
 
             elif operation == Tokens.and_:
                 operands = self.get_operands(evaluate_stack)
