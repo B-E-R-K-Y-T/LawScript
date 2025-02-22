@@ -26,5 +26,5 @@ class Void(BaseAtomicType):
     def __init__(self):
         super().__init__(str(), None)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<void>"

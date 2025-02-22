@@ -10,8 +10,8 @@ from core.types.variable import ScopeStack, Variable
 
 
 class Operands(NamedTuple):
-    left: Union[BaseAtomicType, str]
-    right: Union[BaseAtomicType, str]
+    left: BaseAtomicType
+    right: BaseAtomicType
     atomic_type: Type[BaseAtomicType]
 
 

@@ -67,6 +67,7 @@ class Parser(ABC):
         return num_line - 1
 
     def separate_line_to_token(self, line: Line) -> list[str]:
+        self.__check_quotes(line)
         raw_line = line.raw_data
 
         # Убираем комментарии из строки
@@ -125,6 +126,17 @@ class Parser(ABC):
                     tokens[-1] = end
 
         return tokens
+
+    @staticmethod
+    def __check_quotes(line: Line) -> None:
+        raw_line = line.raw_data
+        count_quotes = sum(1 for symbol in raw_line if symbol == Tokens.quotation)
+
+        if count_quotes % 2 == 1:
+            raise InvalidSyntaxError(
+                f"Некорректная строка: '{raw_line}', возможно Вы забыли одну из кавычек",
+                info=line.get_file_info()
+            )
 
     @staticmethod
     def __split(raw_line: str) -> list[str]:
