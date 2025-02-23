@@ -46,7 +46,7 @@ class BodyExecutor(Executor):
                     if result.value:
                         body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
                         body_executor.execute()
-                    else:
+                    elif command.else_ is not None:
                         body_executor = BodyExecutor(command.else_.body, self.tree_variables, self.compiled)
                         body_executor.execute()
 

@@ -169,7 +169,6 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                 stack.append(op)
                 break
 
-
         elif op in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus]:
             while True:
                 if len(stack) == 0:
@@ -283,7 +282,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
                         Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,
-                        Tokens.greater, Tokens.less
+                        Tokens.greater, Tokens.less, Tokens.exponentiation
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [

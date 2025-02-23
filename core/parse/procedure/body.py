@@ -85,11 +85,12 @@ class BodyParser(Parser):
                         body_else_ = self.execute_parse(BodyParser, body, self.next_num_line(self.jump))
                         else_ = Else(str(), body_else_)
 
-                    self.commands.append(
-                        When(
-                            str(), Expression(str(), expr, self.info), when_body, else_
-                        )
+                    when = When(
+                        str(), Expression(str(), expr, self.info), when_body, else_
                     )
+                    when.set_info(self.info)
+
+                    self.commands.append(when)
                     printer.logging("Добавлена команда When", level="INFO")
                 case [Tokens.loop, Tokens.from_, *expr, Tokens.left_bracket]:
                     expr = list(expr)
