@@ -16,6 +16,10 @@ def is_float(s: str) -> bool:
     return bool(re.match(r"^-?\d+(\.\d+)?$", str(s)))
 
 
+def is_identifier(s: str) -> bool:
+    return bool(re.match(r"^[А-Яа-яЁёA-Za-z_][А-Яа-яЁёA-Za-z0-9_]*$", str(s)))
+
+
 class Image:
     def __init__(self, name: str, obj: Type[BaseType], image_args: tuple, *, info: Info):
         self.name = name

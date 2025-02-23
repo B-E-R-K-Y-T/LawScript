@@ -72,3 +72,6 @@ class Tokens(StrEnum):
     return_ = "ВЕРНУТЬ"
     true = "ИСТИНА"
     false = "ЛОЖЬ"
+
+    _unary_minus = "{{%unary_minus%}}"
+    _unary_plus = "{{%unary_plus%}}"

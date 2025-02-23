@@ -23,6 +23,12 @@ class BaseAtomicType(BaseType):
     def sub(self, other: "BaseAtomicType"):
         return self.value - other.value
 
+    def neg(self):
+        return -self.value
+
+    def pos(self):
+        return +self.value
+
     def mul(self, other: "BaseAtomicType"):
         return self.value * other.value
 

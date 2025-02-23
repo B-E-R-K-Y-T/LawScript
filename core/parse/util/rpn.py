@@ -1,10 +1,14 @@
+from typing import Union
+
 from core.exceptions import InvalidExpression
-from core.parse.base import is_integer, is_float
+from core.parse.base import is_integer, is_float, is_identifier
 from core.tokens import Tokens
 from core.types.atomic import Number, String, Boolean
+from core.types.basetype import BaseAtomicType
+from core.types.operation import Operator
 from util.console_worker import printer
 
-ALLOW_OPERATORS = (
+ALLOW_OPERATORS = {
     Tokens.left_bracket,
     Tokens.right_bracket,
     Tokens.star,
@@ -18,7 +22,9 @@ ALLOW_OPERATORS = (
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
-)
+    Tokens._unary_minus, # noqa
+    Tokens._unary_plus, # noqa
+}
 
 
 def check_correct_expr(expr: list[str]):
@@ -78,8 +84,32 @@ def check_correct_expr(expr: list[str]):
         else:
             previous_op = None
 
+    allowed_ops = {
+        *ALLOW_OPERATORS,
+        Tokens.true,
+        Tokens.false,
+        Tokens.quotation,
+    }
 
-def build_rpn_stack(expr: list[str]) -> list[str]:
+    for op in filtered_expr:
+        if op not in allowed_ops:
+            if not is_integer(op) and not is_float(op):
+                if is_identifier(op):
+                    continue
+
+                raise InvalidExpression(
+                    f"В выражении: '{' '.join(expr)}' не может быть оператора: '{op}'"
+                )
+
+
+def detect_unary(expr: list[str], offset, op, type_op) -> bool:
+    aw_without_right_bracket = ALLOW_OPERATORS - {Tokens.right_bracket}
+    l = expr[offset - 1] in aw_without_right_bracket
+
+    return l and op == type_op
+
+
+def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
     check_correct_expr(expr)
 
     printer.logging(f"Начало построения RPN-стека из выражения: {expr}", level="INFO")
@@ -172,12 +202,23 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
         elif op in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus]:
             while True:
                 if len(stack) == 0:
+                    if detect_unary(expr, offset, op, Tokens.minus):
+                        stack.append(Tokens._unary_minus) # noqa
+                        printer.logging(f"Оператор '{Tokens._unary_minus}' добавлен в стек (пустой стек)", level="INFO") # noqa
+                        break
+                    elif detect_unary(expr, offset, op, Tokens.plus):
+                        stack.append(Tokens._unary_plus) # noqa
+                        printer.logging(f"Оператор '{Tokens._unary_plus}' добавлен в стек (пустой стек)", level="INFO") # noqa
+                        break
+
                     stack.append(op)
                     printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
                     break
 
                 if op in [Tokens.plus, Tokens.minus]:
-                    if stack[-1] in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus]:
+                    if stack[-1] in [
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens._unary_minus, Tokens._unary_plus # noqa
+                    ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
@@ -188,6 +229,14 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                             op_ = stack.pop(-1)
                             result_stack.append(op_)
 
+                    if len(expr) >= offset:
+                        if detect_unary(expr, offset, op, Tokens.minus):
+                            stack.append(Tokens._unary_minus) # noqa
+                            break
+                        elif detect_unary(expr, offset, op, Tokens.plus):
+                            stack.append(Tokens._unary_plus) # noqa
+                            break
+
                     stack.append(op)
                     break
 
@@ -196,7 +245,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                         stack.append(op)
                         break
 
-                    elif stack[-1] in [Tokens.star, Tokens.div]:
+                    elif stack[-1] in [Tokens.star, Tokens.div, Tokens._unary_minus, Tokens._unary_plus]: # noqa
                         for _ in range(len(stack)):
                             if stack[-1] not in [
                                 Tokens.plus, Tokens.minus,
@@ -233,7 +282,7 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
                                 Tokens.and_, Tokens.or_, Tokens.bool_equal,
-                                Tokens.greater, Tokens.less
+                                Tokens.greater, Tokens.less,  Tokens._unary_plus, Tokens._unary_minus, # noqa
                             ]:
                                break
 
@@ -250,8 +299,8 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
-                                Tokens.or_, Tokens.bool_equal,
-                                Tokens.greater, Tokens.less
+                                Tokens.or_, Tokens.bool_equal, Tokens.greater, Tokens.less,
+                                Tokens._unary_plus, Tokens._unary_minus, # noqa
                             ]:
                                break
 
@@ -268,7 +317,8 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
-                                Tokens.bool_equal, Tokens.greater, Tokens.less
+                                Tokens.bool_equal, Tokens.greater, Tokens.less,
+                                Tokens._unary_plus, Tokens._unary_minus, # noqa
                             ]:
                                break
 
@@ -282,7 +332,8 @@ def build_rpn_stack(expr: list[str]) -> list[str]:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
                         Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,
-                        Tokens.greater, Tokens.less, Tokens.exponentiation
+                        Tokens.greater, Tokens.less, Tokens.exponentiation,
+                        Tokens._unary_plus, Tokens._unary_minus, # noqa
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -316,7 +367,7 @@ def compile_rpn(expr):
             continue
 
         if op in ALLOW_OPERATORS:
-            compiled_stack.append(op)
+            compiled_stack.append(Operator(op))
             continue
 
         if is_integer(op):
@@ -354,6 +405,6 @@ def compile_rpn(expr):
             compiled_stack.append(String(res_op))
             continue
 
-        compiled_stack.append(op)
+        compiled_stack.append(Operator(op))
 
     return compiled_stack

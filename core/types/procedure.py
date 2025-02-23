@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Optional, Union
 
 from core.parse.util.rpn import build_rpn_stack
-from core.types.basetype import BaseType
+from core.types.basetype import BaseType, BaseAtomicType
 from core.types.line import Info
+from core.types.operation import Operator
 from core.types.variable import ScopeStack
 
 
@@ -32,8 +33,7 @@ class Expression(BaseType):
     def __init__(self, name: str, operations, info_line: Info):
         super().__init__(name)
         self.meta_info = info_line
-        self.operations: list[str] = build_rpn_stack(operations)
-
+        self.operations: list[Union[Operator, BaseAtomicType]] = build_rpn_stack(operations)
 
 
 class Print(BaseType):
