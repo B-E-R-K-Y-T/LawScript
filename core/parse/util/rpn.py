@@ -93,10 +93,7 @@ def check_correct_expr(expr: list[str]):
 
     for op in filtered_expr:
         if op not in allowed_ops:
-            if not is_integer(op) and not is_float(op):
-                if is_identifier(op):
-                    continue
-
+            if not is_integer(op) and not is_float(op) and not is_identifier(op):
                 raise InvalidExpression(
                     f"В выражении: '{' '.join(expr)}' не может быть оператора: '{op}'"
                 )
@@ -104,9 +101,9 @@ def check_correct_expr(expr: list[str]):
 
 def detect_unary(expr: list[str], offset, op, type_op) -> bool:
     aw_without_right_bracket = ALLOW_OPERATORS - {Tokens.right_bracket}
-    l = expr[offset - 1] in aw_without_right_bracket
+    left_op = expr[offset - 1] in aw_without_right_bracket
 
-    return l and op == type_op
+    return left_op and op == type_op
 
 
 def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
