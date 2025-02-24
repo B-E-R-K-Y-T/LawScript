@@ -74,5 +74,7 @@ class Tokens(StrEnum):
     true = "ИСТИНА"
     false = "ЛОЖЬ"
 
-    _unary_minus = "{{%unary_minus%}}"
-    _unary_plus = "{{%unary_plus%}}"
+
+class ServiceTokens(StrEnum):
+    unary_minus = "{{%unary_minus%}}"
+    unary_plus = "{{%unary_plus%}}"

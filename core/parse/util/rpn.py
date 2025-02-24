@@ -2,7 +2,7 @@ from typing import Union
 
 from core.exceptions import InvalidExpression, BaseError
 from core.parse.base import is_integer, is_float, is_identifier
-from core.tokens import Tokens
+from core.tokens import Tokens, ServiceTokens
 from core.types.atomic import Number, String, Boolean
 from core.types.basetype import BaseAtomicType
 from core.types.line import Info
@@ -24,8 +24,8 @@ ALLOW_OPERATORS = {
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
-    Tokens._unary_minus, # noqa
-    Tokens._unary_plus, # noqa
+    ServiceTokens.unary_minus,
+    ServiceTokens.unary_plus,
 }
 
 
@@ -215,12 +215,12 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
             while True:
                 if len(stack) == 0:
                     if detect_unary(expr, offset, op, Tokens.minus):
-                        stack.append(Tokens._unary_minus) # noqa
-                        printer.logging(f"Оператор '{Tokens._unary_minus}' добавлен в стек (пустой стек)", level="INFO") # noqa
+                        stack.append(ServiceTokens.unary_minus)
+                        printer.logging(f"Оператор '{ServiceTokens.unary_minus}' добавлен в стек (пустой стек)", level="INFO")
                         break
                     elif detect_unary(expr, offset, op, Tokens.plus):
-                        stack.append(Tokens._unary_plus) # noqa
-                        printer.logging(f"Оператор '{Tokens._unary_plus}' добавлен в стек (пустой стек)", level="INFO") # noqa
+                        stack.append(ServiceTokens.unary_plus)
+                        printer.logging(f"Оператор '{ServiceTokens.unary_plus}' добавлен в стек (пустой стек)", level="INFO")
                         break
 
                     stack.append(op)
@@ -230,7 +230,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 if op in [Tokens.plus, Tokens.minus]:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.exponentiation,
-                        Tokens._unary_minus, Tokens._unary_plus # noqa
+                        ServiceTokens.unary_minus, ServiceTokens.unary_plus,
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -244,10 +244,10 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                     if len(expr) >= offset:
                         if detect_unary(expr, offset, op, Tokens.minus):
-                            stack.append(Tokens._unary_minus) # noqa
+                            stack.append(ServiceTokens.unary_minus)
                             break
                         elif detect_unary(expr, offset, op, Tokens.plus):
-                            stack.append(Tokens._unary_plus) # noqa
+                            stack.append(ServiceTokens.unary_plus)
                             break
 
                     stack.append(op)
@@ -260,7 +260,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                     elif stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.exponentiation,
-                        Tokens._unary_minus, Tokens._unary_plus # noqa
+                        ServiceTokens.unary_minus, ServiceTokens.unary_plus
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] not in [
@@ -301,7 +301,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
                                 Tokens.and_, Tokens.or_, Tokens.bool_equal,Tokens.bool_not_equal,
-                                Tokens.greater, Tokens.less,  Tokens._unary_plus, Tokens._unary_minus, # noqa
+                                Tokens.greater, Tokens.less,  ServiceTokens.unary_plus, ServiceTokens.unary_minus,
                             ]:
                                break
 
@@ -319,7 +319,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
                                 Tokens.or_, Tokens.bool_equal,Tokens.bool_not_equal, Tokens.greater, Tokens.less,
-                                Tokens._unary_plus, Tokens._unary_minus, # noqa
+                                ServiceTokens.unary_plus, ServiceTokens.unary_minus,
                             ]:
                                break
 
@@ -337,7 +337,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
                                 Tokens.bool_equal, Tokens.bool_not_equal, Tokens.greater, Tokens.less,
-                                Tokens._unary_plus, Tokens._unary_minus, # noqa
+                                ServiceTokens.unary_plus, ServiceTokens.unary_minus,
                             ]:
                                break
 
@@ -352,7 +352,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
                         Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,Tokens.bool_not_equal,
                         Tokens.greater, Tokens.less, Tokens.exponentiation,
-                        Tokens._unary_plus, Tokens._unary_minus, # noqa
+                        ServiceTokens.unary_plus, ServiceTokens.unary_minus,
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [

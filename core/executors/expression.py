@@ -2,7 +2,7 @@ from typing import Union, NamedTuple, Type, Optional
 
 from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefine
 from core.executors.base import Executor
-from core.tokens import Tokens
+from core.tokens import Tokens, ServiceTokens
 from core.types.atomic import Void, Boolean
 from core.types.basetype import BaseAtomicType
 from core.types.operation import Operator
@@ -24,8 +24,8 @@ ALLOW_OPERATORS = {
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
-    Tokens._unary_minus, # noqa
-    Tokens._unary_plus, # noqa
+    ServiceTokens.unary_minus,
+    ServiceTokens.unary_plus,
 }
 
 
@@ -106,13 +106,13 @@ class ExpressionExecutor(Executor):
                 operands = self.get_operands(evaluate_stack)
                 evaluate_stack.append(operands.atomic_type(operands.left.add(operands.right)))
 
-            elif operation.operator == Tokens._unary_minus: # noqa
+            elif operation.operator == ServiceTokens.unary_minus:
                 operand = evaluate_stack.pop(-1)
                 atomic_type = type(operand)
 
                 evaluate_stack.append(atomic_type(operand.neg()))
 
-            elif operation.operator == Tokens._unary_plus: # noqa
+            elif operation.operator == ServiceTokens.unary_plus:
                 operand = evaluate_stack.pop(-1)
                 atomic_type = type(operand)
 
