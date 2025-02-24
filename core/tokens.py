@@ -78,3 +78,6 @@ class Tokens(StrEnum):
 class ServiceTokens(StrEnum):
     unary_minus = "{{%unary_minus%}}"
     unary_plus = "{{%unary_plus%}}"
+
+
+ALL_TOKENS = list(ServiceTokens) + list(Tokens)

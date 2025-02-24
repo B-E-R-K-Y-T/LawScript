@@ -2,7 +2,7 @@ from typing import Union, NamedTuple, Type, Optional
 
 from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefine
 from core.executors.base import Executor
-from core.tokens import Tokens, ServiceTokens
+from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean
 from core.types.basetype import BaseAtomicType
 from core.types.operation import Operator
@@ -53,7 +53,7 @@ class ExpressionExecutor(Executor):
 
         for operation in new_expression_stack:
             if not isinstance(operation, BaseAtomicType):
-                if operation.name not in Tokens:
+                if operation.name not in ALL_TOKENS:
                     raise NameNotDefine(
                         f"Имя переменной {operation.name} не определено."
                     )
