@@ -49,6 +49,7 @@ class GreaterThan(Modify):
 
 class Between(Modify):
     def __init__(self, lower_bound: Any, upper_bound: Any):
+        super().__init__(None)
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
 
