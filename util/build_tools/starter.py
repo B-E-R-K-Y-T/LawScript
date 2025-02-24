@@ -29,10 +29,10 @@ def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled,
     except RecursionError as e:
         raise e
 
+
 def preprocess(raw_code, path: str) -> list:
     prepared_code = [line.strip() for line in raw_code.split("\n")]
     imports = set()
-
 
     code = []
 
@@ -57,13 +57,23 @@ def preprocess(raw_code, path: str) -> list:
                     kill_process(f"Модуль для включения не найден: '{path}'")
 
                 try:
+                    checked_files = []
+
                     for filename in files: # noqa
+                        file_without_ext = os.path.splitext(filename)[0]
+
+                        if file_without_ext in checked_files:
+                            continue
+
                         if filename.endswith(f".{settings.compiled_prefix}"):  # Проверка на нужное расширение
                             file_path = os.path.join(dir_path, filename)
                             preprocessed.append(import_preprocess(file_path))
+                            checked_files.append(file_without_ext)
                         elif filename.endswith(f".{settings.raw_prefix}"):  # Проверка на нужное расширение
                             file_path = os.path.join(dir_path, filename)
-                            preprocessed.extend(preprocess(import_preprocess(file_path, byte_mode=False), path))
+                            preprocessed.extend(preprocess(import_preprocess(file_path, byte_mode=False), file_path))
+                            checked_files.append(file_without_ext)
+
                 except RecursionError:
                     kill_process(
                         f"Обнаружен циклический импорт '{path}', {line}"

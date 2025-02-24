@@ -26,6 +26,7 @@ class CheckerSituationExecute(Executor):
 
         table_data = {
             "Название критерия": [],
+            "Фактические данные": [],
             "Результат": [],
             "Тип проверки": [],
         }
@@ -34,6 +35,7 @@ class CheckerSituationExecute(Executor):
             result = self.obj.check_result_map[result_condition.result]
 
             table_data["Название критерия"].append(criteria)
+            table_data["Фактические данные"].append(result_condition.value_fact_data)
             table_data["Результат"].append(result)
             table_data["Тип проверки"].append(result_condition.modify)
 

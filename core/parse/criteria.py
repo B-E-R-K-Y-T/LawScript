@@ -3,6 +3,7 @@ from typing import Optional
 from core.exceptions import InvalidSyntaxError, InvalidType
 from core.parse.base import Parser, MetaObject, Image, is_integer, is_float
 from core.tokens import Tokens
+from core.types.atomic import Number, String
 from core.types.conditions import Modify, Only, LessThan, GreaterThan, Between, NotEqual, ProcedureModifyWrapper
 from core.types.criteria import Criteria
 from core.types.line import Line, Info
@@ -46,9 +47,9 @@ class DefineCriteriaParser(Parser):
     @staticmethod
     def parse_to_num(value: str, line):
         if is_float(value):
-            return float(value)
+            return Number(float(value))
         if is_integer(value):
-            return int(value)
+            return Number(int(value))
 
         raise InvalidType(value, "число", line)
 
@@ -56,14 +57,14 @@ class DefineCriteriaParser(Parser):
         """Обрабатывает случай с 'not may be'."""
         if len(value) == 1:
             return self.parse_single_value(value[0], line)
-        return self.parse_sequence_words_to_str(value)
+        return String(self.parse_sequence_words_to_str(value))
 
     def parse_single_value(self, value: str, line):
         """Попытка преобразовать одно значение в число, иначе в строку."""
         try:
             return self.parse_to_num(value, line)
         except InvalidType:
-            return self.parse_sequence_words_to_str([value])
+            return String(self.parse_sequence_words_to_str([value]))
 
     def parse(self, body: list[Line], jump) -> int:
         printer.logging(f"Начало парсинга DefineCriteria с jump={jump} {Criteria.__name__}", level="INFO")
@@ -83,7 +84,9 @@ class DefineCriteriaParser(Parser):
                 case [Tokens.criteria, Tokens.left_bracket]:
                     printer.logging("Обнаружена секция 'criteria'", level="INFO")
                 case [name_criteria, Tokens.only, *value, Tokens.comma]:
-                    self.criteria[name_criteria] = Only(self.parse_sequence_words_to_str(value))
+                    self.criteria[name_criteria] = Only(
+                        self.parse_single_value(self.parse_sequence_words_to_str(value), line)
+                    )
                     printer.logging(f"Добавлено условие 'Only' для {name_criteria} с значениями {value}", level="INFO")
                 case [name_criteria, Tokens.not_, Tokens.may, Tokens.be, *value, Tokens.comma]:
                     processed_value = self.process_not_may_be_case(name_criteria, value, line)
