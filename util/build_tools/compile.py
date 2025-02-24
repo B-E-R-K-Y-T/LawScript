@@ -156,19 +156,19 @@ class Compiler:
                         if op not in Tokens and not is_float(op) and not is_integer(op):
                             names.append((obj_, op))
 
-                elif isinstance(obj_, Expression):
-                    for op in obj_.operations:
-                        if (
-                                obj_.operations[0] == Tokens.quotation and
-                                obj_.operations[-1] == Tokens.quotation
-                        ):
-                            continue
-
-                        if op[0] == Tokens.quotation and op[-1] == Tokens.quotation:
-                            continue
-
-                        if op not in Tokens and not is_float(op) and not is_integer(op):
-                            names.append((obj_, op))
+                # elif isinstance(obj_, Expression):
+                #     for op in obj_.operations:
+                #         if (
+                #                 obj_.operations[0] == Tokens.quotation and
+                #                 obj_.operations[-1] == Tokens.quotation
+                #         ):
+                #             continue
+                #
+                #         if op[0] == Tokens.quotation and op[-1] == Tokens.quotation:
+                #             continue
+                #
+                #         if op not in Tokens and not is_float(op) and not is_integer(op):
+                #             names.append((obj_, op))
 
                 elif isinstance(obj_, (CodeBlock, Procedure)):
                     for nested_obj in obj_.body.commands:

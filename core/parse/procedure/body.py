@@ -119,6 +119,9 @@ class BodyParser(Parser):
                     self.commands.append(Return(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Return с выражением: {expr}", level="INFO")
                     return self.next_num_line(num)
+                case [*expr, Tokens.end_expr]:
+                    self.commands.append(Expression(str(), expr, self.info))
+                    printer.logging(f"Добавлена команда Expression с выражением: {expr}", level="INFO")
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг тела завершен: 'right_bracket' найден", level="INFO")
                     return num

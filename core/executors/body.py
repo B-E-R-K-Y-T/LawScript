@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 from core.exceptions import ErrorType
 from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
-from core.types.atomic import Void, Boolean, Number
+from core.types.atomic import Void, Number
 from core.types.basetype import BaseAtomicType
-from core.types.procedure import Print, Return, AssignField, Body, When, Loop
+from core.types.procedure import Print, Return, AssignField, Body, When, Loop, Expression, Procedure
 from core.executors.base import Executor
 from core.types.variable import Variable, ScopeStack, VariableContextCreator
 from util.console_worker import printer
@@ -19,27 +19,33 @@ class BodyExecutor(Executor):
         self.body = body
         self.tree_variables = tree_variables
         self.compiled = compiled
+        self.catch_comprehensive_procedures()
+
+    def catch_comprehensive_procedures(self):
+        for item in self.compiled.compiled_code.values():
+            if isinstance(item, Procedure):
+                self.tree_variables.set(Variable(item.name, item))
 
     def execute(self) -> BaseAtomicType:
         for command in self.body.commands:
             if isinstance(command, Return):
-                executor = ExpressionExecutor(command.expression, self.tree_variables)
+                executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
 
                 return executor.execute()
 
             elif isinstance(command, AssignField):
-                executor = ExpressionExecutor(command.expression, self.tree_variables)
+                executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
                 var = Variable(command.name, executor.execute())
 
                 self.tree_variables.set(var)
 
             elif isinstance(command, Print):
-                executor = ExpressionExecutor(command.expression, self.tree_variables)
+                executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
 
                 printer.raw_print(executor.execute())
 
             elif isinstance(command, When):
-                executor = ExpressionExecutor(command.expression, self.tree_variables)
+                executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
                 result = executor.execute()
 
                 with VariableContextCreator(self.tree_variables):
@@ -56,8 +62,8 @@ class BodyExecutor(Executor):
                         return executed
 
             elif isinstance(command, Loop):
-                executor_from = ExpressionExecutor(command.expression_from, self.tree_variables)
-                executor_to = ExpressionExecutor(command.expression_to, self.tree_variables)
+                executor_from = ExpressionExecutor(command.expression_from, self.tree_variables, self.compiled)
+                executor_to = ExpressionExecutor(command.expression_to, self.tree_variables, self.compiled)
 
                 result_from = executor_from.execute()
                 result_to = executor_to.execute()
@@ -79,6 +85,10 @@ class BodyExecutor(Executor):
 
                         if not isinstance(executed, Void):
                             return executed
+
+            elif isinstance(command, Expression):
+                executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
+                executor.execute()
 
             else:
                 raise ErrorType(f"Неизвестная команда '{command.name}'!", info=command.meta_info)

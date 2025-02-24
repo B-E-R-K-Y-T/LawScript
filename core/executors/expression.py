@@ -1,13 +1,23 @@
-from typing import Union, NamedTuple, Type, Optional
+from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable
 
-from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefine
+from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefine, MaxRecursionError
 from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean
 from core.types.basetype import BaseAtomicType
 from core.types.operation import Operator
-from core.types.procedure import Expression
-from core.types.variable import ScopeStack, traverse_scope
+from core.types.procedure import Expression, Procedure
+from core.types.variable import ScopeStack, traverse_scope, Variable
+
+if TYPE_CHECKING:
+    from util.build_tools.compile import Compiled
+    from core.executors.procedure import ProcedureExecutor
+
+
+def _get_procedure_executor() -> Callable[..., "ProcedureExecutor"]:
+    from core.executors.procedure import ProcedureExecutor
+    return lambda *args, **kwargs: ProcedureExecutor(*args, **kwargs)
+
 
 ALLOW_OPERATORS = {
     Tokens.left_bracket,
@@ -36,9 +46,11 @@ class Operands(NamedTuple):
 
 
 class ExpressionExecutor(Executor):
-    def __init__(self, expression: Expression, tree_variable: ScopeStack):
+    def __init__(self, expression: Expression, tree_variable: ScopeStack, compiled: "Compiled"):
         self.expression = expression
         self.tree_variable = tree_variable
+        self.compiled = compiled
+        self.procedure_executor = _get_procedure_executor()
 
     def prepare_operations(self) -> list[Union[BaseAtomicType, Operator]]:
         new_expression_stack = []
@@ -52,7 +64,7 @@ class ExpressionExecutor(Executor):
                 new_expression_stack.append(operation)
 
         for operation in new_expression_stack:
-            if not isinstance(operation, BaseAtomicType):
+            if not isinstance(operation, BaseAtomicType) and not isinstance(operation, Procedure):
                 if operation.name not in ALL_TOKENS:
                     raise NameNotDefine(
                         f"Имя переменной {operation.name} не определено."
@@ -80,6 +92,25 @@ class ExpressionExecutor(Executor):
         evaluate_stack: list[Union[BaseAtomicType, str]] = []
 
         for operation in prepared_operations:
+            if isinstance(operation, Procedure):
+                procedure = operation
+                operand = evaluate_stack.pop(-1)
+
+                procedure.tree_variables = ScopeStack()
+                procedure.tree_variables.set(Variable(procedure.arguments_names[0], operand))
+
+                executor = self.procedure_executor(procedure, self.compiled)
+
+                try:
+                    evaluate_stack.append(executor.execute())
+                except RecursionError:
+                    raise MaxRecursionError(
+                        f"Вызов функции {procedure.name} завершился с ошибкой.",
+                        info=self.expression.meta_info
+                    )
+
+                continue
+
             if operation.name not in ALLOW_OPERATORS:
                 evaluate_stack.append(operation)
                 continue

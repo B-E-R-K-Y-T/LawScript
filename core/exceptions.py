@@ -6,7 +6,31 @@ from core.types.severitys import Levels
 
 
 class BaseError(Exception):
-    pass
+    def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Ошибка."
+
+        if line is not None:
+            msg = f"{msg} Строка: '{" ".join(line)}'"
+
+        if info is not None:
+            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+
+        super().__init__(msg)
+
+
+class MaxRecursionError(BaseError):
+    def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = f"Превышена максимальная глубина рекурсии!"
+
+        msg = f"{msg} Ошибка: 'Максимальная глубина рекурсии."
+
+        super().__init__(
+            msg=msg,
+            line=line,
+            info=info,
+        )
 
 
 class InvalidSyntaxError(BaseError):

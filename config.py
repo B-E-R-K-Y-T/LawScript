@@ -1,3 +1,5 @@
+import sys
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -8,6 +10,7 @@ from rich.text import Text
 
 class Settings(BaseSettings):
     debug: bool = Field(default=False)
+    max_recursion_depth: int = Field(default=4000)
     raw_prefix: str = Field(default="raw")
     compiled_prefix: str = Field(default="law")
 
@@ -16,6 +19,7 @@ class Settings(BaseSettings):
 
 try:
     settings = Settings()
+    sys.setrecursionlimit(settings.max_recursion_depth)
 except Exception as exception:
     console = Console()
 
