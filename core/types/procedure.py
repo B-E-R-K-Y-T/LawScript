@@ -33,7 +33,7 @@ class Expression(BaseType):
     def __init__(self, name: str, operations, info_line: Info):
         super().__init__(name)
         self.meta_info = info_line
-        self.operations: list[Union[Operator, BaseAtomicType]] = build_rpn_stack(operations)
+        self.operations: list[Union[Operator, BaseAtomicType]] = build_rpn_stack(operations, self.meta_info)
 
 
 class Print(BaseType):

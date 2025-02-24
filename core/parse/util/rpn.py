@@ -1,10 +1,11 @@
 from typing import Union
 
-from core.exceptions import InvalidExpression
+from core.exceptions import InvalidExpression, BaseError
 from core.parse.base import is_integer, is_float, is_identifier
 from core.tokens import Tokens
 from core.types.atomic import Number, String, Boolean
 from core.types.basetype import BaseAtomicType
+from core.types.line import Info
 from core.types.operation import Operator
 from util.console_worker import printer
 
@@ -41,6 +42,12 @@ def check_correct_expr(expr: list[str]):
 
         if not filter_on:
             filtered_expr.append(op)
+
+    if filtered_expr:
+        if filtered_expr[-1] in ALLOW_OPERATORS - {Tokens.left_bracket, Tokens.right_bracket}:
+            raise InvalidExpression(
+                f"Выражение: {' '.join(expr)} не может заканчиваться на: '{filtered_expr[-1]}'"
+            )
 
     count_left_bracket = sum(1 for op in filtered_expr if op == Tokens.left_bracket)
     count_right_bracket = sum(1 for op in filtered_expr if op == Tokens.right_bracket)
@@ -100,7 +107,6 @@ def check_correct_expr(expr: list[str]):
                     f"В выражении: '{' '.join(expr)}' не может быть оператора: '{op}'"
                 )
 
-
 def detect_unary(expr: list[str], offset, op, type_op) -> bool:
     aw_without_right_bracket = ALLOW_OPERATORS - {Tokens.right_bracket}
     left_op = expr[offset - 1] in aw_without_right_bracket
@@ -108,7 +114,14 @@ def detect_unary(expr: list[str], offset, op, type_op) -> bool:
     return left_op and op == type_op
 
 
-def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
+def build_rpn_stack(expr: list[str], meta_info: Info) -> list[Union[Operator, BaseAtomicType]]:
+    try:
+        return _build_rpn(expr)
+    except BaseError as e:
+        raise InvalidExpression(str(e), meta_info)
+
+
+def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
     check_correct_expr(expr)
 
     printer.logging(f"Начало построения RPN-стека из выражения: {expr}", level="INFO")
@@ -216,7 +229,8 @@ def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                 if op in [Tokens.plus, Tokens.minus]:
                     if stack[-1] in [
-                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens._unary_minus, Tokens._unary_plus # noqa
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.exponentiation,
+                        Tokens._unary_minus, Tokens._unary_plus # noqa
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -244,7 +258,10 @@ def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         stack.append(op)
                         break
 
-                    elif stack[-1] in [Tokens.star, Tokens.div, Tokens._unary_minus, Tokens._unary_plus]: # noqa
+                    elif stack[-1] in [
+                        Tokens.star, Tokens.div, Tokens.exponentiation,
+                        Tokens._unary_minus, Tokens._unary_plus # noqa
+                    ]:
                         for _ in range(len(stack)):
                             if stack[-1] not in [
                                 Tokens.plus, Tokens.minus,

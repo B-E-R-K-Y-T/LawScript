@@ -72,7 +72,11 @@ class ExpressionExecutor(Executor):
         )
 
     def evaluate(self) -> BaseAtomicType:
-        prepared_operations: list[Union[BaseAtomicType, Operator]] = self.prepare_operations()
+        try:
+            prepared_operations: list[Union[BaseAtomicType, Operator]] = self.prepare_operations()
+        except BaseError as e:
+            raise InvalidExpression(str(e), info=self.expression.meta_info)
+
         evaluate_stack: list[Union[BaseAtomicType, str]] = []
 
         for operation in prepared_operations:
@@ -159,6 +163,12 @@ class ExpressionExecutor(Executor):
                     f"Операция '{operation}' не поддерживается!",
                     info=self.expression.meta_info
                 )
+
+        if len(evaluate_stack) > 1:
+            raise ErrorType(
+                f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                info=self.expression.meta_info
+            )
 
         if evaluate_stack:
             return evaluate_stack[0]
