@@ -36,6 +36,8 @@ class Law:
                 kill_process("Неизвестная команда. Используйте --build или --run.")
 
         except BaseError as e:
+            if settings.debug:
+                raise
             kill_process(str(e))
         except Exception as e:
             if settings.debug:

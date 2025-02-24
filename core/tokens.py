@@ -63,7 +63,7 @@ class Tokens(StrEnum):
     a_procedure = "ПРОЦЕДУРУ"
     assign = "ЗАДАТЬ"
     when = "ЕСЛИ"
-    then = "TO"
+    then = "ТО"
     else_ = "ИНАЧЕ"
     loop = "ЦИКЛ"
     from_ = "ОТ"

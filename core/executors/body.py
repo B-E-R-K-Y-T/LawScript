@@ -43,12 +43,17 @@ class BodyExecutor(Executor):
                 result = executor.execute()
 
                 with VariableContextCreator(self.tree_variables):
+                    executed = Void()
+
                     if result.value:
                         body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
-                        body_executor.execute()
+                        executed = body_executor.execute()
                     elif command.else_ is not None:
                         body_executor = BodyExecutor(command.else_.body, self.tree_variables, self.compiled)
-                        body_executor.execute()
+                        executed = body_executor.execute()
+
+                    if not isinstance(executed, Void):
+                        return executed
 
             elif isinstance(command, Loop):
                 executor_from = ExpressionExecutor(command.expression_from, self.tree_variables)
@@ -70,7 +75,10 @@ class BodyExecutor(Executor):
                     body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
 
                     for _ in range(result_from.value, result_to.value + 1):
-                        body_executor.execute()
+                        executed = body_executor.execute()
+
+                        if not isinstance(executed, Void):
+                            return executed
 
             else:
                 raise ErrorType(f"Неизвестная команда '{command.name}'!", info=command.meta_info)
