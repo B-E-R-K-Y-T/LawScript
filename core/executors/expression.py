@@ -20,6 +20,7 @@ ALLOW_OPERATORS = {
     Tokens.or_,
     Tokens.not_,
     Tokens.bool_equal,
+    Tokens.bool_not_equal,
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
@@ -140,6 +141,10 @@ class ExpressionExecutor(Executor):
             elif operation.operator == Tokens.bool_equal:
                 operands = self.get_operands(evaluate_stack)
                 evaluate_stack.append(Boolean(operands.left.eq(operands.right)))
+
+            elif operation.operator == Tokens.bool_not_equal:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.ne(operands.right)))
 
             elif operation.operator == Tokens.greater:
                 operands = self.get_operands(evaluate_stack)

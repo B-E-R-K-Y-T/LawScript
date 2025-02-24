@@ -8,6 +8,8 @@ from util.build_tools.build import build
 from util.console_worker import printer
 from util.build_tools.starter import run_file
 
+printer.debug = settings.debug
+
 
 class Law:
     @staticmethod
@@ -24,8 +26,8 @@ class Law:
             if command == '--build':
                 printer.debug = True
 
-                if not filename.endswith('.txt'):  # Предполагаем, что источник текстовый файл
-                    kill_process("Файл для сборки должен иметь расширение .txt.")
+                if not filename.endswith(f'.{settings.raw_prefix}'):
+                    kill_process(f"Файл для сборки должен иметь расширение '.{settings.raw_prefix}'.")
 
                 build(filename)
             elif command == '--run':
@@ -49,6 +51,6 @@ class Law:
 if __name__ == '__main__':
     law = Law()
     law.run()
-    # file = "new_1.txt"
+    # file = "new_2.raw"
     # build(file)
     # run_file(file)

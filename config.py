@@ -8,6 +8,8 @@ from rich.text import Text
 
 class Settings(BaseSettings):
     debug: bool = Field(default=False)
+    raw_prefix: str = Field(default="raw")
+    compiled_prefix: str = Field(default="law")
 
     model_config = SettingsConfigDict(env_file="law_config.env")
 

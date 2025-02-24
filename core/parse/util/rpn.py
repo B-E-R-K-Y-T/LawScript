@@ -19,6 +19,7 @@ ALLOW_OPERATORS = {
     Tokens.or_,
     Tokens.not_,
     Tokens.bool_equal,
+    Tokens.bool_not_equal,
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
@@ -69,6 +70,7 @@ def check_correct_expr(expr: list[str]):
         Tokens.or_,
         Tokens.not_,
         Tokens.bool_equal,
+        Tokens.bool_not_equal,
         Tokens.greater,
         Tokens.less,
     )
@@ -219,7 +221,7 @@ def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
-                                Tokens.and_, Tokens.or_,  Tokens.not_, Tokens.bool_equal
+                                Tokens.and_, Tokens.or_,  Tokens.not_, Tokens.bool_equal, Tokens.bool_not_equal,
                             ]:
                                break
 
@@ -266,7 +268,10 @@ def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     printer.logging(f"Оператор '{op}' добавлен в стек", level="INFO")
                     break
 
-        elif op in [Tokens.and_, Tokens.or_,  Tokens.not_, Tokens.bool_equal, Tokens.greater, Tokens.less]:
+        elif op in [
+            Tokens.and_, Tokens.or_,  Tokens.not_, Tokens.bool_equal,
+            Tokens.bool_not_equal,  Tokens.greater, Tokens.less
+        ]:
             while True:
                 if len(stack) == 0:
                     stack.append(op)
@@ -278,7 +283,7 @@ def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
-                                Tokens.and_, Tokens.or_, Tokens.bool_equal,
+                                Tokens.and_, Tokens.or_, Tokens.bool_equal,Tokens.bool_not_equal,
                                 Tokens.greater, Tokens.less,  Tokens._unary_plus, Tokens._unary_minus, # noqa
                             ]:
                                break
@@ -296,7 +301,7 @@ def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
-                                Tokens.or_, Tokens.bool_equal, Tokens.greater, Tokens.less,
+                                Tokens.or_, Tokens.bool_equal,Tokens.bool_not_equal, Tokens.greater, Tokens.less,
                                 Tokens._unary_plus, Tokens._unary_minus, # noqa
                             ]:
                                break
@@ -314,7 +319,7 @@ def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
-                                Tokens.bool_equal, Tokens.greater, Tokens.less,
+                                Tokens.bool_equal, Tokens.bool_not_equal, Tokens.greater, Tokens.less,
                                 Tokens._unary_plus, Tokens._unary_minus, # noqa
                             ]:
                                break
@@ -325,10 +330,10 @@ def build_rpn_stack(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     stack.append(op)
                     break
 
-                if op in [Tokens.bool_equal, Tokens.greater, Tokens.less]:
+                if op in [Tokens.bool_equal, Tokens.bool_not_equal, Tokens.greater, Tokens.less]:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
-                        Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,
+                        Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,Tokens.bool_not_equal,
                         Tokens.greater, Tokens.less, Tokens.exponentiation,
                         Tokens._unary_plus, Tokens._unary_minus, # noqa
                     ]:

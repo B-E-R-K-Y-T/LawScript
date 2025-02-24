@@ -54,6 +54,7 @@ class Tokens(StrEnum):
     and_ = "И"
     or_ = "ИЛИ"
     bool_equal = "РАВНО"
+    bool_not_equal = "НЕРАВНО"
     less = "МЕНЬШЕ"
     greater = "БОЛЬШЕ"
     between = "МЕЖДУ"
