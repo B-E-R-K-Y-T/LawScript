@@ -9,6 +9,7 @@ from core.types.procedure import Print, Return, AssignField, Body, When, Loop, E
 from core.executors.base import Executor
 from core.types.variable import Variable, ScopeStack, VariableContextCreator
 from util.console_worker import printer
+from core.extend.function_wrap import PyExtendWrapper
 
 if TYPE_CHECKING:
     from util.build_tools.compile import Compiled
@@ -24,6 +25,9 @@ class BodyExecutor(Executor):
     def catch_comprehensive_procedures(self):
         for item in self.compiled.compiled_code.values():
             if isinstance(item, Procedure):
+                self.tree_variables.set(Variable(item.name, item))
+
+            elif isinstance(item, PyExtendWrapper):
                 self.tree_variables.set(Variable(item.name, item))
 
     def execute(self) -> BaseAtomicType:

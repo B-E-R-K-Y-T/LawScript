@@ -1,6 +1,8 @@
 import os
 import pickle
 
+import dill
+
 from config import settings
 from util.build_tools.ast import AbstractSyntaxTreeBuilder
 from util.build_tools.compile import Compiler
@@ -17,7 +19,7 @@ def build(path: str):
 
         compiler = Compiler(ast)
 
-        new_path = os.path.splitext(path)[0] + settings.compiled_postfix
+        new_path = f"{os.path.splitext(path)[0]}.{settings.compiled_postfix}"
 
         with open(f"{new_path}", 'wb') as write_file:
-            pickle.dump(compiler.compile(), write_file)
+            dill.dump(compiler.compile(), write_file)

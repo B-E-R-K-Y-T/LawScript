@@ -1,7 +1,8 @@
 import os
-import pickle
 import re
 from typing import Optional, Union
+
+import dill
 
 from config import settings
 from core.parse.base import MetaObject
@@ -17,7 +18,7 @@ def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled,
     try:
         if byte_mode:
             with open(path, "rb") as file:
-                compiled = pickle.load(file)
+                compiled = dill.load(file)
                 return compiled
 
         with open(path, "r", encoding="utf-8") as file:
@@ -69,6 +70,10 @@ def preprocess(raw_code, path: str) -> list:
                             file_path = os.path.join(dir_path, filename)
                             preprocessed.append(import_preprocess(file_path))
                             checked_files.append(file_without_ext)
+                        elif filename.endswith(f".{settings.py_extend_postfix}"):  # Проверка на нужное расширение
+                            file_path = os.path.join(dir_path, filename)
+                            preprocessed.append(import_preprocess(file_path))
+                            checked_files.append(file_without_ext)
                         elif filename.endswith(f".{settings.raw_postfix}"):  # Проверка на нужное расширение
                             file_path = os.path.join(dir_path, filename)
                             preprocessed.extend(preprocess(import_preprocess(file_path, byte_mode=False), file_path))
@@ -87,9 +92,10 @@ def preprocess(raw_code, path: str) -> list:
 
                 path = path.replace(".", "/", path.count("."))
                 law_path = (f"{path}.{settings.compiled_postfix}", True)
+                pyl_path = (f"{path}.{settings.py_extend_postfix}", True)
                 raw_path = (f"{path}.{settings.raw_postfix}", False)
 
-                for path_data in [law_path, raw_path]:
+                for path_data in [law_path, pyl_path, raw_path]:
                     path_, byte_mode = path_data
 
                     try:
@@ -118,9 +124,10 @@ def preprocess(raw_code, path: str) -> list:
                 path = path.replace(Tokens.dot, "/")
 
                 law_path = (f"{path}.{settings.compiled_postfix}", True)
+                pyl_path = (f"{path}.{settings.py_extend_postfix}", True)
                 raw_path = (f"{path}.{settings.raw_postfix}", False)
 
-                for path_data in [law_path, raw_path]:
+                for path_data in [law_path, pyl_path, raw_path]:
                     path_, byte_mode = path_data
 
                     try:
@@ -167,7 +174,11 @@ def run_file(path: str):
     try:
         if path.endswith(f'.{settings.compiled_postfix}'):
             with open(path, "rb") as file:
-                compiled = pickle.load(file)
+                compiled = dill.load(file)
+                run_compiled_code(compiled)
+        elif path.endswith(f'.{settings.py_extend_postfix}'):
+            with open(path, "rb") as file:
+                compiled = dill.load(file)
                 run_compiled_code(compiled)
         elif path.endswith(f'.{settings.raw_postfix}'):
             with open(path, "r", encoding="utf-8") as file:

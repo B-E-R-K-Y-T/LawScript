@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     max_recursion_depth: int = Field(default=4000)
     raw_postfix: str = Field(default="raw")
     compiled_postfix: str = Field(default="law")
+    py_extend_postfix: str = Field(default="pyl")
 
     model_config = SettingsConfigDict(env_file="law_config.env")
 

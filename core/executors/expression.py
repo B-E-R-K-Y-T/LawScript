@@ -9,6 +9,7 @@ from core.types.basetype import BaseAtomicType
 from core.types.operation import Operator
 from core.types.procedure import Expression, Procedure
 from core.types.variable import ScopeStack, traverse_scope, Variable
+from core.extend.function_wrap import PyExtendWrapper
 
 if TYPE_CHECKING:
     from util.build_tools.compile import Compiled
@@ -65,7 +66,13 @@ class ExpressionExecutor(Executor):
                 new_expression_stack.append(operation)
 
         for operation in new_expression_stack:
-            if not isinstance(operation, BaseAtomicType) and not isinstance(operation, Procedure):
+            if (
+                    not isinstance(operation, BaseAtomicType)
+                    and
+                    not isinstance(operation, Procedure)
+                    and
+                    not isinstance(operation, PyExtendWrapper)
+            ):
                 if operation.name not in ALL_TOKENS:
                     raise NameNotDefine(
                         f"Имя переменной {operation.name} не определено."
@@ -109,6 +116,20 @@ class ExpressionExecutor(Executor):
                         f"Вызов функции {procedure.name} завершился с ошибкой.",
                         info=self.expression.meta_info
                     )
+
+                continue
+
+            elif isinstance(operation, PyExtendWrapper):
+                procedure = operation
+                operand = evaluate_stack.pop(-1)
+                result = procedure.call([operand])
+
+                if not isinstance(result, BaseAtomicType):
+                    raise ErrorType(
+                        f"Вызов функции {procedure.name} завершился с ошибкой. Не верный возвращаемый тип."
+                    )
+
+                evaluate_stack.append(result)
 
                 continue
 
