@@ -1,6 +1,7 @@
 import os
 import pickle
 
+from config import settings
 from util.build_tools.ast import AbstractSyntaxTreeBuilder
 from util.build_tools.compile import Compiler
 from core.parse.base import MetaObject
@@ -16,7 +17,7 @@ def build(path: str):
 
         compiler = Compiler(ast)
 
-        new_path = os.path.splitext(path)[0] + ".law"
+        new_path = os.path.splitext(path)[0] + settings.compiled_postfix
 
         with open(f"{new_path}", 'wb') as write_file:
             pickle.dump(compiler.compile(), write_file)

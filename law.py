@@ -26,8 +26,8 @@ class Law:
             if command == '--build':
                 printer.debug = True
 
-                if not filename.endswith(f'.{settings.raw_prefix}'):
-                    kill_process(f"Файл для сборки должен иметь расширение '.{settings.raw_prefix}'.")
+                if not filename.endswith(f'.{settings.raw_postfix}'):
+                    kill_process(f"Файл для сборки должен иметь расширение '.{settings.raw_postfix}'.")
 
                 build(filename)
             elif command == '--run':
@@ -51,7 +51,7 @@ class Law:
 
 
 if __name__ == '__main__':
-    # law = Law()
-    # law.run()
-    file = "new_2.raw"
-    run_file(file)
+    law = Law()
+    law.run()
+    # file = "new_2.raw"
+    # run_file(file)

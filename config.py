@@ -11,8 +11,8 @@ from rich.text import Text
 class Settings(BaseSettings):
     debug: bool = Field(default=False)
     max_recursion_depth: int = Field(default=4000)
-    raw_prefix: str = Field(default="raw")
-    compiled_prefix: str = Field(default="law")
+    raw_postfix: str = Field(default="raw")
+    compiled_postfix: str = Field(default="law")
 
     model_config = SettingsConfigDict(env_file="law_config.env")
 

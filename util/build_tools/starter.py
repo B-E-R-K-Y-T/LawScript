@@ -65,11 +65,11 @@ def preprocess(raw_code, path: str) -> list:
                         if file_without_ext in checked_files:
                             continue
 
-                        if filename.endswith(f".{settings.compiled_prefix}"):  # Проверка на нужное расширение
+                        if filename.endswith(f".{settings.compiled_postfix}"):  # Проверка на нужное расширение
                             file_path = os.path.join(dir_path, filename)
                             preprocessed.append(import_preprocess(file_path))
                             checked_files.append(file_without_ext)
-                        elif filename.endswith(f".{settings.raw_prefix}"):  # Проверка на нужное расширение
+                        elif filename.endswith(f".{settings.raw_postfix}"):  # Проверка на нужное расширение
                             file_path = os.path.join(dir_path, filename)
                             preprocessed.extend(preprocess(import_preprocess(file_path, byte_mode=False), file_path))
                             checked_files.append(file_without_ext)
@@ -86,8 +86,8 @@ def preprocess(raw_code, path: str) -> list:
                 imports.add(path)
 
                 path = path.replace(".", "/", path.count("."))
-                law_path = (f"{path}.{settings.compiled_prefix}", True)
-                raw_path = (f"{path}.{settings.raw_prefix}", False)
+                law_path = (f"{path}.{settings.compiled_postfix}", True)
+                raw_path = (f"{path}.{settings.raw_postfix}", False)
 
                 for path_data in [law_path, raw_path]:
                     path_, byte_mode = path_data
@@ -117,8 +117,8 @@ def preprocess(raw_code, path: str) -> list:
 
                 path = path.replace(Tokens.dot, "/")
 
-                law_path = (f"{path}.{settings.compiled_prefix}", True)
-                raw_path = (f"{path}.{settings.raw_prefix}", False)
+                law_path = (f"{path}.{settings.compiled_postfix}", True)
+                raw_path = (f"{path}.{settings.raw_postfix}", False)
 
                 for path_data in [law_path, raw_path]:
                     path_, byte_mode = path_data
@@ -165,11 +165,11 @@ def run(raw_code: str, path: str):
 
 def run_file(path: str):
     try:
-        if path.endswith(f'.{settings.compiled_prefix}'):
+        if path.endswith(f'.{settings.compiled_postfix}'):
             with open(path, "rb") as file:
                 compiled = pickle.load(file)
                 run_compiled_code(compiled)
-        elif path.endswith(f'.{settings.raw_prefix}'):
+        elif path.endswith(f'.{settings.raw_postfix}'):
             with open(path, "r", encoding="utf-8") as file:
                 run(file.read(), path)
         else:
