@@ -1,6 +1,7 @@
 from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable
 
-from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefine, MaxRecursionError
+from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefine, MaxRecursionError, \
+    DivisionByZeroError
 from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean
@@ -211,12 +212,17 @@ class ExpressionExecutor(Executor):
             return self.evaluate()
         except BaseError as e:
             raise e
-        except TypeError as _:
+        except TypeError:
             raise ErrorType(
                 f"Ошибка выполнения операции между операндами в выражении '{self.expression.meta_info.raw_line}'!",
                 info=self.expression.meta_info
             )
-        except Exception as _:
+        except ZeroDivisionError:
+            raise DivisionByZeroError(
+                f"Деление на ноль в выражении '{self.expression.meta_info.raw_line}'!",
+                info=self.expression.meta_info
+            )
+        except Exception:
             raise InvalidExpression(
                 f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
                 info=self.expression.meta_info

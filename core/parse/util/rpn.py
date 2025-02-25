@@ -178,6 +178,16 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         stack.pop(-1)
                         printer.logging(f"Закрывающая скобка '{op}' обнаружена. Открывающая скобка удалена из стека.",
                                         level="INFO")
+
+                        if not stack:
+                            break
+
+                        next_op = stack[-1]
+
+                        if next_op not in ALLOW_OPERATORS:
+                            op_ = stack.pop()
+                            result_stack.append(op_)
+
                         break
                 except IndexError:
                     raise InvalidExpression(

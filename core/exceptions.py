@@ -128,3 +128,11 @@ class InvalidExpression(BaseError):
             msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         super().__init__(msg)
+
+
+class DivisionByZeroError(BaseError):
+    def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Деление на ноль"
+
+        super().__init__(msg, info=info)

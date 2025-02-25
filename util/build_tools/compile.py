@@ -19,7 +19,7 @@ from core.types.hypothesis import Hypothesis
 from core.types.objects import Object
 from core.types.obligations import Obligation
 from core.types.laws import Law
-from core.types.procedure import Procedure, CodeBlock, AssignField, Expression, Return, Print
+from core.types.procedure import Procedure, CodeBlock, AssignField, Return, Print
 from core.types.rules import Rule
 from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
@@ -155,20 +155,6 @@ class Compiler:
 
                         if op not in Tokens and not is_float(op) and not is_integer(op):
                             names.append((obj_, op))
-
-                # elif isinstance(obj_, Expression):
-                #     for op in obj_.operations:
-                #         if (
-                #                 obj_.operations[0] == Tokens.quotation and
-                #                 obj_.operations[-1] == Tokens.quotation
-                #         ):
-                #             continue
-                #
-                #         if op[0] == Tokens.quotation and op[-1] == Tokens.quotation:
-                #             continue
-                #
-                #         if op not in Tokens and not is_float(op) and not is_integer(op):
-                #             names.append((obj_, op))
 
                 elif isinstance(obj_, (CodeBlock, Procedure)):
                     for nested_obj in obj_.body.commands:
