@@ -108,5 +108,5 @@ if __name__ == '__main__':
     scope_stack.pop()
     print(scope_stack.get("my_var"))
 
-    for scope in scope_stack.scopes:
-        print(scope.variables)
+    for scope_ in scope_stack.scopes:
+        print(scope_.variables)
