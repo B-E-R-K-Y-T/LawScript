@@ -121,9 +121,6 @@ class ExpressionExecutor(Executor):
 
             elif isinstance(operation, PyExtendWrapper):
                 procedure = operation
-
-                procedure.meta_info = self.expression.meta_info
-
                 operand = evaluate_stack.pop(-1)
 
                 try:
