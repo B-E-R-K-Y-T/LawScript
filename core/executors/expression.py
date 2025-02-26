@@ -5,7 +5,7 @@ from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefi
 from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean
-from core.types.basetype import BaseAtomicType
+from core.types.basetype import BaseAtomicType, BaseType
 from core.types.operation import Operator
 from core.types.procedure import Expression, Procedure
 from core.types.variable import ScopeStack, traverse_scope, Variable
@@ -91,7 +91,11 @@ class ExpressionExecutor(Executor):
             atomic_type=atomic_type,
         )
 
-    def call_procedure_evaluate(self, procedure: Procedure, evaluate_stack: list[BaseAtomicType]):
+    def call_procedure_evaluate(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
+        if not evaluate_stack:
+            evaluate_stack.append(procedure)
+            return
+
         operand: Union[BaseAtomicType, Operator] = evaluate_stack.pop(-1)
 
         procedure.tree_variables = ScopeStack()
@@ -122,8 +126,12 @@ class ExpressionExecutor(Executor):
             )
 
     def call_py_extend_procedure_evaluate(
-            self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[BaseAtomicType]
+            self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
     ):
+        if not evaluate_stack:
+            evaluate_stack.append(py_extend_procedure)
+            return
+
         operand = evaluate_stack.pop(-1)
 
         if isinstance(operand, Operator) and operand.operator == ServiceTokens.void_arg:
@@ -150,7 +158,7 @@ class ExpressionExecutor(Executor):
         except BaseError as e:
             raise InvalidExpression(str(e), info=self.expression.meta_info)
 
-        evaluate_stack: list[Union[BaseAtomicType, str]] = []
+        evaluate_stack: list[Union[BaseAtomicType, BaseType]] = []
 
         for operation in prepared_operations:
             if isinstance(operation, Procedure):

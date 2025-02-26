@@ -254,11 +254,13 @@ class Compiler:
         return compiled_obj
 
     def compile(self) -> Compiled:
+        compiled_modules = {}
+
         for idx, meta in enumerate(self.ast):
             compiled = self.execute_compile(meta)
 
             if isinstance(compiled, Compiled):
-                self.compiled = {**self.compiled, **compiled.compiled_code}
+                compiled_modules = {**compiled_modules, **compiled.compiled_code}
                 continue
 
             printer.logging(f"Команда компиляции №{idx + 1}", level="INFO")
@@ -270,4 +272,4 @@ class Compiler:
             self.compiled[compiled.name] = compiled
             printer.logging(f"Скомпилировано: {compiled.name}", level="INFO")
 
-        return Compiled(self.compiled)
+        return Compiled({**compiled_modules, **self.compiled})

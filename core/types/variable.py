@@ -70,11 +70,11 @@ class VariableContextCreator:
 
 
 def traverse_scope(scope: Scope) -> Iterable[Variable]:
-    for variable in scope.variables.values():
-        yield variable
-
     if scope.parent is not None:
         yield from traverse_scope(scope.parent)
+
+    for variable in scope.variables.values():
+        yield variable
 
 
 if __name__ == '__main__':

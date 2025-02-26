@@ -88,6 +88,14 @@ class ToString(PyExtendWrapper):
             return String(str(arg))
 
 
+@builder.collect(func_name='func_wa')
+class FuncWa(PyExtendWrapper):
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from core.types.atomic import Number
+        args = self.parse_args(args)
+        return Number(int(args[0]) + 1)
+
+
 if __name__ == '__main__':
     builder.build_python_extend("lib")
     print(builder.wrappers[0].call([Number(1)]))

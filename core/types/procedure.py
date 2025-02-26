@@ -28,6 +28,9 @@ class Procedure(BaseType):
         self.arguments_names = arguments_names
         self.tree_variables: Optional[ScopeStack] = None
 
+    def __repr__(self):
+        return f'Процедура({self.name}, {self.body}, {self.arguments_names})'
+
 
 class Expression(BaseType):
     def __init__(self, name: str, operations, info_line: Info):

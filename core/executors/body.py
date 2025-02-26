@@ -7,7 +7,7 @@ from core.types.atomic import Void, Number
 from core.types.basetype import BaseAtomicType
 from core.types.procedure import Print, Return, AssignField, Body, When, Loop, Expression, Procedure
 from core.executors.base import Executor
-from core.types.variable import Variable, ScopeStack, VariableContextCreator
+from core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
 from util.console_worker import printer
 from core.extend.function_wrap import PyExtendWrapper
 
@@ -23,12 +23,16 @@ class BodyExecutor(Executor):
         self.catch_comprehensive_procedures()
 
     def catch_comprehensive_procedures(self):
-        for item in self.compiled.compiled_code.values():
-            if isinstance(item, Procedure):
-                self.tree_variables.set(Variable(item.name, item))
+        local_vars_names = [lv.name for lv in traverse_scope(self.tree_variables.scopes[-1])]
 
-            elif isinstance(item, PyExtendWrapper):
-                self.tree_variables.set(Variable(item.name, item))
+        for name, var in self.compiled.compiled_code.items():
+            if name in local_vars_names:
+                continue
+
+            if isinstance(var, Procedure):
+                self.tree_variables.set(Variable(var.name, var))
+            elif isinstance(var, PyExtendWrapper):
+                self.tree_variables.set(Variable(var.name, var))
 
     def execute(self) -> BaseAtomicType:
         for command in self.body.commands:
