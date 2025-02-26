@@ -44,6 +44,7 @@ class ToNumber(PyExtendWrapper):
         from core.types.atomic import Number
 
         args = self.parse_args(args)
+        arg = None
 
         if not args:
             raise BaseError(f"Функция {self.func_name} принимает только один аргумент!")
@@ -85,14 +86,6 @@ class ToString(PyExtendWrapper):
                     return String(Tokens.false)
 
             return String(str(arg))
-
-
-@builder.collect(func_name='fwa')
-class ToString(PyExtendWrapper):
-    def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from core.types.atomic import Void
-        return Void()
-
 
 
 if __name__ == '__main__':
