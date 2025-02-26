@@ -121,12 +121,20 @@ class ExpressionExecutor(Executor):
 
             elif isinstance(operation, PyExtendWrapper):
                 procedure = operation
+
+                procedure.meta_info = self.expression.meta_info
+
                 operand = evaluate_stack.pop(-1)
-                result = procedure.call([operand])
+
+                try:
+                    result = procedure.call([operand])
+                except BaseError as e:
+                    raise InvalidExpression(str(e), info=self.expression.meta_info)
 
                 if not isinstance(result, BaseAtomicType):
                     raise ErrorType(
-                        f"Вызов функции {procedure.name} завершился с ошибкой. Не верный возвращаемый тип."
+                        f"Вызов функции {procedure.name} завершился с ошибкой. Не верный возвращаемый тип.",
+                        info=self.expression.meta_info
                     )
 
                 evaluate_stack.append(result)

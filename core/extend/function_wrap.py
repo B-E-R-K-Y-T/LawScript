@@ -6,6 +6,7 @@ import dill
 from config import settings
 from core.exceptions import BaseError
 from core.types.basetype import BaseAtomicType, BaseType
+from core.types.line import Info
 
 
 class PyExtendWrapper(BaseType, ABC):
@@ -32,6 +33,7 @@ class PyExtendWrapper(BaseType, ABC):
 class CallableWrapper:
     def __init__(self):
         self.mod_name: Optional[str] = None
+        self.meta_info: Optional[Info] = None
 
     def callable_py_wrap(self, func, func_name: str):
         def wrapper(*args, **kwargs):
@@ -56,10 +58,11 @@ class PyExtendBuilder:
     def collect(self, func_name: str):
         def decorator(py_wrapper: Type[PyExtendWrapper]):
             py_wrapper.call = self.callable_wrapper.callable_py_wrap(py_wrapper.call, func_name)
+            instance_py_wrapper = py_wrapper(func_name)
 
-            self.wrappers.append(py_wrapper(func_name))
+            self.wrappers.append(instance_py_wrapper)
 
-            return py_wrapper
+            return instance_py_wrapper
 
         return decorator
 
