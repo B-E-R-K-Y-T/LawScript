@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, TYPE_CHECKING
 
+from core.call_func_stack import call_func_stack_builder
 from core.exceptions import NameNotDefine
 from core.executors.procedure import ProcedureExecutor
 from core.types.basetype import BaseType, BaseAtomicType
@@ -120,7 +121,9 @@ class Condition(BaseType):
 
                 executor = ProcedureExecutor(procedure, compiled)
 
+                call_func_stack_builder.push(executor.procedure.name, procedure.meta_info)
                 modify.nested_modify.value = executor.execute()
+                call_func_stack_builder.pop()
 
             try:
                 result[name_fact_data] = ResultCondition(

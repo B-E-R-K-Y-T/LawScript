@@ -1,7 +1,14 @@
 from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable
 
-from core.exceptions import ErrorType, InvalidExpression, BaseError, NameNotDefine, MaxRecursionError, \
+from core.call_func_stack import call_func_stack_builder
+from core.exceptions import (
+    ErrorType,
+    InvalidExpression,
+    BaseError,
+    NameNotDefine,
+    MaxRecursionError,
     DivisionByZeroError
+)
 from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean
@@ -96,6 +103,7 @@ class ExpressionExecutor(Executor):
             evaluate_stack.append(procedure)
             return
 
+        call_func_stack_builder.push(func_name=procedure.name, meta_info=self.expression.meta_info)
         operand: Union[BaseAtomicType, Operator] = evaluate_stack.pop(-1)
 
         procedure.tree_variables = ScopeStack()
@@ -125,6 +133,8 @@ class ExpressionExecutor(Executor):
                 info=self.expression.meta_info
             )
 
+        call_func_stack_builder.pop()
+
     def call_py_extend_procedure_evaluate(
             self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
     ):
@@ -132,6 +142,7 @@ class ExpressionExecutor(Executor):
             evaluate_stack.append(py_extend_procedure)
             return
 
+        call_func_stack_builder.push(func_name=py_extend_procedure.name, meta_info=self.expression.meta_info)
         operand = evaluate_stack.pop(-1)
 
         if isinstance(operand, Operator) and operand.operator == ServiceTokens.void_arg:
@@ -151,6 +162,7 @@ class ExpressionExecutor(Executor):
             )
 
         evaluate_stack.append(result)
+        call_func_stack_builder.pop()
 
     def evaluate(self) -> BaseAtomicType:
         try:
