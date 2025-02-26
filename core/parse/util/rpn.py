@@ -167,6 +167,13 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
             printer.logging(f"Открывающая скобка '{op}' добавлена в стек", level="INFO")
 
         elif op == Tokens.right_bracket:
+            previous_op = expr[offset - 1]
+
+            if previous_op == Tokens.left_bracket:
+                stack.append(ServiceTokens.void_arg)
+                # jump = offset + 2
+                continue
+
             while True:
                 if not stack:
                     raise InvalidExpression(

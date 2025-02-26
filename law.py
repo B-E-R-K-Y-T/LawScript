@@ -51,7 +51,7 @@ class Law:
 
 
 if __name__ == '__main__':
-    law = Law()
-    law.run()
-    # file = "new_3.raw"
-    # run_file(file)
+    # law = Law()
+    # law.run()
+    file = "new_3.raw"
+    run_file(file)

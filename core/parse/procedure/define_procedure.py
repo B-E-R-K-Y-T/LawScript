@@ -4,6 +4,7 @@ from core.exceptions import InvalidSyntaxError
 from core.parse.base import MetaObject, Image, Parser
 from core.parse.procedure.body import BodyParser
 from core.tokens import Tokens
+from core.types.atomic import Void
 from core.types.line import Line, Info
 from core.types.procedure import Procedure
 from core.util import is_ignore_line
@@ -69,11 +70,11 @@ class DefineProcedureParser(Parser):
                 case [Tokens.define, Tokens.a_procedure, name_condition, Tokens.left_bracket, *arguments, Tokens.right_bracket, Tokens.left_bracket]:
                     arguments = "".join(arguments).split(Tokens.comma)
                     if not all(arguments):
-                        printer.logging(f"Неверный синтаксис: отсутствуют аргументы в строке: {line}", level="ERROR")
-                        raise InvalidSyntaxError(line=line, info=self.info)
+                        self.arguments_name = []
+                    else:
+                        self.arguments_name = arguments
 
                     self.procedure_name = name_condition
-                    self.arguments_name = arguments
                     self.body = self.execute_parse(BodyParser, body, self.next_num_line(num))
                     self.jump = self.previous_num_line(self.jump)
                     printer.logging(

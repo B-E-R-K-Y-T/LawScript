@@ -91,6 +91,52 @@ class ExpressionExecutor(Executor):
             atomic_type=atomic_type,
         )
 
+    def call_procedure_evaluate(self, procedure: Procedure, evaluate_stack: list[BaseAtomicType]):
+        operand: Union[BaseAtomicType, Operator] = evaluate_stack.pop(-1)
+
+        procedure.tree_variables = ScopeStack()
+
+        if not isinstance(operand, Operator):
+            if not procedure.arguments_names:
+                raise InvalidExpression(
+                    f"Функция {procedure.name} не принимает аргументов.",
+                    info=self.expression.meta_info
+                )
+
+            procedure.tree_variables.set(Variable(procedure.arguments_names[0], operand))
+
+        if procedure.arguments_names and isinstance(operand, Operator):
+            raise InvalidExpression(
+                f"Функция {procedure.name} принимает '{len(procedure.arguments_names)}' аргумента(ов)",
+                info=self.expression.meta_info
+            )
+
+        executor = self.procedure_executor(procedure, self.compiled)
+
+        try:
+            evaluate_stack.append(executor.execute())
+        except RecursionError:
+            raise MaxRecursionError(
+                f"Вызов функции {procedure.name} завершился с ошибкой.",
+                info=self.expression.meta_info
+            )
+
+    def call_py_extend_procedure_evaluate(self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[BaseAtomicType]):
+        operand = evaluate_stack.pop(-1)
+
+        try:
+            result = py_extend_procedure.call([operand])
+        except BaseError as e:
+            raise InvalidExpression(str(e), info=self.expression.meta_info)
+
+        if not isinstance(result, BaseAtomicType):
+            raise ErrorType(
+                f"Вызов функции {py_extend_procedure.name} завершился с ошибкой. Не верный возвращаемый тип.",
+                info=self.expression.meta_info
+            )
+
+        evaluate_stack.append(result)
+
     def evaluate(self) -> BaseAtomicType:
         try:
             prepared_operations: list[Union[BaseAtomicType, Operator]] = self.prepare_operations()
@@ -101,41 +147,11 @@ class ExpressionExecutor(Executor):
 
         for operation in prepared_operations:
             if isinstance(operation, Procedure):
-                procedure = operation
-                operand = evaluate_stack.pop(-1)
-
-                procedure.tree_variables = ScopeStack()
-                procedure.tree_variables.set(Variable(procedure.arguments_names[0], operand))
-
-                executor = self.procedure_executor(procedure, self.compiled)
-
-                try:
-                    evaluate_stack.append(executor.execute())
-                except RecursionError:
-                    raise MaxRecursionError(
-                        f"Вызов функции {procedure.name} завершился с ошибкой.",
-                        info=self.expression.meta_info
-                    )
-
+                self.call_procedure_evaluate(operation, evaluate_stack)
                 continue
 
             elif isinstance(operation, PyExtendWrapper):
-                procedure = operation
-                operand = evaluate_stack.pop(-1)
-
-                try:
-                    result = procedure.call([operand])
-                except BaseError as e:
-                    raise InvalidExpression(str(e), info=self.expression.meta_info)
-
-                if not isinstance(result, BaseAtomicType):
-                    raise ErrorType(
-                        f"Вызов функции {procedure.name} завершился с ошибкой. Не верный возвращаемый тип.",
-                        info=self.expression.meta_info
-                    )
-
-                evaluate_stack.append(result)
-
+                self.call_py_extend_procedure_evaluate(operation, evaluate_stack)
                 continue
 
             if operation.name not in ALLOW_OPERATORS:
