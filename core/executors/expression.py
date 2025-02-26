@@ -124,8 +124,13 @@ class ExpressionExecutor(Executor):
     def call_py_extend_procedure_evaluate(self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[BaseAtomicType]):
         operand = evaluate_stack.pop(-1)
 
+        if isinstance(operand, Operator) and operand.operator == ServiceTokens.void_arg:
+            args = None
+        else:
+            args = [operand]
+
         try:
-            result = py_extend_procedure.call([operand])
+            result = py_extend_procedure.call(args)
         except BaseError as e:
             raise InvalidExpression(str(e), info=self.expression.meta_info)
 

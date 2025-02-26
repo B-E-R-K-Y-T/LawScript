@@ -26,6 +26,9 @@
 )
 
 ОПРЕДЕЛИТЬ ПРОЦЕДУРУ Премия(премия)(
+    fwa();
+    to_number();
+    input();
     НАПЕЧАТАТЬ func1(func1(func2(func1(func()))));
     # input(input(input(input(input(input(""))))));
     #ЗАДАТЬ input = 1;
