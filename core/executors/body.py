@@ -23,7 +23,7 @@ class BodyExecutor(Executor):
         self.catch_comprehensive_procedures()
 
     def catch_comprehensive_procedures(self):
-        local_vars_names = [lv.name for lv in traverse_scope(self.tree_variables.scopes[-1])]
+        local_vars_names = {lv.name for lv in traverse_scope(self.tree_variables.scopes[-1])}
 
         for name, var in self.compiled.compiled_code.items():
             if name in local_vars_names:
