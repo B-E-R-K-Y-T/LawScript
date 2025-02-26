@@ -121,7 +121,9 @@ class ExpressionExecutor(Executor):
                 info=self.expression.meta_info
             )
 
-    def call_py_extend_procedure_evaluate(self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[BaseAtomicType]):
+    def call_py_extend_procedure_evaluate(
+            self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[BaseAtomicType]
+    ):
         operand = evaluate_stack.pop(-1)
 
         if isinstance(operand, Operator) and operand.operator == ServiceTokens.void_arg:
