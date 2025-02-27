@@ -41,10 +41,7 @@ class InvalidSyntaxError(BaseError):
         if line is not None:
             msg = f"{msg} Строка: '{" ".join(line)}'"
 
-        if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}"
-
-        super().__init__(msg)
+        super().__init__(msg, info=info)
 
 
 class InvalidLevelDegree(BaseError):

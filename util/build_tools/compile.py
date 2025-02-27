@@ -10,7 +10,7 @@ from core.exceptions import (
 from core.extend.function_wrap import PyExtendWrapper
 from core.parse.base import MetaObject, is_float, is_integer
 from core.parse.util.rpn import build_rpn_stack
-from core.tokens import Tokens
+from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.basetype import BaseType
 from core.types.checkers import CheckerSituation
 from core.types.conditions import Condition
@@ -115,7 +115,7 @@ class Compiler:
                     f"Оператор {Tokens.break_} встретился вне цикла.", info=statement.meta_info
                 )
 
-            elif hasattr(statement, "body"):
+            elif isinstance(statement, CodeBlock):
                 self.check_code_body(statement.body)
 
     def execute_compile(self, meta: Union[BaseType, MetaObject, Compiled]) -> Union[str, BaseType, Compiled]:
@@ -272,6 +272,13 @@ class Compiler:
         def _compile(expr_: Expression):
             raw = expr_.raw_operations
 
+            for op in raw:
+                if op in NOT_ALLOWED_TOKENS:
+                    raise InvalidSyntaxError(
+                        f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {op}",
+                        info=expr_.meta_info
+                    )
+
             for offset, op in enumerate(raw):
                 if not (op not in Tokens and op in self.compiled):
                     continue
@@ -318,7 +325,7 @@ class Compiler:
             elif isinstance(statement, Return):
                 _compile(statement.expression)
 
-            if hasattr(statement, "body"):
+            if isinstance(statement, CodeBlock):
                 self.expr_compile(statement.body)
 
     def compile(self) -> Compiled:

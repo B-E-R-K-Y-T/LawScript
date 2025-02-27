@@ -3,7 +3,7 @@ from typing import Optional
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import MetaObject, Image, Parser
 from core.parse.procedure.body import BodyParser
-from core.tokens import Tokens
+from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.atomic import Void
 from core.types.line import Line, Info
 from core.types.procedure import Procedure
@@ -73,6 +73,13 @@ class DefineProcedureParser(Parser):
                         self.arguments_name = []
                     else:
                         self.arguments_name = arguments
+
+                    for arg in self.arguments_name:
+                        if arg in NOT_ALLOWED_TOKENS:
+                            raise InvalidSyntaxError(
+                                f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {arg}",
+                                info=self.info
+                            )
 
                     self.procedure_name = name_condition
                     self.body = self.execute_parse(BodyParser, body, self.next_num_line(num))

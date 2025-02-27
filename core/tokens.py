@@ -84,3 +84,10 @@ class ServiceTokens(StrEnum):
 
 
 ALL_TOKENS = list(ServiceTokens) + list(Tokens)
+NOT_ALLOWED_TOKENS = set(Tokens) - {
+    Tokens.comment, Tokens.star, Tokens.left_bracket, Tokens.right_bracket,
+    Tokens.left_square_bracket, Tokens.right_square_bracket, Tokens.comma, Tokens.dot,
+    Tokens.equal, Tokens.plus, Tokens.minus, Tokens.exponentiation, Tokens.percent,
+    Tokens.div, Tokens.end_expr, Tokens.quotation, Tokens.not_,Tokens.and_,Tokens.or_,
+    Tokens.bool_equal,Tokens.bool_not_equal,Tokens.less,Tokens.greater,Tokens.true,Tokens.false,
+}

@@ -75,9 +75,10 @@ class Print(BaseType):
 
 
 class AssignField(BaseType):
-    def __init__(self, name: str, expression: Expression):
+    def __init__(self, name: str, expression: Expression, info_line: Info):
         super().__init__(name)
 
+        self.meta_info = info_line
         self.expression = expression
 
 
@@ -113,4 +114,3 @@ class While(CodeBlock):
     def __init__(self, name: str, expression: Expression, body: Body):
         super().__init__(name, body)
         self.expression = expression
-        

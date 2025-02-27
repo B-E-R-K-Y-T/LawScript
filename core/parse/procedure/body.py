@@ -3,8 +3,8 @@ from typing import Union
 from numba.core.target_extension import target_override
 
 from core.exceptions import InvalidSyntaxError
-from core.parse.base import MetaObject, Image, Parser
-from core.tokens import Tokens
+from core.parse.base import MetaObject, Image, Parser, is_identifier
+from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.basetype import BaseType
 from core.types.line import Line, Info
 from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
@@ -77,7 +77,20 @@ class BodyParser(Parser):
                     self.commands.append(Else(str(), self.execute_parse(BodyParser, body, self.next_num_line(num))))
                     printer.logging("Добавлена команда Else", level="INFO")
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
-                    self.commands.append(AssignField(name, Expression(str(), expr, self.info)))
+                    if not is_identifier(name):
+                        raise InvalidSyntaxError(
+                            f"Имя переменной должно состоять только из букв и цифр! Переменная: {name}",
+                            line=line,
+                            info=self.info
+                        )
+
+                    if name in NOT_ALLOWED_TOKENS:
+                        raise InvalidSyntaxError(
+                            f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {name}",
+                            info=self.info
+                        )
+
+                    self.commands.append(AssignField(name, Expression(str(), expr, self.info), self.info))
                     printer.logging(f"Добавлена команда AssignField с именем: {name} и выражением: {expr}",
                                     level="INFO")
                 case [Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:

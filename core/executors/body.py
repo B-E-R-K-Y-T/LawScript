@@ -43,6 +43,9 @@ class BodyExecutor(Executor):
                 return executor.execute()
 
             elif isinstance(command, AssignField):
+                if command.name in self.tree_variables.scopes[-1].variables:
+                    raise ErrorType(f"Переменная '{command.name}' уже определена!", info=command.meta_info)
+
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
                 var = Variable(command.name, executor.execute())
 
