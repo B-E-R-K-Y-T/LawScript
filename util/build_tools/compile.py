@@ -99,7 +99,7 @@ class Compiler:
 
     def check_code_body(self, body: Body):
         for statement in body.commands:
-            if isinstance(statement, Loop):
+            if isinstance(statement, (Loop, While)):
                 try:
                     self.check_code_body(statement.body)
                 except InvalidSyntaxError:
