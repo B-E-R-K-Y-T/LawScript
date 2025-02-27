@@ -72,27 +72,19 @@ class ToString(PyExtendWrapper):
         self.count_args = 1
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from core.exceptions import BaseError
-        from core.types.atomic import String, Void
+        from core.types.atomic import String
         from core.tokens import Tokens
 
         args = self.parse_args(args)
+        arg = args[0]
 
-        if args:
-            if len(args) != 1:
-                raise BaseError(f"Функция {self.func_name} принимает только один аргумент!")
+        if isinstance(arg, bool):
+            if arg:
+                return String(Tokens.true)
+            else:
+                return String(Tokens.false)
 
-            arg = args[0]
-
-            if isinstance(arg, bool):
-                if arg:
-                    return String(Tokens.true)
-                else:
-                    return String(Tokens.false)
-
-            return String(str(arg))
-
-        return Void()
+        return String(str(arg))
 
 
 @builder.collect(func_name='func_wa')

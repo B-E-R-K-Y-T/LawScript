@@ -130,14 +130,7 @@ class ExpressionExecutor(Executor):
             )
 
         executor = self.procedure_executor(procedure, self.compiled)
-
-        try:
-            evaluate_stack.append(executor.execute())
-        except RecursionError:
-            raise MaxRecursionError(
-                f"Вызов функции {procedure.name} завершился с ошибкой. Циклический вызов.",
-                info=self.expression.meta_info
-            )
+        evaluate_stack.append(executor.execute())
 
         call_func_stack_builder.pop()
 
@@ -181,7 +174,14 @@ class ExpressionExecutor(Executor):
 
         for operation in prepared_operations:
             if isinstance(operation, Procedure):
-                self.call_procedure_evaluate(operation, evaluate_stack)
+                try:
+                    self.call_procedure_evaluate(operation, evaluate_stack)
+                except RecursionError:
+                    raise MaxRecursionError(
+                        f"Вызов функции {operation.name} завершился с ошибкой. Циклический вызов.",
+                        info=self.expression.meta_info
+                    )
+
                 continue
 
             elif isinstance(operation, LinkedProcedure):
