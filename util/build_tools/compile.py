@@ -168,17 +168,6 @@ class Compiler:
                 if isinstance(obj_, AssignField):
                     return [(obj_, obj_.name)]
 
-                elif isinstance(obj_, (Return, Print)):
-                    for op in obj_.expression.operations:
-                        if (
-                                obj_.expression.operations[0] == Tokens.quotation and
-                                obj_.expression.operations[-1] == Tokens.quotation
-                        ):
-                            continue
-
-                        if op not in Tokens and not is_float(op) and not is_integer(op):
-                            names.append((obj_, op))
-
                 elif isinstance(obj_, (CodeBlock, Procedure)):
                     for nested_obj in obj_.body.commands:
                         names.extend(get_all_uses_names(nested_obj))
