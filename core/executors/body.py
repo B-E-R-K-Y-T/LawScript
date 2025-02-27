@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Union
 
-from core.exceptions import ErrorType
+from core.exceptions import ErrorType, NameNotDefine
 from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
 from core.types.atomic import Void, Number
@@ -114,13 +114,23 @@ class BodyExecutor(Executor):
 
                 if len(command.target_expr.operations) == 1:
                     target_name = command.target_expr.operations[0].name
-                    var = self.tree_variables.get(target_name)
+
+                    try:
+                        var = self.tree_variables.get(target_name)
+                    except NameNotDefine as e:
+                        raise NameNotDefine(str(e), info=command.meta_info)
+
                     var.set_value(override_expr_result)
 
                     continue
 
                 target = target_expr_execute()
-                var = self.tree_variables.get(target.name)
+
+                try:
+                    var = self.tree_variables.get(target.name)
+                except NameNotDefine as e:
+                    raise NameNotDefine(str(e), info=command.meta_info)
+
                 var.set_value(override_expr_result)
 
             elif isinstance(command, Continue):

@@ -1,6 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Type, Sequence
+from typing import Type, Sequence, Union
 
 from core.exceptions import InvalidSyntaxError
 from core.types.basetype import BaseType
@@ -59,7 +59,7 @@ class Parser(ABC):
     def parse_sequence_words_to_str(words: Sequence[str]):
         return " ".join(words)
 
-    def execute_parse(self, parser: Type["Parser"], code: list[str], num: int) -> MetaObject:
+    def execute_parse(self, parser: Type["Parser"], code: list[Line], num: int) -> Union[MetaObject, BaseType]:
         parser = parser()
         meta = parse_execute(parser, code, num)
         self.jump = self.next_num_line(meta.stop_num)

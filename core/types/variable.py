@@ -1,5 +1,6 @@
 from typing import TypeVar, Generic, Iterable
 
+from core.exceptions import NameNotDefine
 from core.types.basetype import BaseType
 
 
@@ -38,7 +39,7 @@ class Scope:
         elif self.parent is not None:
             return self.parent.get(name)
         else:
-            raise NameError(f"Variable '{name}' is not defined")
+            raise NameNotDefine(f"Переменная '{name}' не определена")
 
 
 class ScopeStack:
