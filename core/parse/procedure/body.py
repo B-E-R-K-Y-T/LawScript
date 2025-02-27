@@ -1,11 +1,14 @@
 from typing import Union
 
+from numba.core.target_extension import target_override
+
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import MetaObject, Image, Parser
 from core.tokens import Tokens
 from core.types.basetype import BaseType
 from core.types.line import Line, Info
-from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break
+from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
+    AssignOverrideVariable
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -126,6 +129,27 @@ class BodyParser(Parser):
                     self.commands.append(Break(str(), self.info))
                     printer.logging(f"Добавлена команда Break", level="INFO")
                 case [*expr, Tokens.end_expr]:
+                    if Tokens.equal in expr:
+                        if expr.count(Tokens.equal) > 1:
+                            raise InvalidSyntaxError(
+                                f"Оператор '{Tokens.equal}' должен встречаться в определении выражения только 1 раз!",
+                                line=line,
+                                info=self.info
+                            )
+
+                        equal_idx = expr.index(Tokens.equal)
+                        target, override = expr[:equal_idx], expr[equal_idx + 1:]
+
+                        self.commands.append(
+                            AssignOverrideVariable(
+                                str(),
+                                Expression(str(), target, self.info),
+                                Expression(str(), override, self.info),
+                                self.info
+                            )
+                        )
+                        continue
+
                     self.commands.append(Expression(str(), expr, self.info))
                     printer.logging(f"Добавлена команда Expression с выражением: {expr}", level="INFO")
                 case [Tokens.right_bracket]:

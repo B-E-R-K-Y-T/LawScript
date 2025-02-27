@@ -6,7 +6,7 @@ from core.tokens import Tokens
 from core.types.atomic import Void, Number
 from core.types.basetype import BaseAtomicType
 from core.types.procedure import Print, Return, AssignField, Body, When, Loop, Expression, Procedure, Continue, \
-    CodeBlock, Break
+    CodeBlock, Break, AssignOverrideVariable
 from core.executors.base import Executor
 from core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
 from util.console_worker import printer
@@ -101,10 +101,27 @@ class BodyExecutor(Executor):
                         elif not isinstance(executed, Void):
                             return executed
 
-
             elif isinstance(command, Expression):
                 executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
                 executor.execute()
+
+            elif isinstance(command, AssignOverrideVariable):
+                target_expr_executor = ExpressionExecutor(command.target_expr, self.tree_variables, self.compiled)
+                override_expr_executor = ExpressionExecutor(command.override_expr, self.tree_variables, self.compiled)
+
+                target_expr_execute = target_expr_executor.execute
+                override_expr_result = override_expr_executor.execute()
+
+                if len(command.target_expr.operations) == 1:
+                    target_name = command.target_expr.operations[0].name
+                    var = self.tree_variables.get(target_name)
+                    var.set_value(override_expr_result)
+
+                    continue
+
+                target = target_expr_execute()
+                var = self.tree_variables.get(target.name)
+                var.set_value(override_expr_result)
 
             elif isinstance(command, Continue):
                 return command

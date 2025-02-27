@@ -32,11 +32,22 @@ class Procedure(BaseType):
         return f'Процедура({self.name}, {self.body}, {self.arguments_names})'
 
 
+class LinkedProcedure(Procedure): ...
+
+
 class Expression(BaseType):
     def __init__(self, name: str, operations, info_line: Info):
         super().__init__(name)
         self.meta_info = info_line
         self.operations: list[Union[Operator, BaseAtomicType]] = build_rpn_stack(operations, self.meta_info)
+
+
+class AssignOverrideVariable(BaseType):
+    def __init__(self, name: str, target_expr: Expression, override_expr: Expression, info_line: Info):
+        super().__init__(name)
+        self.meta_info = info_line
+        self.target_expr = target_expr
+        self.override_expr = override_expr
 
 
 class Continue(BaseType):

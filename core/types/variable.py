@@ -54,7 +54,7 @@ class ScopeStack:
     def set(self, variable: Variable):
         self.scopes[-1].set(variable)
 
-    def get(self, name) -> Variable:
+    def get(self, name: str) -> Variable:
         return self.scopes[-1].get(name)
 
 
