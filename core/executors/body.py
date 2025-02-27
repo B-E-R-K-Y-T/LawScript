@@ -6,7 +6,7 @@ from core.tokens import Tokens
 from core.types.atomic import Void, Number
 from core.types.basetype import BaseAtomicType
 from core.types.procedure import Print, Return, AssignField, Body, When, Loop, Expression, Procedure, Continue, \
-    CodeBlock, Break, AssignOverrideVariable
+    CodeBlock, Break, AssignOverrideVariable, While
 from core.executors.base import Executor
 from core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
 from util.console_worker import printer
@@ -69,6 +69,26 @@ class BodyExecutor(Executor):
 
                     if not isinstance(executed, Void):
                         return executed
+
+            elif isinstance(command, While):
+                body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
+                executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
+
+                with VariableContextCreator(self.tree_variables):
+                    while True:
+                        if not executor.execute().value:
+                            break
+
+                        executed = body_executor.execute()
+
+                        if isinstance(executed, Continue):
+                            continue
+
+                        elif isinstance(executed, Break):
+                            break
+
+                        elif not isinstance(executed, Void):
+                            return executed
 
             elif isinstance(command, Loop):
                 executor_from = ExpressionExecutor(command.expression_from, self.tree_variables, self.compiled)

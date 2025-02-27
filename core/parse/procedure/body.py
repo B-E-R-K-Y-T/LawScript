@@ -8,7 +8,7 @@ from core.tokens import Tokens
 from core.types.basetype import BaseType
 from core.types.line import Line, Info
 from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
-    AssignOverrideVariable
+    AssignOverrideVariable, While
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -95,6 +95,14 @@ class BodyParser(Parser):
 
                     self.commands.append(when)
                     printer.logging("Добавлена команда When", level="INFO")
+                case [Tokens.while_, *expr, Tokens.left_bracket]:
+                    self.commands.append(
+                        While(
+                            str(), Expression(str(), expr, self.info),
+                            self.execute_parse(BodyParser, body, self.next_num_line(num))
+                        )
+                    )
+                    printer.logging("Добавлена команда While", level="INFO")
                 case [Tokens.loop, Tokens.from_, *expr, Tokens.left_bracket]:
                     expr = list(expr)
 

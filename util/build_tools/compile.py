@@ -22,7 +22,7 @@ from core.types.objects import Object
 from core.types.obligations import Obligation
 from core.types.laws import Law
 from core.types.procedure import Procedure, CodeBlock, AssignField, Return, Print, Loop, Continue, Body, Break, \
-    Expression, LinkedProcedure, AssignOverrideVariable, When, Else
+    Expression, LinkedProcedure, AssignOverrideVariable, When, Else, While
 from core.types.rules import Rule
 from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
@@ -291,6 +291,9 @@ class Compiler:
         for statement in body.commands:
             if isinstance(statement, Expression):
                 _compile(statement)
+
+            elif isinstance(statement, While):
+                _compile(statement.expression)
 
             elif isinstance(statement, Loop):
                 _compile(statement.expression_from)

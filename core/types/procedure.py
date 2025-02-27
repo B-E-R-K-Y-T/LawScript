@@ -107,3 +107,10 @@ class Loop(CodeBlock):
 
         self.expression_from = expression_from
         self.expression_to = expression_to
+
+
+class While(CodeBlock):
+    def __init__(self, name: str, expression: Expression, body: Body):
+        super().__init__(name, body)
+        self.expression = expression
+        
