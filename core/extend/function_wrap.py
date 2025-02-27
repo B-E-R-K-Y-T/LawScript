@@ -4,7 +4,7 @@ from typing import Optional, Type
 import dill
 
 from config import settings
-from core.exceptions import BaseError
+from core.exceptions import BaseError, ArgumentError
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.line import Info
 
@@ -13,9 +13,22 @@ class PyExtendWrapper(BaseType, ABC):
     def __init__(self, func_name: str, ):
         super().__init__(func_name)
         self.func_name = func_name
+        self.empty_args = False
+        self.count_args = -1
 
     @abstractmethod
     def call(self, args: Optional[list[BaseAtomicType]] = None) -> BaseAtomicType: ...
+
+    def check_args(self, args: Optional[list[BaseAtomicType]] = None):
+        if not self.empty_args and args is None:
+            raise ArgumentError(f"Необходимо передать аргументы в процедуру '{self.func_name}'")
+
+        if self.count_args > -1:
+            if len(args) != self.count_args:
+                raise ArgumentError(
+                    f"Неверное количество аргументов процедуры '{self.func_name}'. Ожидалось: {self.count_args}, "
+                    f"но передано: {len(args)}"
+                )
 
     @staticmethod
     def parse_args(args: Optional[list[BaseAtomicType]] = None) -> list:
@@ -41,10 +54,10 @@ class CallableWrapper:
                 return func(*args, **kwargs)
             except Exception as e:
                 if settings.debug:
-                    raise Exception(repr(e))
+                    raise
 
                 raise BaseError(
-                    f"При выполнении функции '{func_name}' в модуле: '{self.mod_name}' произошла ошибка: '{e}'"
+                    f"При выполнении процедуры '{func_name}' в модуле: '{self.mod_name}' произошла ошибка: '{e}'"
                 )
 
         return wrapper

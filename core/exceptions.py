@@ -136,3 +136,10 @@ class DivisionByZeroError(BaseError):
             msg = "Деление на ноль"
 
         super().__init__(msg, info=info)
+
+class ArgumentError(BaseError):
+    def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Ошибка аргумента"
+
+        super().__init__(msg, info=info)

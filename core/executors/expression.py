@@ -151,6 +151,7 @@ class ExpressionExecutor(Executor):
             args = [operand]
 
         try:
+            py_extend_procedure.check_args(args)
             result = py_extend_procedure.call(args)
         except BaseError as e:
             raise InvalidExpression(str(e), info=self.expression.meta_info)

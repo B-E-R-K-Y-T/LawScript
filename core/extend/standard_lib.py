@@ -66,9 +66,14 @@ class ToNumber(PyExtendWrapper):
 
 @builder.collect(func_name='to_string')
 class ToString(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         from core.exceptions import BaseError
-        from core.types.atomic import String
+        from core.types.atomic import String, Void
         from core.tokens import Tokens
 
         args = self.parse_args(args)
@@ -86,6 +91,8 @@ class ToString(PyExtendWrapper):
                     return String(Tokens.false)
 
             return String(str(arg))
+
+        return Void()
 
 
 @builder.collect(func_name='func_wa')
