@@ -95,7 +95,6 @@ class NameNotDefine(BaseError):
         if info is not None:
             msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
-
         super().__init__(msg)
 
 
