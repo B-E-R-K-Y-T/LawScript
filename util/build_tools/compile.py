@@ -5,7 +5,7 @@ from core.exceptions import (
     InvalidType,
     UnknownType,
     NameAlreadyExist,
-    FieldNotDefine,
+    FieldNotDefine, InvalidSyntaxError,
 )
 from core.parse.base import MetaObject, is_float, is_integer
 from core.tokens import Tokens
@@ -19,7 +19,7 @@ from core.types.hypothesis import Hypothesis
 from core.types.objects import Object
 from core.types.obligations import Obligation
 from core.types.laws import Law
-from core.types.procedure import Procedure, CodeBlock, AssignField, Return, Print
+from core.types.procedure import Procedure, CodeBlock, AssignField, Return, Print, Loop, Continue, Body, Break
 from core.types.rules import Rule
 from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
@@ -94,6 +94,27 @@ class Compiler:
         printer.logging(f"Поле {field_name} успешно обработано как {type_check.__name__}", level="INFO")
         return compiled_obj
 
+    def check_code_body(self, body: Body):
+        for statement in body.commands:
+            if isinstance(statement, Loop):
+                try:
+                    self.check_code_body(statement.body)
+                except InvalidSyntaxError:
+                    continue
+
+            elif isinstance(statement, Continue):
+                raise InvalidSyntaxError(
+                    f"Оператор {Tokens.continue_} встретился вне цикла.", info=statement.meta_info
+                )
+
+            elif isinstance(statement, Break):
+                raise InvalidSyntaxError(
+                    f"Оператор {Tokens.break_} встретился вне цикла.", info=statement.meta_info
+                )
+
+            elif hasattr(statement, "body"):
+                self.check_code_body(statement.body)
+
     def execute_compile(self, meta: Union[BaseType, MetaObject, Compiled]) -> Union[str, BaseType, Compiled]:
         if isinstance(meta, Compiled):
             return meta
@@ -139,6 +160,8 @@ class Compiler:
             return compiled_obj
 
         elif isinstance(compiled_obj, Procedure):
+            self.check_code_body(compiled_obj.body)
+
             def get_all_uses_names(obj_: Union[CodeBlock, BaseType]) -> list[tuple[BaseType, str]]:
                 names = []
 

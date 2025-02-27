@@ -1,11 +1,12 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from core.exceptions import ErrorType
 from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
 from core.types.atomic import Void, Number
 from core.types.basetype import BaseAtomicType
-from core.types.procedure import Print, Return, AssignField, Body, When, Loop, Expression, Procedure
+from core.types.procedure import Print, Return, AssignField, Body, When, Loop, Expression, Procedure, Continue, \
+    CodeBlock, Break
 from core.executors.base import Executor
 from core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
 from util.console_worker import printer
@@ -34,7 +35,7 @@ class BodyExecutor(Executor):
             elif isinstance(var, PyExtendWrapper):
                 self.tree_variables.set(Variable(var.name, var))
 
-    def execute(self) -> BaseAtomicType:
+    def execute(self) -> Union[BaseAtomicType, Continue, Break]:
         for command in self.body.commands:
             if isinstance(command, Return):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
@@ -91,12 +92,25 @@ class BodyExecutor(Executor):
                     for _ in range(result_from.value, result_to.value + 1):
                         executed = body_executor.execute()
 
-                        if not isinstance(executed, Void):
+                        if isinstance(executed, Continue):
+                            continue
+
+                        elif isinstance(executed, Break):
+                            break
+
+                        elif not isinstance(executed, Void):
                             return executed
+
 
             elif isinstance(command, Expression):
                 executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
                 executor.execute()
+
+            elif isinstance(command, Continue):
+                return command
+
+            elif isinstance(command, Break):
+                return command
 
             else:
                 raise ErrorType(f"Неизвестная команда '{command.name}'!", info=command.meta_info)

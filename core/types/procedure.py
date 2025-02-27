@@ -39,6 +39,18 @@ class Expression(BaseType):
         self.operations: list[Union[Operator, BaseAtomicType]] = build_rpn_stack(operations, self.meta_info)
 
 
+class Continue(BaseType):
+    def __init__(self, name: str, info_line: Info):
+        super().__init__(name)
+        self.meta_info = info_line
+
+
+class Break(BaseType):
+    def __init__(self, name: str, info_line: Info):
+        super().__init__(name)
+        self.meta_info = info_line
+
+
 class Print(BaseType):
     def __init__(self, name: str, expression: Expression):
         super().__init__(name)

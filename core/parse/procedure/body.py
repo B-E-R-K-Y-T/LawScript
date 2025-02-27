@@ -5,7 +5,7 @@ from core.parse.base import MetaObject, Image, Parser
 from core.tokens import Tokens
 from core.types.basetype import BaseType
 from core.types.line import Line, Info
-from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return
+from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -119,6 +119,12 @@ class BodyParser(Parser):
                     self.commands.append(Return(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Return с выражением: {expr}", level="INFO")
                     return self.next_num_line(num)
+                case [Tokens.continue_, Tokens.end_expr]:
+                    self.commands.append(Continue(str(), self.info))
+                    printer.logging(f"Добавлена команда Continue", level="INFO")
+                case [Tokens.break_, Tokens.end_expr]:
+                    self.commands.append(Break(str(), self.info))
+                    printer.logging(f"Добавлена команда Break", level="INFO")
                 case [*expr, Tokens.end_expr]:
                     self.commands.append(Expression(str(), expr, self.info))
                     printer.logging(f"Добавлена команда Expression с выражением: {expr}", level="INFO")

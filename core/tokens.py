@@ -73,6 +73,8 @@ class Tokens(StrEnum):
     return_ = "ВЕРНУТЬ"
     true = "ИСТИНА"
     false = "ЛОЖЬ"
+    continue_ = "ПРОПУСТИТЬ"
+    break_ = "ПРЕРВАТЬ"
 
 
 class ServiceTokens(StrEnum):
