@@ -135,7 +135,7 @@ class ExpressionExecutor(Executor):
             evaluate_stack.append(executor.execute())
         except RecursionError:
             raise MaxRecursionError(
-                f"Вызов функции {procedure.name} завершился с ошибкой.",
+                f"Вызов функции {procedure.name} завершился с ошибкой. Циклический вызов.",
                 info=self.expression.meta_info
             )
 
