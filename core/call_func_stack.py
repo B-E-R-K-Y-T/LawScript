@@ -34,4 +34,7 @@ def get_stack_str():
             f"Номер строки: {call_func.meta_info.num}\n\tСтрока: '{call_func.meta_info.raw_line}'\n"
         )
 
+    if not call_func_stack_builder.stack:
+        call_stack_str += "\n\tСтек пуст.\n"
+
     return call_stack_str
