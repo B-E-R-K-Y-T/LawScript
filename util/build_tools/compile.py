@@ -7,7 +7,9 @@ from core.exceptions import (
     NameAlreadyExist,
     FieldNotDefine, InvalidSyntaxError,
 )
+from core.extend.function_wrap import PyExtendWrapper
 from core.parse.base import MetaObject, is_float, is_integer
+from core.parse.util.rpn import build_rpn_stack
 from core.tokens import Tokens
 from core.types.basetype import BaseType
 from core.types.checkers import CheckerSituation
@@ -19,7 +21,8 @@ from core.types.hypothesis import Hypothesis
 from core.types.objects import Object
 from core.types.obligations import Obligation
 from core.types.laws import Law
-from core.types.procedure import Procedure, CodeBlock, AssignField, Return, Print, Loop, Continue, Body, Break
+from core.types.procedure import Procedure, CodeBlock, AssignField, Return, Print, Loop, Continue, Body, Break, \
+    Expression, LinkedProcedure, AssignOverrideVariable, When, Else
 from core.types.rules import Rule
 from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
@@ -265,6 +268,56 @@ class Compiler:
 
         return compiled_obj
 
+    def expr_compile(self, body: Body):
+        def _compile(expr_: Expression):
+            raw = expr_.raw_operations
+
+            for offset, op in enumerate(raw):
+                if not (op not in Tokens and op in self.compiled):
+                    continue
+
+                command = self.compiled[op]
+
+                if isinstance(command, (Procedure, PyExtendWrapper)):
+                    if offset < len(raw) - 1:
+                        if raw[offset + 1] != Tokens.left_bracket:
+                            raw[offset] = LinkedProcedure(name=command.name, func=command)
+                        continue
+
+                    raw[offset] = LinkedProcedure(name=command.name, func=command)
+
+            expr_.operations = build_rpn_stack(raw, expr_.meta_info)
+
+        for statement in body.commands:
+            if isinstance(statement, Expression):
+                _compile(statement)
+
+            elif isinstance(statement, Loop):
+                _compile(statement.expression_from)
+                _compile(statement.expression_to)
+
+            elif isinstance(statement, AssignOverrideVariable):
+                _compile(statement.target_expr)
+                _compile(statement.override_expr)
+
+            elif isinstance(statement, Print):
+                _compile(statement.expression)
+
+            elif isinstance(statement, AssignField):
+                _compile(statement.expression)
+
+            elif isinstance(statement, When):
+                _compile(statement.expression)
+
+                if statement.else_ is not None:
+                    self.expr_compile(statement.else_.body)
+
+            elif isinstance(statement, Return):
+                _compile(statement.expression)
+
+            if hasattr(statement, "body"):
+                self.expr_compile(statement.body)
+
     def compile(self) -> Compiled:
         compiled_modules = {}
 
@@ -284,4 +337,11 @@ class Compiler:
             self.compiled[compiled.name] = compiled
             printer.logging(f"Скомпилировано: {compiled.name}", level="INFO")
 
-        return Compiled({**compiled_modules, **self.compiled})
+        compiled_without_build_modules = self.compiled
+        self.compiled = {**compiled_modules, **self.compiled}
+
+        for name, compiled in compiled_without_build_modules.items():
+            if isinstance(compiled, Procedure):
+                self.expr_compile(compiled.body)
+
+        return Compiled(self.compiled)

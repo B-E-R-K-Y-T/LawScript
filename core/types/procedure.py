@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from core.parse.util.rpn import build_rpn_stack
+from core.extend.function_wrap import PyExtendWrapper
 from core.types.basetype import BaseType, BaseAtomicType
 from core.types.line import Info
 from core.types.operation import Operator
@@ -29,17 +29,19 @@ class Procedure(BaseType):
         self.tree_variables: Optional[ScopeStack] = None
 
     def __repr__(self):
-        return f'Процедура({self.name}, {self.body}, {self.arguments_names})'
+        return f"Процедура('{self.name}') кол-во аргументов: {len(self.arguments_names)}"
 
 
-class LinkedProcedure(Procedure): ...
+class LinkedProcedure(BaseType):
+    def __init__(self, name: str, func: Union[Procedure, PyExtendWrapper]):
+        super().__init__(name)
+        self.func = func
 
 
 class Expression(BaseType):
     def __init__(self, name: str, operations, info_line: Info):
         super().__init__(name)
         self.meta_info = info_line
-        # self.operations: Optional[list[Union[Operator, BaseAtomicType]]] = build_rpn_stack(operations, self.meta_info)
         self.operations: Optional[list[Union[Operator, BaseAtomicType]]] = None
         self.raw_operations = operations
 

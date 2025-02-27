@@ -14,7 +14,7 @@ from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.operation import Operator
-from core.types.procedure import Expression, Procedure
+from core.types.procedure import Expression, Procedure, LinkedProcedure
 from core.types.variable import ScopeStack, traverse_scope, Variable
 from core.extend.function_wrap import PyExtendWrapper
 
@@ -65,6 +65,10 @@ class ExpressionExecutor(Executor):
         new_expression_stack = []
 
         for operation in self.expression.operations:
+            if isinstance(operation, LinkedProcedure):
+                new_expression_stack.append(self.tree_variable.get(operation.name).value)
+                continue
+
             for variable in traverse_scope(self.tree_variable.scopes[-1]):
                 if operation.name == variable.name:
                     new_expression_stack.append(variable.value)
@@ -79,6 +83,8 @@ class ExpressionExecutor(Executor):
                     not isinstance(operation, Procedure)
                     and
                     not isinstance(operation, PyExtendWrapper)
+                    and
+                    not isinstance(operation, LinkedProcedure)
             ):
                 if operation.name not in ALL_TOKENS:
                     raise NameNotDefine(
@@ -176,6 +182,10 @@ class ExpressionExecutor(Executor):
         for operation in prepared_operations:
             if isinstance(operation, Procedure):
                 self.call_procedure_evaluate(operation, evaluate_stack)
+                continue
+
+            elif isinstance(operation, LinkedProcedure):
+                evaluate_stack.append(operation.func)
                 continue
 
             elif isinstance(operation, PyExtendWrapper):

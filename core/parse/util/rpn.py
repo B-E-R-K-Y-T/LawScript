@@ -7,6 +7,7 @@ from core.types.atomic import Number, String, Boolean
 from core.types.basetype import BaseAtomicType
 from core.types.line import Info
 from core.types.operation import Operator
+from core.types.procedure import LinkedProcedure
 from util.console_worker import printer
 
 ALLOW_OPERATORS = {
@@ -101,6 +102,9 @@ def check_correct_expr(expr: list[str]):
     }
 
     for op in filtered_expr:
+        if isinstance(op, LinkedProcedure):
+            continue
+
         if op not in allowed_ops:
             if not is_integer(op) and not is_float(op) and not is_identifier(op):
                 raise InvalidExpression(
@@ -403,6 +407,10 @@ def compile_rpn(expr):
 
         if op in ALLOW_OPERATORS:
             compiled_stack.append(Operator(op))
+            continue
+
+        if isinstance(op, LinkedProcedure):
+            compiled_stack.append(op)
             continue
 
         if is_integer(op):
