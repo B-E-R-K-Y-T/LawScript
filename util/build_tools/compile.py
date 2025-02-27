@@ -8,7 +8,7 @@ from core.exceptions import (
     FieldNotDefine, InvalidSyntaxError,
 )
 from core.extend.function_wrap import PyExtendWrapper
-from core.parse.base import MetaObject, is_float, is_integer
+from core.parse.base import MetaObject
 from core.parse.util.rpn import build_rpn_stack
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.basetype import BaseType
@@ -21,8 +21,22 @@ from core.types.hypothesis import Hypothesis
 from core.types.objects import Object
 from core.types.obligations import Obligation
 from core.types.laws import Law
-from core.types.procedure import Procedure, CodeBlock, AssignField, Return, Print, Loop, Continue, Body, Break, \
-    Expression, LinkedProcedure, AssignOverrideVariable, When, Else, While
+from core.types.procedure import (
+    Procedure,
+    CodeBlock,
+    AssignField,
+    Return,
+    Print,
+    Loop,
+    Continue,
+    Body,
+    Break,
+    Expression,
+    LinkedProcedure,
+    AssignOverrideVariable,
+    When,
+    While
+)
 from core.types.rules import Rule
 from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
