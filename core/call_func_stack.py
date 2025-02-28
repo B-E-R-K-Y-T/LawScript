@@ -21,6 +21,9 @@ class CallFuncStackBuilder:
     def __iter__(self):
         return iter(self.stack)
 
+    def __len__(self) -> int:
+        return len(self.stack)
+
 
 call_func_stack_builder = CallFuncStackBuilder()
 
@@ -34,7 +37,7 @@ def get_stack_pretty_str() -> str:
             f"Номер строки: {call_func.meta_info.num}\n\tСтрока: '{call_func.meta_info.raw_line}'\n"
         )
 
-    if not call_func_stack_builder.stack:
+    if not call_func_stack_builder:
         call_stack_str += "\n\tСтек пуст.\n"
 
     return call_stack_str
