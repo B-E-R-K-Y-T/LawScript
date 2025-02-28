@@ -63,7 +63,10 @@ class DefineProcedureParser(Parser):
                 printer.logging(f"Игнорируем строку: {line}", level="INFO")
                 continue
 
-            self.info = line.get_file_info()
+            if self.info is None:
+                self.info = line.get_file_info()
+
+            info_line = line.get_file_info()
             line = self.separate_line_to_token(line)
 
             match line:
@@ -78,7 +81,7 @@ class DefineProcedureParser(Parser):
                         if arg in NOT_ALLOWED_TOKENS:
                             raise InvalidSyntaxError(
                                 f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {arg}",
-                                info=self.info
+                                info=info_line
                             )
 
                     self.procedure_name = name_condition
@@ -92,7 +95,7 @@ class DefineProcedureParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=self.info)
+                    raise InvalidSyntaxError(line=line, info=info_line)
 
         printer.logging("Парсинг процедуры завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

@@ -47,11 +47,11 @@ class ToNumber(PyExtendWrapper):
         arg = None
 
         if not args:
-            raise BaseError(f"Функция {self.func_name} принимает только один аргумент!")
+            raise BaseError(f"Процедура {self.func_name} принимает только один аргумент!")
 
         if args:
             if len(args) != 1:
-                raise BaseError(f"Функция {self.func_name} принимает только один аргумент!")
+                raise BaseError(f"Процедура {self.func_name} принимает только один аргумент!")
 
             arg = args[0]
 

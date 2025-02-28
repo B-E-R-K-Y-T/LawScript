@@ -88,7 +88,7 @@ class ExpressionExecutor(Executor):
             ):
                 if operation.name not in ALL_TOKENS:
                     raise NameNotDefine(
-                        f"Имя переменной {operation.name} не определено."
+                        f"Имя '{operation.name}' не определено."
                     )
 
         return new_expression_stack
@@ -157,7 +157,7 @@ class ExpressionExecutor(Executor):
 
         if not isinstance(result, BaseAtomicType):
             raise ErrorType(
-                f"Вызов функции {py_extend_procedure.name} завершился с ошибкой. Не верный возвращаемый тип.",
+                f"Вызов процедуры '{py_extend_procedure.name}' завершился с ошибкой. Не верный возвращаемый тип.",
                 info=self.expression.meta_info
             )
 
@@ -178,7 +178,7 @@ class ExpressionExecutor(Executor):
                     self.call_procedure_evaluate(operation, evaluate_stack)
                 except RecursionError:
                     raise MaxRecursionError(
-                        f"Вызов функции {operation.name} завершился с ошибкой. Циклический вызов.",
+                        f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
                         info=self.expression.meta_info
                     )
 

@@ -2,7 +2,7 @@ import sys
 import time
 
 from config import settings
-from core.call_func_stack import get_stack_str
+from core.call_func_stack import get_stack_pretty_str
 from core.exceptions import BaseError
 from core.util import kill_process, success_process, yellow_print
 from util.build_tools.build import build
@@ -40,12 +40,12 @@ class Law:
             if settings.debug:
                 raise
 
-            kill_process(f"{get_stack_str()}\n{str(e)}")
+            kill_process(f"{get_stack_pretty_str()}\n{str(e)}")
         except Exception as e:
             if settings.debug:
                 raise
 
-            printer.print_error(f"{get_stack_str()}\n{str(e)}")
+            printer.print_error(f"{get_stack_pretty_str()}\n{str(e)}")
         else:
             success_process(f"Операция {command} завершена успешно.")
         finally:

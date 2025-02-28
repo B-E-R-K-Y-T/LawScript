@@ -25,7 +25,7 @@ class CallFuncStackBuilder:
 call_func_stack_builder = CallFuncStackBuilder()
 
 
-def get_stack_str():
+def get_stack_pretty_str() -> str:
     call_stack_str = "Стек вызова процедур:\n"
 
     for call_func in call_func_stack_builder:
