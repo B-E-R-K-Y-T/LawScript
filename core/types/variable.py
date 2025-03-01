@@ -52,6 +52,9 @@ class ScopeStack:
     def pop(self):
         self.scopes.pop()
 
+    def extend(self, scope: "ScopeStack"):
+        self.scopes.extend(scope.scopes)
+        
     def set(self, variable: Variable):
         self.scopes[-1].set(variable)
 

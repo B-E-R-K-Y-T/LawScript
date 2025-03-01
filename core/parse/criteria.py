@@ -94,8 +94,8 @@ class DefineCriteriaParser(Parser):
                     printer.logging(
                         f"Добавлено условие 'NotEqual' для {name_criteria} с значениями {value}", level="INFO"
                     )
-                case [name_criteria, Tokens.less, value, Tokens.comma]:
-                    value = self.parse_to_num(value, line)
+                case [name_criteria, Tokens.less, *value, Tokens.comma]:
+                    value = self.parse_to_num("".join(value), line)
                     self.criteria[name_criteria] = LessThan(value)
                     printer.logging(f"Добавлено условие 'LessThan' для {name_criteria} с значением {value}",
                                     level="INFO")
@@ -117,8 +117,8 @@ class DefineCriteriaParser(Parser):
                     self.criteria[name_criteria] = ProcedureModifyWrapper(modify(procedure_name))
                     printer.logging(f"Добавлено условие '{modify_type}' для {name_criteria} с значением {procedure_name}",
                                     level="INFO")
-                case [name_criteria, Tokens.greater, value, Tokens.comma]:
-                    value = self.parse_to_num(value, line)
+                case [name_criteria, Tokens.greater, *value, Tokens.comma]:
+                    value = self.parse_to_num("".join(value), line)
                     self.criteria[name_criteria] = GreaterThan(value)
                     printer.logging(f"Добавлено условие 'GreaterThan' для {name_criteria} с значением {value}",
                                     level="INFO")
@@ -126,7 +126,7 @@ class DefineCriteriaParser(Parser):
                     values = []
 
                     for value in (value1, value2):
-                        values.append(self.parse_to_num(value, line))
+                        values.append(self.parse_to_num("".join(value), line))
 
                     self.criteria[name_criteria] = Between(*values)
                     printer.logging(f"Добавлено условие 'Between' для {name_criteria} с значениями {values}",

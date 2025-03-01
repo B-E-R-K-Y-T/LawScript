@@ -150,7 +150,7 @@ class DataParser(Parser):
                 case [Tokens.data, Tokens.left_bracket]:
                     printer.logging("Начало секции данных, ожидается ввод", level="INFO")
                 case [name_data, *data, Tokens.comma]:
-                    value = self.parse_sequence_words_to_str(data)
+                    value = self.parse_sequence_words_to_str(data, sep="")
 
                     if is_integer(value):
                         value = Number(int(value))

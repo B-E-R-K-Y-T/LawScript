@@ -1,21 +1,24 @@
 from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable
 
+from numba.core.ir import Assign
+
 from core.call_func_stack import call_func_stack_builder
 from core.exceptions import (
     ErrorType,
     InvalidExpression,
     BaseError,
-    NameNotDefine,
     MaxRecursionError,
     DivisionByZeroError
 )
 from core.executors.base import Executor
-from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
+from core.executors.table_factory_executor import TableFactoryExecutor
+from core.parse.base import is_identifier
+from core.tokens import Tokens, ServiceTokens
 from core.types.atomic import Void, Boolean
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.operation import Operator
-from core.types.procedure import Expression, Procedure, LinkedProcedure
-from core.types.table import TableFactory, Table
+from core.types.procedure import Expression, Procedure, LinkedProcedure, AssignField
+from core.types.table import TableFactory, Table, This
 from core.types.variable import ScopeStack, traverse_scope, Variable
 from core.extend.function_wrap import PyExtendWrapper
 
@@ -77,24 +80,25 @@ class ExpressionExecutor(Executor):
             else:
                 new_expression_stack.append(operation)
 
-        for operation in new_expression_stack:
-            if (
-                    not isinstance(operation, BaseAtomicType)
-                    and
-                    not isinstance(operation, Procedure)
-                    and
-                    not isinstance(operation, PyExtendWrapper)
-                    and
-                    not isinstance(operation, LinkedProcedure)
-                    and
-                    not isinstance(operation, TableFactory)
-                    and
-                    not isinstance(operation, Table)
-            ):
-                if operation.name not in ALL_TOKENS:
-                    raise NameNotDefine(
-                        f"Имя '{operation.name}' не определено."
-                    )
+        #
+        # for operation in new_expression_stack:
+        #     if (
+        #             not isinstance(operation, BaseAtomicType)
+        #             and
+        #             not isinstance(operation, Procedure)
+        #             and
+        #             not isinstance(operation, PyExtendWrapper)
+        #             and
+        #             not isinstance(operation, LinkedProcedure)
+        #             and
+        #             not isinstance(operation, TableFactory)
+        #             and
+        #             not isinstance(operation, Table)
+        #     ):
+        #         if operation.name not in ALL_TOKENS:
+        #             raise NameNotDefine(
+        #                 f"Имя '{operation.name}' не определено."
+        #             )
 
         return new_expression_stack
 
@@ -117,7 +121,8 @@ class ExpressionExecutor(Executor):
         call_func_stack_builder.push(func_name=procedure.name, meta_info=self.expression.meta_info)
         operand: Union[BaseAtomicType, Operator] = evaluate_stack.pop(-1)
 
-        procedure.tree_variables = ScopeStack()
+        if procedure.tree_variables is None:
+            procedure.tree_variables = ScopeStack()
 
         if not isinstance(operand, Operator):
             if not procedure.arguments_names:
@@ -177,7 +182,7 @@ class ExpressionExecutor(Executor):
 
         evaluate_stack: list[Union[BaseAtomicType, BaseType]] = []
 
-        for operation in prepared_operations:
+        for offset, operation in enumerate(prepared_operations):
             if isinstance(operation, Procedure):
                 try:
                     self.call_procedure_evaluate(operation, evaluate_stack)
@@ -193,6 +198,10 @@ class ExpressionExecutor(Executor):
                 evaluate_stack.append(operation.func)
                 continue
 
+            elif isinstance(operation, Table):
+                evaluate_stack.append(operation)
+                continue
+
             elif isinstance(operation, PyExtendWrapper):
                 self.call_py_extend_procedure_evaluate(operation, evaluate_stack)
                 continue
@@ -202,22 +211,10 @@ class ExpressionExecutor(Executor):
                     evaluate_stack.append(operation)
                     continue
 
-                name = operation.name
-                this = operation.table_image.this
-                body = operation.table_image.body
-                base = operation.table_image.base_table
+                instance_table = operation.create_table()
 
-                instance_table = operation.table_image.table(
-                    name=name,
-                    body=body,
-                )
-
-                instance_table.this = instance_table
-                instance_table.tree_variables = ScopeStack()
-                instance_table.tree_variables.set(Variable(this.value, instance_table.this))
-
-                instance_table.base_table = base
-
+                executor = TableFactoryExecutor(operation, instance_table, self.compiled)
+                executor.execute()
 
                 evaluate_stack.pop(-1)
                 evaluate_stack.append(instance_table)

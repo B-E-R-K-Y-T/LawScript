@@ -6,7 +6,7 @@ from core.parse.base import MetaObject
 from core.types.atomic import String
 from core.types.basetype import BaseType
 from core.types.procedure import Body
-from core.types.variable import ScopeStack
+from core.types.variable import ScopeStack, Variable
 
 
 class Table(BaseType):
@@ -14,9 +14,14 @@ class Table(BaseType):
         super().__init__(name)
 
         self.body = body
-        self.this: Optional[Table] = None
+        self.this: Optional[This] = None
         self.base_table: Optional[Table] = None
         self.tree_variables: Optional[ScopeStack] = None
+
+
+class This(NamedTuple):
+    name: str
+    link: Table
 
 
 class TableImage(NamedTuple):
@@ -30,3 +35,22 @@ class TableFactory(BaseType):
     def __init__(self, name: str, table_image: TableImage):
         super().__init__(name)
         self.table_image = table_image
+
+    def create_table(self) -> Table:
+        name = self.name
+        this = self.table_image.this
+        body = self.table_image.body
+        base = self.table_image.base_table
+
+        instance_table = self.table_image.table(
+            name=name,
+            body=body,
+        )
+
+        instance_table.this = This(self.table_image.this.value, instance_table)
+        instance_table.tree_variables = ScopeStack()
+        instance_table.tree_variables.set(Variable(this.value, instance_table.this))
+
+        return instance_table
+
+        instance_table.base_table = base

@@ -5,12 +5,13 @@ from core.exceptions import (
     InvalidType,
     UnknownType,
     NameAlreadyExist,
-    FieldNotDefine, InvalidSyntaxError,
+    FieldNotDefine, InvalidSyntaxError, InvalidExpression,
 )
 from core.extend.function_wrap import PyExtendWrapper
-from core.parse.base import MetaObject
+from core.parse.base import MetaObject, is_integer
 from core.parse.util.rpn import build_rpn_stack
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
+from core.types.atomic import String, Number
 from core.types.basetype import BaseType
 from core.types.checkers import CheckerSituation
 from core.types.conditions import Condition
@@ -42,7 +43,7 @@ from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
 from core.types.severitys import Severity
 from core.types.subjects import Subject
-from core.types.table import TableFactory
+from core.types.table import TableFactory, Table
 from util.console_worker import printer
 
 
@@ -133,6 +134,58 @@ class Compiler:
             elif isinstance(statement, CodeBlock):
                 self.check_code_body(statement.body)
 
+    def get_all_uses_names(self, obj_: Union[CodeBlock, BaseType]) -> list[tuple[BaseType, str]]:
+        names = []
+
+        if isinstance(obj_, AssignField):
+            return [(obj_, obj_.name)]
+
+        elif isinstance(obj_, (CodeBlock, Procedure)):
+            for nested_obj in obj_.body.commands:
+                names.extend(self.get_all_uses_names(nested_obj))
+
+        filtered_names = []
+
+        for item in names:
+            _, name_ = item
+
+            if isinstance(name_, str):
+                filtered_names.append(item)
+
+        return filtered_names
+
+    def body_compile(self, body: Body) -> None:
+        self.check_code_body(body)
+
+        for offset, command in enumerate(body.commands):
+            body.commands[offset] = self.execute_compile(command)
+
+    def procedure_compile(self, compiled_obj: Procedure) -> None:
+            self.body_compile(compiled_obj.body)
+
+            uses_names = self.get_all_uses_names(compiled_obj)
+            check_seq = set()
+
+            for obj, name in uses_names:
+                if isinstance(obj, AssignField):
+                    check_seq.add(name)
+                    continue
+
+                if name in compiled_obj.arguments_names:
+                    check_seq.add(name)
+                    continue
+
+                if name not in check_seq:
+                    msg = (
+                        f"Объект '{name}' используется до определения в процедуре '{compiled_obj.name}'. "
+                        f"Файл: {compiled_obj.meta_info.file}"
+                    )
+
+                    printer.logging(msg, level="ERROR")
+                    raise NameNotDefine(msg=msg)
+
+
+
     def execute_compile(self, meta: Union[BaseType, MetaObject, Compiled]) -> Union[str, BaseType, Compiled]:
         if isinstance(meta, Compiled):
             return meta
@@ -179,55 +232,12 @@ class Compiler:
 
 
         elif isinstance(compiled_obj, TableFactory):
-            self.check_code_body(compiled_obj.table_image.body)
+            self.body_compile(compiled_obj.table_image.body)
+
+            return compiled_obj
 
         elif isinstance(compiled_obj, Procedure):
-            self.check_code_body(compiled_obj.body)
-
-            def get_all_uses_names(obj_: Union[CodeBlock, BaseType]) -> list[tuple[BaseType, str]]:
-                names = []
-
-                if isinstance(obj_, AssignField):
-                    return [(obj_, obj_.name)]
-
-                elif isinstance(obj_, (CodeBlock, Procedure)):
-                    for nested_obj in obj_.body.commands:
-                        names.extend(get_all_uses_names(nested_obj))
-
-                filtered_names = []
-
-                for item in names:
-                    _, name_ = item
-
-                    if isinstance(name_, str):
-                        filtered_names.append(item)
-
-                return filtered_names
-
-
-            for offset, command in enumerate(compiled_obj.body.commands):
-                compiled_obj.body.commands[offset] = self.execute_compile(command)
-
-            uses_names = get_all_uses_names(compiled_obj)
-            check_seq = set()
-
-            for obj, name in uses_names:
-                if isinstance(obj, AssignField):
-                    check_seq.add(name)
-                    continue
-
-                if name in compiled_obj.arguments_names:
-                    check_seq.add(name)
-                    continue
-
-                if name not in check_seq:
-                    msg = (
-                        f"Объект '{name}' используется до определения в процедуре '{compiled_obj.name}'. "
-                        f"Файл: {compiled_obj.meta_info.file}"
-                    )
-
-                    printer.logging(msg, level="ERROR")
-                    raise NameNotDefine(msg=msg)
+            self.procedure_compile(compiled_obj)
 
             return compiled_obj
 
@@ -297,6 +307,39 @@ class Compiler:
                         f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {op}",
                         info=expr_.meta_info
                     )
+
+            for offset, op in enumerate(raw):
+                if op == Tokens.dot:
+                    if offset < len(raw) - 1:
+                        if is_integer(raw[offset - 1]) and is_integer(raw[offset + 1]):
+                            num = Number(float(f"{raw[offset - 1]}{Tokens.dot}{raw[offset + 1]}"))
+
+                            del raw[offset - 1: offset + 2]
+                            raw.insert(offset-1, num)
+
+            for offset, op in enumerate(raw):
+                if op == Tokens.quotation:
+                    step = offset
+                    res_op = ""
+
+                    while step < len(raw) - 1:
+                        step += 1
+                        next_op = raw[step]
+
+                        if next_op == Tokens.quotation:
+                            jump = step + 1
+                            break
+
+                        res_op += next_op
+                    else:
+                        raise InvalidExpression(
+                            f"В выражении: '{' '.join(raw)}' не хватает закрывающей кавычки: '{Tokens.quotation}'"
+                        )
+
+                    del raw[offset: jump]
+                    raw.insert(offset, String(res_op))
+
+                    continue
 
             for offset, op in enumerate(raw):
                 if not (op not in Tokens and op in self.compiled):
@@ -375,5 +418,9 @@ class Compiler:
 
             elif isinstance(compiled, TableFactory):
                 self.expr_compile(compiled.table_image.body)
+
+                for cmd in compiled.table_image.body.commands:
+                    if isinstance(cmd, Procedure):
+                        self.expr_compile(cmd.body)
 
         return Compiled(self.compiled)

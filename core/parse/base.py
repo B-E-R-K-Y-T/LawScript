@@ -1,5 +1,6 @@
 import re
 from abc import ABC, abstractmethod
+from enum import StrEnum
 from typing import Type, Sequence, Union
 
 from core.exceptions import InvalidSyntaxError
@@ -56,8 +57,8 @@ class Parser(ABC):
     def create_metadata(self, stop_num: int) -> MetaObject: ...
 
     @staticmethod
-    def parse_sequence_words_to_str(words: Sequence[str]):
-        return " ".join(words)
+    def parse_sequence_words_to_str(words: Sequence[str], sep: str = " "):
+        return sep.join(words)
 
     def execute_parse(self, parser: Type["Parser"], code: list[Line], num: int) -> Union[MetaObject, BaseType]:
         parser = parser()
@@ -74,7 +75,7 @@ class Parser(ABC):
     def previous_num_line(num_line: int) -> int:
         return num_line - 1
 
-    def separate_line_to_token(self, line: Line) -> list[str]:
+    def separate_line_to_token(self, line: Line) -> list[Union[str, StrEnum]]:
         self.__check_quotes(line)
         raw_line = line.raw_data
 
@@ -113,6 +114,7 @@ class Parser(ABC):
                         Tokens.left_bracket, Tokens.right_bracket, Tokens.comma, Tokens.star,
                         Tokens.left_square_bracket, Tokens.right_square_bracket, Tokens.equal,
                         Tokens.plus, Tokens.minus, Tokens.div, Tokens.quotation, Tokens.exponentiation,
+                        Tokens.dot
                 ):
                     if unknown_token:
                         tokens.append(unknown_token)

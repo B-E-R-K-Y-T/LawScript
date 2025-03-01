@@ -26,6 +26,7 @@ ALLOW_OPERATORS = {
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
+    Tokens.dot,
     ServiceTokens.unary_minus,
     ServiceTokens.unary_plus,
 }
@@ -107,6 +108,9 @@ def check_correct_expr(expr: list[str]):
             continue
 
         if op not in allowed_ops:
+            if isinstance(op, BaseAtomicType):
+                continue
+
             if not is_integer(op) and not is_float(op) and not is_identifier(op):
                 raise InvalidExpression(
                     f"В выражении: '{' '.join(expr)}' не может быть оператора: '{op}'"
@@ -153,6 +157,12 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
             continue
 
+        if op == Tokens.right_bracket:
+            previous_op = expr[offset - 1]
+
+            if previous_op == Tokens.left_bracket:
+                result_stack.append(ServiceTokens.void_arg)
+
         if op not in ALLOW_OPERATORS:
             if 0 <= offset < len(expr) - 1:
                 next_op = expr[offset + 1]
@@ -172,12 +182,6 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
             printer.logging(f"Открывающая скобка '{op}' добавлена в стек", level="INFO")
 
         elif op == Tokens.right_bracket:
-            previous_op = expr[offset - 1]
-
-            if previous_op == Tokens.left_bracket:
-                stack.append(ServiceTokens.void_arg)
-                continue
-
             while True:
                 if not stack:
                     raise InvalidExpression(
@@ -194,6 +198,9 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                             break
 
                         next_op = stack[-1]
+
+                        # if next_op == Tokens.dot:
+                        #     break
 
                         if next_op not in ALLOW_OPERATORS:
                             op_ = stack.pop()
@@ -212,6 +219,26 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 result_stack.append(op_)
                 printer.logging(f"Оператор '{op_}' добавлен в результирующий стек", level="INFO")
 
+        elif op == Tokens.dot:
+            while True:
+                if len(stack) == 0:
+                    stack.append(op)
+                    printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
+                    break
+
+                if stack[-1] in [Tokens.dot, Tokens.left_bracket, Tokens.right_bracket]:
+                    for _ in range(len(stack)):
+                        if stack[-1] in [
+                            Tokens.left_bracket, Tokens.right_bracket, Tokens.dot
+                        ]:
+                            break
+
+                        op_ = stack.pop(-1)
+                        result_stack.append(op_)
+
+                stack.append(op)
+                break
+
         elif op == Tokens.exponentiation:
             while True:
                 if len(stack) == 0:
@@ -219,7 +246,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
                     break
 
-                if stack[-1] in [Tokens.exponentiation, Tokens.left_bracket, Tokens.right_bracket]:
+                if stack[-1] in [Tokens.dot, Tokens.exponentiation, Tokens.left_bracket, Tokens.right_bracket]:
                     for _ in range(len(stack)):
                         if stack[-1] in [
                             Tokens.left_bracket, Tokens.right_bracket, Tokens.exponentiation
@@ -250,7 +277,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                 if op in [Tokens.plus, Tokens.minus]:
                     if stack[-1] in [
-                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.exponentiation,
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.exponentiation, Tokens.dot,
                         ServiceTokens.unary_minus, ServiceTokens.unary_plus,
                     ]:
                         for _ in range(len(stack)):
@@ -280,12 +307,12 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         break
 
                     elif stack[-1] in [
-                        Tokens.star, Tokens.div, Tokens.exponentiation,
+                        Tokens.star, Tokens.div, Tokens.exponentiation, Tokens.dot,
                         ServiceTokens.unary_minus, ServiceTokens.unary_plus
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] not in [
-                                Tokens.star, Tokens.div,
+                                Tokens.star, Tokens.div, Tokens.dot,
                                 Tokens.left_bracket, Tokens.right_bracket,
                             ]:
                                 break
@@ -418,11 +445,16 @@ def compile_rpn(expr):
             compiled_stack.append(op)
             continue
 
+        if isinstance(op, String):
+            compiled_stack.append(op)
+            continue
+
+        if isinstance(op, Number):
+            compiled_stack.append(op)
+            continue
+
         if is_integer(op):
             compiled_stack.append(Number(int(op)))
-            continue
-        elif is_float(op):
-            compiled_stack.append(Number(float(op)))
             continue
 
         if op == Tokens.true:
@@ -430,27 +462,6 @@ def compile_rpn(expr):
             continue
         elif op == Tokens.false:
             compiled_stack.append(Boolean(False))
-            continue
-
-        if op == Tokens.quotation:
-            step = offset
-            res_op = ""
-
-            while step < len(expr)-1:
-                step += 1
-                next_op = expr[step]
-
-                if next_op == Tokens.quotation:
-                    jump = step + 1
-                    break
-
-                res_op += next_op
-            else:
-                raise InvalidExpression(
-                    f"В выражении: '{' '.join(expr)}' не хватает закрывающей кавычки: '{Tokens.quotation}'"
-                )
-
-            compiled_stack.append(String(res_op))
             continue
 
         compiled_stack.append(Operator(op))
