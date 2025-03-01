@@ -11,7 +11,8 @@ from core.parse.define_object import DefineObjectParser
 from core.parse.define_law import DefineLawParser
 from core.parse.define_rule import DefineRuleParser
 from core.parse.define_subject import DefineSubjectParser
-from core.parse.procedure.define_procedure import DefineProcedureParser
+from core.parse.procedure.define import DefineProcedureParser
+from core.parse.table.define import DefineTableParser
 from core.parse.type_sanction import TypeSanctionParser
 from core.tokens import Tokens
 from core.types.line import Line
@@ -54,6 +55,8 @@ class AbstractSyntaxTreeBuilder:
             match line.split():
                 case [Tokens.define, Tokens.of_sanction, *_]:
                     self.create_meta(TypeSanctionParser, num)
+                case [Tokens.define, Tokens.a_table, *_]:
+                    self.create_meta(DefineTableParser, num)
                 case [Tokens.define, Tokens.a_procedure, *_]:
                     self.create_meta(DefineProcedureParser, num)
                 case [Tokens.create, Tokens.document, *_]:

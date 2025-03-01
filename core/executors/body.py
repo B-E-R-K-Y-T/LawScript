@@ -8,6 +8,7 @@ from core.types.basetype import BaseAtomicType
 from core.types.procedure import Print, Return, AssignField, Body, When, Loop, Expression, Procedure, Continue, \
     CodeBlock, Break, AssignOverrideVariable, While
 from core.executors.base import Executor
+from core.types.table import TableFactory
 from core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
 from util.console_worker import printer
 from core.extend.function_wrap import PyExtendWrapper
@@ -33,6 +34,8 @@ class BodyExecutor(Executor):
             if isinstance(var, Procedure):
                 self.tree_variables.set(Variable(var.name, var))
             elif isinstance(var, PyExtendWrapper):
+                self.tree_variables.set(Variable(var.name, var))
+            elif isinstance(var, TableFactory):
                 self.tree_variables.set(Variable(var.name, var))
 
     def execute(self) -> Union[BaseAtomicType, Continue, Break]:

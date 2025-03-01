@@ -13,6 +13,7 @@ class Body(BaseType):
 
         self.commands = commands
 
+
 class CodeBlock(BaseType):
     def __init__(self, name: str, body: Body):
         super().__init__(name)
@@ -44,7 +45,6 @@ class Expression(BaseType):
         self.meta_info = info_line
         self.operations: Optional[list[Union[Operator, BaseAtomicType]]] = None
         self.raw_operations = operations
-
 
 
 class AssignOverrideVariable(BaseType):

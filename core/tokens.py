@@ -61,6 +61,7 @@ class Tokens(StrEnum):
     data = "ДАННЫЕ"
     procedure = "ПРОЦЕДУРА"
     a_procedure = "ПРОЦЕДУРУ"
+    extends = "РАСШИРИТЬ"
     table = "ТАБЛИЦА"
     a_table = "ТАБЛИЦУ"
     assign = "ЗАДАТЬ"

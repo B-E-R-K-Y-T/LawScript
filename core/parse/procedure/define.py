@@ -2,7 +2,7 @@ from typing import Optional
 
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import MetaObject, Image, Parser
-from core.parse.procedure.body import BodyParser
+from core.parse.procedure.body import ProcedureBodyParser
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.atomic import Void
 from core.types.line import Line, Info
@@ -85,7 +85,7 @@ class DefineProcedureParser(Parser):
                             )
 
                     self.procedure_name = name_condition
-                    self.body = self.execute_parse(BodyParser, body, self.next_num_line(num))
+                    self.body = self.execute_parse(ProcedureBodyParser, body, self.next_num_line(num))
                     self.jump = self.previous_num_line(self.jump)
                     printer.logging(
                         f"Добавлена процедура: name={self.procedure_name}, arguments_name={self.arguments_name}",

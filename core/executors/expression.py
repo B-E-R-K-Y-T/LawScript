@@ -15,6 +15,7 @@ from core.types.atomic import Void, Boolean
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.operation import Operator
 from core.types.procedure import Expression, Procedure, LinkedProcedure
+from core.types.table import TableFactory, Table
 from core.types.variable import ScopeStack, traverse_scope, Variable
 from core.extend.function_wrap import PyExtendWrapper
 
@@ -85,6 +86,10 @@ class ExpressionExecutor(Executor):
                     not isinstance(operation, PyExtendWrapper)
                     and
                     not isinstance(operation, LinkedProcedure)
+                    and
+                    not isinstance(operation, TableFactory)
+                    and
+                    not isinstance(operation, Table)
             ):
                 if operation.name not in ALL_TOKENS:
                     raise NameNotDefine(
@@ -190,6 +195,33 @@ class ExpressionExecutor(Executor):
 
             elif isinstance(operation, PyExtendWrapper):
                 self.call_py_extend_procedure_evaluate(operation, evaluate_stack)
+                continue
+
+            elif isinstance(operation, TableFactory):
+                if not evaluate_stack:
+                    evaluate_stack.append(operation)
+                    continue
+
+                name = operation.name
+                this = operation.table_image.this
+                body = operation.table_image.body
+                base = operation.table_image.base_table
+
+                instance_table = operation.table_image.table(
+                    name=name,
+                    body=body,
+                )
+
+                instance_table.this = instance_table
+                instance_table.tree_variables = ScopeStack()
+                instance_table.tree_variables.set(Variable(this.value, instance_table.this))
+
+                instance_table.base_table = base
+
+
+                evaluate_stack.pop(-1)
+                evaluate_stack.append(instance_table)
+
                 continue
 
             if operation.name not in ALLOW_OPERATORS:

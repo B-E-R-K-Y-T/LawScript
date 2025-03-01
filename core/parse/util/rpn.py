@@ -8,6 +8,7 @@ from core.types.basetype import BaseAtomicType
 from core.types.line import Info
 from core.types.operation import Operator
 from core.types.procedure import LinkedProcedure
+from core.types.table import TableFactory
 from util.console_worker import printer
 
 ALLOW_OPERATORS = {
@@ -410,6 +411,10 @@ def compile_rpn(expr):
             continue
 
         if isinstance(op, LinkedProcedure):
+            compiled_stack.append(op)
+            continue
+
+        if isinstance(op, TableFactory):
             compiled_stack.append(op)
             continue
 

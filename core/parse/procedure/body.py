@@ -1,7 +1,5 @@
 from typing import Union
 
-from numba.core.target_extension import target_override
-
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import MetaObject, Image, Parser, is_identifier
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
@@ -29,7 +27,7 @@ class DefineBodyMetaObject(MetaObject):
         )
 
 
-class BodyParser(Parser):
+class ProcedureBodyParser(Parser):
     def __init__(self):
         super().__init__()
         self.info = None
@@ -74,7 +72,7 @@ class BodyParser(Parser):
                     if not isinstance(self.commands[len(self.commands) - 1], When):
                         raise InvalidSyntaxError(err_msg, line=line, info=self.info)
 
-                    self.commands.append(Else(str(), self.execute_parse(BodyParser, body, self.next_num_line(num))))
+                    self.commands.append(Else(str(), self.execute_parse(ProcedureBodyParser, body, self.next_num_line(num))))
                     printer.logging("Добавлена команда Else", level="INFO")
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
                     if not is_identifier(name):
@@ -94,11 +92,11 @@ class BodyParser(Parser):
                     printer.logging(f"Добавлена команда AssignField с именем: {name} и выражением: {expr}",
                                     level="INFO")
                 case [Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
-                    when_body = self.execute_parse(BodyParser, body, self.next_num_line(num))
+                    when_body = self.execute_parse(ProcedureBodyParser, body, self.next_num_line(num))
                     else_ = None
 
                     if body[self.jump].startswith(Tokens.else_):
-                        body_else_ = self.execute_parse(BodyParser, body, self.next_num_line(self.jump))
+                        body_else_ = self.execute_parse(ProcedureBodyParser, body, self.next_num_line(self.jump))
                         else_ = Else(str(), body_else_)
 
                     when = When(
@@ -112,7 +110,7 @@ class BodyParser(Parser):
                     self.commands.append(
                         While(
                             str(), Expression(str(), expr, self.info),
-                            self.execute_parse(BodyParser, body, self.next_num_line(num))
+                            self.execute_parse(ProcedureBodyParser, body, self.next_num_line(num))
                         )
                     )
                     printer.logging("Добавлена команда While", level="INFO")
@@ -133,7 +131,7 @@ class BodyParser(Parser):
 
                     loop = Loop(
                         str(), Expression(str(), start_expr, self.info), Expression(str(), end_expr, self.info),
-                        self.execute_parse(BodyParser, body, self.next_num_line(num))
+                        self.execute_parse(ProcedureBodyParser, body, self.next_num_line(num))
                     )
                     loop.set_info(self.info)
 

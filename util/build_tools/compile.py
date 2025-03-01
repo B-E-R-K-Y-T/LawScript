@@ -42,6 +42,7 @@ from core.types.sanction_types import SanctionType
 from core.types.sanctions import Sanction
 from core.types.severitys import Severity
 from core.types.subjects import Subject
+from core.types.table import TableFactory
 from util.console_worker import printer
 
 
@@ -175,6 +176,10 @@ class Compiler:
 
         elif isinstance(compiled_obj, Subject):
             return compiled_obj
+
+
+        elif isinstance(compiled_obj, TableFactory):
+            self.check_code_body(compiled_obj.table_image.body)
 
         elif isinstance(compiled_obj, Procedure):
             self.check_code_body(compiled_obj.body)
@@ -367,5 +372,8 @@ class Compiler:
         for name, compiled in compiled_without_build_modules.items():
             if isinstance(compiled, Procedure):
                 self.expr_compile(compiled.body)
+
+            elif isinstance(compiled, TableFactory):
+                self.expr_compile(compiled.table_image.body)
 
         return Compiled(self.compiled)
