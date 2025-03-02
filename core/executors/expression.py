@@ -18,7 +18,7 @@ from core.types.atomic import Void, Boolean
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.operation import Operator
 from core.types.procedure import Expression, Procedure, LinkedProcedure, AssignField
-from core.types.table import TableFactory, Table, This
+from core.types.table import TableFactory, Table, This, Field
 from core.types.variable import ScopeStack, traverse_scope, Variable
 from core.extend.function_wrap import PyExtendWrapper
 
@@ -110,9 +110,6 @@ class ExpressionExecutor(Executor):
         call_func_stack_builder.push(func_name=procedure.name, meta_info=self.expression.meta_info)
         operand: Union[BaseAtomicType, Operator] = evaluate_stack.pop(-1)
 
-        if procedure.tree_variables is None:
-            procedure.tree_variables = ScopeStack()
-
         if not isinstance(operand, Operator):
             if not procedure.arguments_names:
                 raise InvalidExpression(
@@ -164,18 +161,22 @@ class ExpressionExecutor(Executor):
         call_func_stack_builder.pop()
 
     def table_evaluate(self, table: Table, operand: Operator, evaluate_stack: list[Union[BaseAtomicType, Table]]):
-        for cmd in table.body.commands:
-            if cmd.name == operand.operator:
-                if isinstance(cmd, Procedure):
-                    self.call_procedure_evaluate(cmd, evaluate_stack)
+        for variable in traverse_scope(table.tree_variables.scopes[-1]):
+            if variable.name == operand.name:
+                if isinstance(variable.value, Procedure):
+                    variable.value.tree_variables = table.tree_variables
+                    variable.value.tree_variables.set(Variable(table.this.name, table.this.link))
+
+                    self.call_procedure_evaluate(variable.value, evaluate_stack)
                     break
-                elif isinstance(cmd, AssignField):
-                    executor = ExpressionExecutor(cmd.expression, self.tree_variable, self.compiled)
-                    evaluate_stack.append(executor.execute())
+                elif isinstance(variable.value, Field):
+                    field = table.tree_variables.get(variable.name)
+
+                    evaluate_stack.append(field.value)
                     break
         else:
             raise InvalidExpression(
-                f"В таблице '{table.name}' отсутствует поле '{operand.operator}'",
+                f"В таблице '{table.name}' отсутствует поле '{operand.name}'",
                 info=self.expression.meta_info
             )
 
@@ -190,6 +191,8 @@ class ExpressionExecutor(Executor):
         for offset, operation in enumerate(prepared_operations):
             if isinstance(operation, Procedure):
                 try:
+                    operation.tree_variables = ScopeStack()
+
                     self.call_procedure_evaluate(operation, evaluate_stack)
                 except RecursionError:
                     raise MaxRecursionError(
@@ -204,6 +207,10 @@ class ExpressionExecutor(Executor):
                 continue
 
             elif isinstance(operation, Table):
+                evaluate_stack.append(operation)
+                continue
+
+            elif isinstance(operation, Field):
                 evaluate_stack.append(operation)
                 continue
 
@@ -232,9 +239,15 @@ class ExpressionExecutor(Executor):
 
             if operation.operator == Tokens.dot:
                 operands = self.get_operands(evaluate_stack)
+
                 if evaluate_stack:
-                    table: Table = evaluate_stack.pop(-1)
-                    evaluate_stack.append(operands.left)
+                    if isinstance(evaluate_stack[-1], Table):
+                        table: Table = evaluate_stack.pop(-1)
+                        evaluate_stack.append(operands.left)
+                    elif operands.left.name == ServiceTokens.void_arg:
+                        table = self.tree_variable.get(evaluate_stack.pop(-1).name).value
+                    else:
+                        table = self.tree_variable.get(operands.left.name).value
                 else:
                     table = operands.left
 

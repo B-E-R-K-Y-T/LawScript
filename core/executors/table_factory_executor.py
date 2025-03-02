@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from core.executors.base import Executor
 from core.types.procedure import Procedure, AssignField
-from core.types.table import TableFactory, Table
+from core.types.table import TableFactory, Table, Field
 from core.types.variable import Variable
 
 if TYPE_CHECKING:
@@ -27,4 +27,5 @@ class TableFactoryExecutor(Executor):
                 self.instance_table.tree_variables.set(Variable(cmd.name, cmd))
             elif isinstance(cmd, AssignField):
                 executor = _get_expression_executor(cmd.expression, self.instance_table.tree_variables, self.compiled)
-                self.instance_table.tree_variables.set(Variable(cmd.name, executor.execute()))
+                result = executor.execute()
+                self.instance_table.tree_variables.set(Variable(cmd.name, Field(result, cmd.name)))
