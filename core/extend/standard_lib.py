@@ -95,6 +95,20 @@ class FuncWa(PyExtendWrapper):
         return Number(int(args[0]) + 1)
 
 
+@builder.collect(func_name='random')
+class Random(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = True
+        self.count_args = -1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from core.types.atomic import Number
+        from random import random
+
+        return Number(float(random()))
+
+
 if __name__ == '__main__':
     builder.build_python_extend("lib")
     print(builder.wrappers[0].call([Number(1)]))

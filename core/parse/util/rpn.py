@@ -229,7 +229,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 if stack[-1] in [Tokens.dot, Tokens.left_bracket, Tokens.right_bracket]:
                     for _ in range(len(stack)):
                         if stack[-1] in [
-                            Tokens.left_bracket, Tokens.right_bracket, Tokens.dot
+                            Tokens.left_bracket, Tokens.right_bracket, # Tokens.dot
                         ]:
                             break
 

@@ -47,14 +47,15 @@ ALLOW_OPERATORS = {
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
+    Tokens.dot,
     ServiceTokens.unary_minus,
     ServiceTokens.unary_plus,
 }
 
 
 class Operands(NamedTuple):
-    left: BaseAtomicType
-    right: Optional[BaseAtomicType]
+    left: Union[BaseAtomicType, Operator]
+    right: Optional[Union[BaseAtomicType, Operator]]
     atomic_type: Type[BaseAtomicType]
 
 
@@ -68,10 +69,18 @@ class ExpressionExecutor(Executor):
     def prepare_operations(self) -> list[Union[BaseAtomicType, Operator]]:
         new_expression_stack = []
 
-        for operation in self.expression.operations:
+        for offset, operation in enumerate(self.expression.operations):
             if isinstance(operation, LinkedProcedure):
                 new_expression_stack.append(self.tree_variable.get(operation.name).value)
                 continue
+
+            if offset > 0:
+                op = self.expression.operations[offset - 1]
+
+                if isinstance(op, Operator):
+                    if self.expression.operations[offset - 1].operator == Tokens.dot:
+                        new_expression_stack.append(operation)
+                        continue
 
             for variable in traverse_scope(self.tree_variable.scopes[-1]):
                 if operation.name == variable.name:
@@ -80,30 +89,10 @@ class ExpressionExecutor(Executor):
             else:
                 new_expression_stack.append(operation)
 
-        #
-        # for operation in new_expression_stack:
-        #     if (
-        #             not isinstance(operation, BaseAtomicType)
-        #             and
-        #             not isinstance(operation, Procedure)
-        #             and
-        #             not isinstance(operation, PyExtendWrapper)
-        #             and
-        #             not isinstance(operation, LinkedProcedure)
-        #             and
-        #             not isinstance(operation, TableFactory)
-        #             and
-        #             not isinstance(operation, Table)
-        #     ):
-        #         if operation.name not in ALL_TOKENS:
-        #             raise NameNotDefine(
-        #                 f"Имя '{operation.name}' не определено."
-        #             )
-
         return new_expression_stack
 
     @staticmethod
-    def get_operands(execute_stack: list[BaseAtomicType]) -> Operands:
+    def get_operands(execute_stack: list[Union[BaseAtomicType, BaseType]]) -> Operands:
         l, r = execute_stack.pop(-2), execute_stack.pop(-1)
         atomic_type = type(l)
 
@@ -174,6 +163,22 @@ class ExpressionExecutor(Executor):
         evaluate_stack.append(result)
         call_func_stack_builder.pop()
 
+    def table_evaluate(self, table: Table, operand: Operator, evaluate_stack: list[Union[BaseAtomicType, Table]]):
+        for cmd in table.body.commands:
+            if cmd.name == operand.operator:
+                if isinstance(cmd, Procedure):
+                    self.call_procedure_evaluate(cmd, evaluate_stack)
+                    break
+                elif isinstance(cmd, AssignField):
+                    executor = ExpressionExecutor(cmd.expression, self.tree_variable, self.compiled)
+                    evaluate_stack.append(executor.execute())
+                    break
+        else:
+            raise InvalidExpression(
+                f"В таблице '{table.name}' отсутствует поле '{operand.operator}'",
+                info=self.expression.meta_info
+            )
+
     def evaluate(self) -> BaseAtomicType:
         try:
             prepared_operations: list[Union[BaseAtomicType, Operator]] = self.prepare_operations()
@@ -225,7 +230,17 @@ class ExpressionExecutor(Executor):
                 evaluate_stack.append(operation)
                 continue
 
-            if operation.operator == Tokens.minus:
+            if operation.operator == Tokens.dot:
+                operands = self.get_operands(evaluate_stack)
+                if evaluate_stack:
+                    table: Table = evaluate_stack.pop(-1)
+                    evaluate_stack.append(operands.left)
+                else:
+                    table = operands.left
+
+                self.table_evaluate(table, operands.right, evaluate_stack)
+
+            elif operation.operator == Tokens.minus:
                 if len(evaluate_stack) == 1:
                     operand = evaluate_stack.pop(-1)
                     atomic_type = type(operand)
@@ -312,6 +327,11 @@ class ExpressionExecutor(Executor):
             )
 
         if evaluate_stack:
+            res = evaluate_stack[0]
+
+            if isinstance(res, Operator):
+                return self.tree_variable.get(res.operator).value
+
             return evaluate_stack[0]
 
         return Void()

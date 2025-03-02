@@ -1,3 +1,4 @@
+from copy import copy, deepcopy
 from typing import Optional, Type
 
 from typing_extensions import NamedTuple
@@ -38,8 +39,8 @@ class TableFactory(BaseType):
 
     def create_table(self) -> Table:
         name = self.name
-        this = self.table_image.this
-        body = self.table_image.body
+        this = deepcopy(self.table_image.this)
+        body = deepcopy(self.table_image.body)
         base = self.table_image.base_table
 
         instance_table = self.table_image.table(
@@ -50,7 +51,6 @@ class TableFactory(BaseType):
         instance_table.this = This(self.table_image.this.value, instance_table)
         instance_table.tree_variables = ScopeStack()
         instance_table.tree_variables.set(Variable(this.value, instance_table.this))
+        instance_table.base_table = base
 
         return instance_table
-
-        instance_table.base_table = base
