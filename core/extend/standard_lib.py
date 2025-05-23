@@ -89,10 +89,16 @@ class ToString(PyExtendWrapper):
 
 @builder.collect(func_name='func_wa')
 class FuncWa(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 2
+
     def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from core.types.atomic import Number
+        from core.types.atomic import Void
         args = self.parse_args(args)
-        return Number(int(args[0]) + 1)
+        print(args)
+        return Void()
 
 
 if __name__ == '__main__':

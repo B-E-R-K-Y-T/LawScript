@@ -110,24 +110,30 @@ class ExpressionExecutor(Executor):
             return
 
         call_func_stack_builder.push(func_name=procedure.name, meta_info=self.expression.meta_info)
-        operand: Union[BaseAtomicType, Operator] = evaluate_stack.pop(-1)
-
         procedure.tree_variables = ScopeStack()
 
-        if not isinstance(operand, Operator):
-            if not procedure.arguments_names:
+        for argument in reversed(procedure.arguments_names):
+            operand: Union[BaseAtomicType, Operator] = evaluate_stack.pop(-1)
+
+            if evaluate_stack:
+                if isinstance(evaluate_stack[-1], Operator):
+                    if evaluate_stack[-1].operator == Tokens.comma:
+                        evaluate_stack.pop(-1)
+
+            if not isinstance(operand, Operator):
+                if not procedure.arguments_names:
+                    raise InvalidExpression(
+                        f"Функция {procedure.name} не принимает аргументов.",
+                        info=self.expression.meta_info
+                    )
+
+                procedure.tree_variables.set(Variable(argument, operand))
+
+            if procedure.arguments_names and isinstance(operand, Operator):
                 raise InvalidExpression(
-                    f"Функция {procedure.name} не принимает аргументов.",
+                    f"Функция {procedure.name} принимает '{len(procedure.arguments_names)}' аргумента(ов)",
                     info=self.expression.meta_info
                 )
-
-            procedure.tree_variables.set(Variable(procedure.arguments_names[0], operand))
-
-        if procedure.arguments_names and isinstance(operand, Operator):
-            raise InvalidExpression(
-                f"Функция {procedure.name} принимает '{len(procedure.arguments_names)}' аргумента(ов)",
-                info=self.expression.meta_info
-            )
 
         executor = self.procedure_executor(procedure, self.compiled)
         evaluate_stack.append(executor.execute())
@@ -142,12 +148,28 @@ class ExpressionExecutor(Executor):
             return
 
         call_func_stack_builder.push(func_name=py_extend_procedure.name, meta_info=self.expression.meta_info)
-        operand = evaluate_stack.pop(-1)
 
-        if isinstance(operand, Operator) and operand.operator == ServiceTokens.void_arg:
-            args = None
-        else:
-            args = [operand]
+        args = None
+
+        for _ in range(py_extend_procedure.count_args):
+            operand = evaluate_stack.pop(-1)
+
+            if evaluate_stack:
+                if isinstance(evaluate_stack[-1], Operator):
+                    if evaluate_stack[-1].operator == Tokens.comma:
+                        evaluate_stack.pop(-1)
+
+            if isinstance(operand, Operator) and operand.operator == ServiceTokens.void_arg:
+                args = None
+                break
+            else:
+                if args is None:
+                    args = []
+
+                args.append(operand)
+
+        if args is not None:
+            args = list(reversed(args))
 
         try:
             py_extend_procedure.check_args(args)

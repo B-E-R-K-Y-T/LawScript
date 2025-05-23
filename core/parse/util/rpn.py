@@ -25,6 +25,7 @@ ALLOW_OPERATORS = {
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
+    Tokens.comma,
     ServiceTokens.unary_minus,
     ServiceTokens.unary_plus,
 }
@@ -210,6 +211,26 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                 result_stack.append(op_)
                 printer.logging(f"Оператор '{op_}' добавлен в результирующий стек", level="INFO")
+
+        elif op == Tokens.comma:
+            while True:
+                if len(stack) == 0:
+                    stack.append(op)
+                    printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
+                    break
+
+                if stack[-1] not in [Tokens.left_bracket, Tokens.right_bracket]:
+                    for _ in range(len(stack)):
+                        if stack[-1] in [
+                            Tokens.left_bracket, Tokens.right_bracket, Tokens.comma,
+                        ]:
+                            break
+
+                        op_ = stack.pop(-1)
+                        result_stack.append(op_)
+
+                result_stack.append(op)
+                break
 
         elif op == Tokens.exponentiation:
             while True:
