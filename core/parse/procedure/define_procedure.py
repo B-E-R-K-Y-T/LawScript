@@ -72,6 +72,7 @@ class DefineProcedureParser(Parser):
             match line:
                 case [Tokens.define, Tokens.a_procedure, name_condition, Tokens.left_bracket, *arguments, Tokens.right_bracket, Tokens.left_bracket]:
                     arguments = "".join(arguments).split(Tokens.comma)
+
                     if not all(arguments):
                         self.arguments_name = []
                     else:
@@ -87,9 +88,11 @@ class DefineProcedureParser(Parser):
                     self.procedure_name = name_condition
                     self.body = self.execute_parse(BodyParser, body, self.next_num_line(num))
                     self.jump = self.previous_num_line(self.jump)
+
                     printer.logging(
                         f"Добавлена процедура: name={self.procedure_name}, arguments_name={self.arguments_name}",
-                        level="INFO")
+                        level="INFO"
+                    )
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг процедуры завершен: 'right_bracket' найден", level="INFO")
                     return num
