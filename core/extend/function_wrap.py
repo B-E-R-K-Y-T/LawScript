@@ -38,6 +38,9 @@ class PyExtendWrapper(BaseType, ABC):
         result = []
 
         for arg in args:
+            if not isinstance(arg, BaseAtomicType):
+                raise ArgumentError(f"Аргумент '{arg}' не является экземпляром типа: '{BaseAtomicType.__name__}'")
+
             result.append(arg.value)
 
         return result

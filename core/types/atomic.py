@@ -13,6 +13,9 @@ class Number(BaseAtomicType):
     def __init__(self, value: Union[float, int]):
         super().__init__(value)
 
+    def is_int(self) -> bool:
+        return isinstance(self.value, int)
+
     def __str__(self) -> str:
         if isinstance(self.value, float):
             if self.value == float("inf"):
@@ -32,6 +35,48 @@ class Boolean(BaseAtomicType):
             return Tokens.true
         else:
             return Tokens.false
+
+
+class Array(BaseAtomicType):
+    def __init__(self, value: list[BaseAtomicType]):
+        super().__init__(value)
+
+    def append(self, obj: BaseAtomicType):
+        self.value.append(obj)
+
+    def remove(self, idx: Number):
+        del self.value[idx.value]
+
+    def index(self, idx: Number):
+        return self.value[idx.value]
+
+    def pop(self, idx: Number):
+        return self.value.pop(idx.value)
+
+    def len(self) -> Number:
+        return Number(len(self.value))
+
+    def __len__(self):
+        return len(self.value)
+
+    def __str__(self):
+        result = ""
+
+        for value in self.value:
+            result += ", "
+
+            if isinstance(value, String):
+                result += f"\"{value}\""
+            else:
+                result += str(value)
+
+        return "[" + result[2:] + "]"
+
+    def __setitem__(self, key, value):
+        self.value[key] = value
+
+    def __getitem__(self, item):
+        return self.value[item]
 
 
 class Void(BaseAtomicType):

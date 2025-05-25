@@ -140,3 +140,17 @@ class ArgumentError(BaseError):
             msg = "Ошибка аргумента"
 
         super().__init__(msg, info=info)
+
+
+class ErrorIndex(BaseError):
+    def __init__(self, msg: Optional[str] = None, index: Optional[int] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Некорректный индекс"
+
+        if index is not None:
+            msg = f"Ошибка: '{msg}' Индекс: '{index}'"
+
+        if info is not None:
+            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+
+        super().__init__(msg)

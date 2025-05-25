@@ -46,7 +46,7 @@ def check_correct_expr(expr: list[str]):
             filtered_expr.append(op)
 
     if filtered_expr:
-        if filtered_expr[-1] in ALLOW_OPERATORS - {Tokens.left_bracket, Tokens.right_bracket}:
+        if filtered_expr[-1] in ALLOW_OPERATORS - {Tokens.left_bracket, Tokens.right_bracket, Tokens.true, Tokens.false}:
             raise InvalidExpression(
                 f"Выражение: {' '.join(expr)} не может заканчиваться на: '{filtered_expr[-1]}'"
             )
@@ -112,6 +112,18 @@ def check_correct_expr(expr: list[str]):
                     f"В выражении: '{' '.join(expr)}' не может быть оператора: '{op}'"
                 )
 
+    _count_double_comma = 0
+
+    for op in filtered_expr:
+        if _count_double_comma > 1:
+            raise InvalidExpression(f"В выражении: {' '.join(expr)} не может быть подряд больше одной запятой")
+
+        if op == Tokens.comma:
+            _count_double_comma += 1
+        else:
+            _count_double_comma = 0
+
+
 def detect_unary(expr: list[str], offset, op, type_op) -> bool:
     aw_without_right_bracket = ALLOW_OPERATORS - {Tokens.right_bracket}
     left_op = expr[offset - 1] in aw_without_right_bracket
@@ -168,6 +180,9 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
             continue
 
         if op == Tokens.left_bracket:
+            if len(expr) > 2 and offset != 0 and is_identifier(expr[offset - 1]) and expr[offset - 1] not in {*ALLOW_OPERATORS, Tokens.true, Tokens.false}:
+                    result_stack.append(ServiceTokens.arg_separator)
+
             stack.append(op)
             printer.logging(f"Открывающая скобка '{op}' добавлена в стек", level="INFO")
 
@@ -176,7 +191,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
             if previous_op == Tokens.left_bracket:
                 stack.append(ServiceTokens.void_arg)
-                continue
+                result_stack.pop(-1)
 
             while True:
                 if not stack:
@@ -459,6 +474,9 @@ def compile_rpn(expr):
                 if next_op == Tokens.quotation:
                     jump = step + 1
                     break
+
+                if isinstance(next_op, LinkedProcedure):
+                    next_op = next_op.func.name
 
                 res_op += next_op
             else:

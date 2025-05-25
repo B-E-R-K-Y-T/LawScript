@@ -112,28 +112,48 @@ class ExpressionExecutor(Executor):
         call_func_stack_builder.push(func_name=procedure.name, meta_info=self.expression.meta_info)
         procedure.tree_variables = ScopeStack()
 
-        for argument in reversed(procedure.arguments_names):
+        rev_arguments_names = list(reversed(procedure.arguments_names))
+        arg_position = 0
+        count_args = 0
+
+        while True:
+            if not evaluate_stack:
+                break
+
             operand: Union[BaseAtomicType, Operator] = evaluate_stack.pop(-1)
+
+            if isinstance(operand, Operator):
+                if operand.operator == ServiceTokens.arg_separator:
+                    break
+
+                if operand.operator == ServiceTokens.void_arg:
+                    break
 
             if evaluate_stack:
                 if isinstance(evaluate_stack[-1], Operator):
                     if evaluate_stack[-1].operator == Tokens.comma:
                         evaluate_stack.pop(-1)
 
+            count_args += 1
+
             if not isinstance(operand, Operator):
+                if rev_arguments_names and arg_position < len(rev_arguments_names):
+                    argument = rev_arguments_names[arg_position]
+                    procedure.tree_variables.set(Variable(argument, operand))
+                    arg_position += 1
+
                 if not procedure.arguments_names:
                     raise InvalidExpression(
                         f"Функция {procedure.name} не принимает аргументов.",
                         info=self.expression.meta_info
                     )
 
-                procedure.tree_variables.set(Variable(argument, operand))
-
-            if procedure.arguments_names and isinstance(operand, Operator):
-                raise InvalidExpression(
-                    f"Функция {procedure.name} принимает '{len(procedure.arguments_names)}' аргумента(ов)",
-                    info=self.expression.meta_info
-                )
+        if count_args != len(procedure.arguments_names):
+            raise InvalidExpression(
+                f"Функция {procedure.name} принимает '{len(procedure.arguments_names)}' "
+                f"аргумента(ов), но передано: '{count_args}'",
+                info=self.expression.meta_info
+            )
 
         executor = self.procedure_executor(procedure, self.compiled)
         evaluate_stack.append(executor.execute())
@@ -151,8 +171,15 @@ class ExpressionExecutor(Executor):
 
         args = None
 
-        for _ in range(py_extend_procedure.count_args):
+        while True:
+            if not evaluate_stack:
+                break
+
             operand = evaluate_stack.pop(-1)
+
+            if isinstance(operand, Operator):
+                if operand.operator == ServiceTokens.arg_separator:
+                    break
 
             if evaluate_stack:
                 if isinstance(evaluate_stack[-1], Operator):
