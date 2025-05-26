@@ -115,7 +115,7 @@ class ArraySetItem(PyExtendWrapper):
         return Void()
 
 
-@builder.collect(func_name='длинна_массива')
+@builder.collect(func_name='длина_массива')
 class ArrayLen(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
