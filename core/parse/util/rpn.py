@@ -112,17 +112,26 @@ def check_correct_expr(expr: list[str]):
                     f"В выражении: '{' '.join(expr)}' не может быть оператора: '{op}'"
                 )
 
-    _count_double_comma = 0
+    count_double_comma = 0
 
     for op in filtered_expr:
-        if _count_double_comma > 1:
+        if count_double_comma > 1:
             raise InvalidExpression(f"В выражении: {' '.join(expr)} не может быть подряд больше одной запятой")
 
         if op == Tokens.comma:
-            _count_double_comma += 1
+            count_double_comma += 1
         else:
-            _count_double_comma = 0
+            count_double_comma = 0
 
+def prepare_expr(expr: list[str]) -> None:
+    for offset, op in enumerate(expr):
+        if len(expr) - 1 > offset >= 0 and op == Tokens.not_:
+            next_op = expr[offset + 1]
+
+            if next_op == Tokens.bool_equal:
+                expr[offset:offset+2] = [Tokens.bool_not_equal]
+                printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[offset]}'", level="INFO")
+                continue
 
 def detect_unary(expr: list[str], offset, op, type_op) -> bool:
     aw_without_right_bracket = ALLOW_OPERATORS - {Tokens.right_bracket}
@@ -140,6 +149,7 @@ def build_rpn_stack(expr: list[str], meta_info: Info) -> list[Union[Operator, Ba
 
 def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
     check_correct_expr(expr)
+    prepare_expr(expr)
 
     printer.logging(f"Начало построения RPN-стека из выражения: {expr}", level="INFO")
 
