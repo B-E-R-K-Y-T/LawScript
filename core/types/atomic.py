@@ -9,6 +9,17 @@ class String(BaseAtomicType):
         super().__init__(value)
 
 
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+
+    def __eq__(self, other):
+        if isinstance(other, String):
+            return self.value == other.value
+
+        return False
+
+
 class Number(BaseAtomicType):
     def __init__(self, value: Union[float, int]):
         super().__init__(value)
@@ -56,6 +67,9 @@ class Array(BaseAtomicType):
     def len(self) -> Number:
         return Number(len(self.value))
 
+    def __contains__(self, idx: Number):
+        return idx in self.value
+
     def __len__(self):
         return len(self.value)
 
@@ -77,6 +91,48 @@ class Array(BaseAtomicType):
 
     def __getitem__(self, item):
         return self.value[item]
+
+
+class Table(BaseAtomicType):
+    def __init__(self, value: dict[String, BaseAtomicType]):
+        super().__init__(value)
+
+    def get(self, key: String):
+        return self.value[key]
+
+    def set(self, key: String, value: BaseAtomicType):
+        self.value[key] = value
+
+    def del_(self, key: String):
+        del self.value[key]
+
+    def len(self) -> Number:
+        return Number(len(self.value))
+
+    def __contains__(self, key):
+        return key in self.value
+
+    def __getitem__(self, item: String):
+        return self.value[item]
+
+    def __setitem__(self, key: String, value: BaseAtomicType):
+        self.value[key] = value
+
+    def __len__(self):
+        return len(self.value)
+
+    def __str__(self) -> str:
+        result = ""
+
+        for key, value in self.value.items():
+            result += ", "
+
+            if isinstance(value, String):
+                result += f"\"{key}\": \"{value}\""
+            else:
+                result += f"\"{key}\": {value}"
+
+        return "{" + result[2:] + "}"
 
 
 class Void(BaseAtomicType):

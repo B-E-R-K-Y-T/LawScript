@@ -7,7 +7,7 @@ from core.types.basetype import BaseAtomicType
 builder = PyExtendBuilder()
 
 
-@builder.collect(func_name='array')
+@builder.collect(func_name='массив')
 class ArrayInit(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
@@ -20,7 +20,7 @@ class ArrayInit(PyExtendWrapper):
         return Array(args if args else [])
 
 
-@builder.collect(func_name='arr_append')
+@builder.collect(func_name='добавить_в_массив')
 class ArrayAppend(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
@@ -37,7 +37,7 @@ class ArrayAppend(PyExtendWrapper):
         return Void()
 
 
-@builder.collect(func_name='arr_remove')
+@builder.collect(func_name='удалить_из_массива')
 class ArrayRemove(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
@@ -62,7 +62,7 @@ class ArrayRemove(PyExtendWrapper):
         return Void()
 
 
-@builder.collect(func_name='arr_get_item')
+@builder.collect(func_name='достать_из_массива')
 class ArrayGetItem(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
@@ -85,7 +85,7 @@ class ArrayGetItem(PyExtendWrapper):
             raise ErrorIndex("Выход за границы массива.")
 
 
-@builder.collect(func_name='arr_set_item')
+@builder.collect(func_name='изменить_в_массиве')
 class ArraySetItem(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
@@ -115,7 +115,7 @@ class ArraySetItem(PyExtendWrapper):
         return Void()
 
 
-@builder.collect(func_name='arr_len')
+@builder.collect(func_name='длинна_массива')
 class ArrayLen(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
@@ -129,5 +129,123 @@ class ArrayLen(PyExtendWrapper):
         return Number(len(arr))
 
 
+@builder.collect(func_name='таблица')
+class TableInit(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = True
+        self.count_args = 2
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from core.types.atomic import Table, Array
+        from core.exceptions import ErrorValue
+
+        if not args:
+            return Table({})
+
+        keys, values = args
+
+        if not isinstance(keys, Array) or not isinstance(values, Array):
+            raise ErrorValue("Таблица должна быть инициализирована массивами ключей и значений.")
+
+        if len(keys) != len(values):
+            raise ErrorValue("Количество ключей и значений не совпадает.")
+
+        return Table({k: v for k, v in zip(keys.value, values.value)})
+
+
+@builder.collect(func_name='добавить_в_таблицу')
+class TableAppend(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 3
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from core.types.atomic import Table, Void, String
+        from core.exceptions import ErrorValue
+
+        table, key, value = args
+
+        if not isinstance(key, String):
+            raise ErrorValue("Ключ должен быть строкой.")
+
+        if not isinstance(table, Table):
+            raise ErrorValue("Первый аргумент должен быть таблицей.")
+
+        table[key] = value
+
+        return Void()
+
+
+@builder.collect(func_name='извлечь_из_таблицы')
+class TableGetValue(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 2
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from core.types.atomic import Table, String
+        from core.exceptions import ErrorValue
+
+        table, key = args
+
+        if not isinstance(key, String):
+            raise ErrorValue("Ключ должен быть строкой.")
+
+        if not isinstance(table, Table):
+            raise ErrorValue("Первый аргумент должен быть таблицей.")
+
+        if key not in table:
+            raise ErrorValue("Ключ не найден.")
+
+        return table[key]
+
+
+@builder.collect(func_name='удалить_из_таблицы')
+class TableRemove(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 2
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from core.types.atomic import Table, String, Void
+        from core.exceptions import ErrorValue
+
+        table, key = args
+
+        if not isinstance(key, String):
+            raise ErrorValue("Ключ должен быть строкой.")
+
+        if not isinstance(table, Table):
+            raise ErrorValue("Первый аргумент должен быть таблицей.")
+
+        if key in table:
+            table.del_(key)
+
+        return Void()
+
+
+@builder.collect(func_name='длина_таблицы')
+class TableLen(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from core.types.atomic import Number, Table
+        from core.exceptions import ErrorValue
+
+        table = args[0]
+
+        if not isinstance(table, Table):
+            raise ErrorValue("Первый аргумент должен быть таблицей.")
+
+        return Number(len(table))
+
+
 if __name__ == '__main__':
-    builder.build_python_extend("structs")
+    builder.build_python_extend("структуры")

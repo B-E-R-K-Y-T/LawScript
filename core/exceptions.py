@@ -81,6 +81,20 @@ class ErrorType(BaseError):
         super().__init__(msg)
 
 
+class ErrorValue(BaseError):
+    def __init__(self, msg: Optional[str] = None, value: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Некорректное значение!"
+
+        if value is not None:
+            msg = f"{msg} Значение: '{value}'"
+
+        if info is not None:
+            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+
+        super().__init__(msg)
+
+
 class NameNotDefine(BaseError):
     def __init__(self, msg: Optional[str] = None, name: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
