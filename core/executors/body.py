@@ -112,7 +112,10 @@ class BodyExecutor(Executor):
 
                     body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
 
-                    for _ in range(result_from.value, result_to.value + 1):
+                    for var in range(result_from.value, result_to.value + 1):
+                        if command.name_loop_var is not None:
+                            self.tree_variables.set(Variable(command.name_loop_var, Number(var)))
+
                         executed = body_executor.execute()
 
                         if isinstance(executed, Continue):

@@ -45,6 +45,29 @@ class BodyParser(Parser):
             info=self.info
         )
 
+    def parse_loop(self, expr, line: list[str], body: list[Line], num: int) -> Loop:
+        expr = list(expr)
+
+        # Проверяю, что в подстроке: "a ДО b" строки: "ЦИКЛ ОТ a ДО b (" "ДО" встречается только 1 раз
+        if expr.count(Tokens.to) != 1:
+            raise InvalidSyntaxError(
+                f"Оператор '{Tokens.to}' должен встречаться в определении цикла только 1 раз!",
+                line=line,
+                info=self.info
+            )
+
+        sep_idx = expr.index(Tokens.to)
+        start_expr = expr[:sep_idx]
+        end_expr = expr[sep_idx + 1:]
+
+        loop = Loop(
+            str(), Expression(str(), start_expr, self.info), Expression(str(), end_expr, self.info),
+            self.execute_parse(BodyParser, body, self.next_num_line(num))
+        )
+        loop.set_info(self.info)
+
+        return loop
+
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга тела с jump={self.jump} {Body.__name__}", level="INFO")
@@ -117,26 +140,27 @@ class BodyParser(Parser):
                     )
                     printer.logging("Добавлена команда While", level="INFO")
                 case [Tokens.loop, Tokens.from_, *expr, Tokens.left_bracket]:
-                    expr = list(expr)
+                    loop = self.parse_loop(expr, line, body, num)
 
-                    # Проверяю, что в подстроке: "a ДО b" строки: "ЦИКЛ ОТ a ДО b (" "ДО" встречается только 1 раз
-                    if expr.count(Tokens.to) != 1:
+                    self.commands.append(loop)
+                    printer.logging("Добавлена команда Loop", level="INFO")
+                case [Tokens.loop, var_name, Tokens.from_, *expr, Tokens.left_bracket]:
+                    if not is_identifier(var_name):
                         raise InvalidSyntaxError(
-                            f"Оператор '{Tokens.to}' должен встречаться в определении цикла только 1 раз!",
+                            f"Имя переменной должно состоять только из букв и цифр! Переменная: {var_name}",
                             line=line,
                             info=self.info
                         )
 
-                    sep_idx = expr.index(Tokens.to)
-                    start_expr = expr[:sep_idx]
-                    end_expr = expr[sep_idx + 1:]
+                    if var_name in NOT_ALLOWED_TOKENS:
+                        raise InvalidSyntaxError(
+                            f"Неверный синтаксис. Нельзя использовать зарезервированные слова{var_name}",
+                            info=self.info
+                        )
 
-                    loop = Loop(
-                        str(), Expression(str(), start_expr, self.info), Expression(str(), end_expr, self.info),
-                        self.execute_parse(BodyParser, body, self.next_num_line(num))
-                    )
-                    loop.set_info(self.info)
+                    loop = self.parse_loop(expr, line, body, num)
 
+                    loop.name_loop_var = var_name
                     self.commands.append(loop)
                     printer.logging("Добавлена команда Loop", level="INFO")
                 case [Tokens.return_, *expr, Tokens.end_expr]:

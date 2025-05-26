@@ -108,6 +108,7 @@ class Loop(CodeBlock):
 
         self.expression_from = expression_from
         self.expression_to = expression_to
+        self.name_loop_var = None
 
 
 class While(CodeBlock):
