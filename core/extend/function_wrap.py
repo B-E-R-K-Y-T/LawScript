@@ -59,7 +59,7 @@ class PyExtendWrapper(BaseType, ABC):
             result.append(arg.value)
 
         if self.offset_required_args != -1 and len(args) < self.count_args:
-            for i in range(len(args) - self.offset_required_args + 1):
+            for _ in range(len(args) - self.offset_required_args + 1):
                 result.append(None)
 
         return result
