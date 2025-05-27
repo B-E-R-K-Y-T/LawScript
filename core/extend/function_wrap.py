@@ -5,6 +5,7 @@ import dill
 
 from config import settings
 from core.exceptions import BaseError, ArgumentError
+from core.types.atomic import Void
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.line import Info
 
@@ -15,6 +16,7 @@ class PyExtendWrapper(BaseType, ABC):
         self.func_name = func_name
         self.empty_args = False
         self.count_args = -1
+        self.offset_required_args = -1
 
     @abstractmethod
     def call(self, args: Optional[list[BaseAtomicType]] = None) -> BaseAtomicType: ...
@@ -23,15 +25,28 @@ class PyExtendWrapper(BaseType, ABC):
         if not self.empty_args and args is None:
             raise ArgumentError(f"Необходимо передать аргументы в процедуру '{self.func_name}'")
 
-        if self.count_args > -1:
+        if self.offset_required_args > 0:
+            if len(args) < self.offset_required_args:
+                raise ArgumentError(
+                    f"Неверное количество аргументов процедуры '{self.func_name}'. "
+                    f"Ожидалось минимум: {self.offset_required_args}, "
+                    f"но передано: {len(args)}"
+                )
+
+            if len(args) > self.count_args:
+                raise ArgumentError(
+                    f"Неверное количество аргументов процедуры '{self.func_name}'. Ожидалось максимум: {self.count_args}, "
+                    f"но передано: {len(args)}"
+                )
+
+        elif self.count_args != -1:
             if len(args) != self.count_args:
                 raise ArgumentError(
                     f"Неверное количество аргументов процедуры '{self.func_name}'. Ожидалось: {self.count_args}, "
                     f"но передано: {len(args)}"
                 )
 
-    @staticmethod
-    def parse_args(args: Optional[list[BaseAtomicType]] = None) -> list:
+    def parse_args(self, args: Optional[list[BaseAtomicType]] = None) -> list:
         if args is None:
             return []
 
@@ -42,6 +57,10 @@ class PyExtendWrapper(BaseType, ABC):
                 raise ArgumentError(f"Аргумент '{arg}' не является экземпляром типа: '{BaseAtomicType.__name__}'")
 
             result.append(arg.value)
+
+        if self.offset_required_args != -1 and len(args) < self.count_args:
+            for i in range(len(args) - self.offset_required_args + 1):
+                result.append(None)
 
         return result
 

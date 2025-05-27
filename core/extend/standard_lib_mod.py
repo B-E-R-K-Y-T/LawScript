@@ -92,7 +92,8 @@ class FuncWa(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
         self.empty_args = False
-        self.count_args = 2
+        self.count_args = 3
+        self.offset_required_args = 2
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         from core.types.atomic import Void
