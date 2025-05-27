@@ -32,6 +32,8 @@ def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled,
 
 
 def preprocess(raw_code, path: str) -> list:
+    folder = os.path.dirname(path)
+
     prepared_code = [line.strip() for line in raw_code.split("\n")]
     imports = set()
 
@@ -44,14 +46,15 @@ def preprocess(raw_code, path: str) -> list:
 
     for offset, line in enumerate(code):
         match line.split(" "):
-            case [Tokens.include, path] if path.endswith(Tokens.star):
-                if path in imports:
+            case [Tokens.include, package] if package.endswith(Tokens.star):
+                if package in imports:
                     continue
 
-                imports.add(path)
+                imports.add(package)
 
                 # Удаляем * из пути и получаем директорию
-                dir_path = path[:-1].replace(Tokens.dot, "/")
+                package = package[:-1].replace(Tokens.dot, "/")
+                dir_path = os.path.join(os.getcwd(), f"{folder}/{package}")
                 try:
                     files = os.listdir(dir_path)
                 except FileNotFoundError:
@@ -84,13 +87,15 @@ def preprocess(raw_code, path: str) -> list:
                         f"Обнаружен циклический импорт '{path}', {line}"
                     )
 
-            case [Tokens.include, path] if re.search(r'\.\S+$', path):
-                if path in imports:
+            case [Tokens.include, module] if re.search(r'\.\S+$', module):
+                if module in imports:
                     continue
 
-                imports.add(path)
+                imports.add(module)
 
-                path = path.replace(".", "/", path.count("."))
+                module = module.replace(".", "/", module.count("."))
+                path = os.path.join(os.getcwd(), f"{folder}/{module}")
+
                 law_path = (f"{path}.{settings.compiled_postfix}", True)
                 pyl_path = (f"{path}.{settings.py_extend_postfix}", True)
                 raw_path = (f"{path}.{settings.raw_postfix}", False)
@@ -115,13 +120,14 @@ def preprocess(raw_code, path: str) -> list:
                 else:
                     kill_process(f"Невозможно включить модуль. Модуль '{path}' не найден.")
 
-            case [Tokens.include, path]:
-                if path in imports:
+            case [Tokens.include, module]:
+                if module in imports:
                     continue
 
-                imports.add(path)
+                imports.add(module)
 
-                path = path.replace(Tokens.dot, "/")
+                module = module.replace(Tokens.dot, "/")
+                path = os.path.join(os.getcwd(), f"{folder}/{module}")
 
                 law_path = (f"{path}.{settings.compiled_postfix}", True)
                 pyl_path = (f"{path}.{settings.py_extend_postfix}", True)

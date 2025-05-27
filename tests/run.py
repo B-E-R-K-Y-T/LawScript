@@ -3,7 +3,7 @@ import os
 
 from util.build_tools.starter import run_file
 
-path = os.path.join(os.getcwd(), ".")
+path = os.path.join(os.getcwd(), "")
 test_num = 0
 
 for file in os.listdir("."):
@@ -13,7 +13,7 @@ for file in os.listdir("."):
         time.sleep(0.5)
         print(f"#{test_num}: Запуск файла: {file}")
 
-        run_file(f"{path}/{file}")
+        run_file(f"{path}{file}")
 
         print(f"Тест #{test_num} успешно завершен")
         time.sleep(0.5)
