@@ -4,7 +4,6 @@ from core.exceptions import InvalidSyntaxError
 from core.parse.base import MetaObject, Image, Parser, is_identifier
 from core.parse.procedure.body import BodyParser
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
-from core.types.atomic import Void
 from core.types.line import Line, Info
 from core.types.procedure import Procedure
 from core.util import is_ignore_line
