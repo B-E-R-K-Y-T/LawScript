@@ -193,7 +193,7 @@ mul(9, mul(mul(3, 1), 5, 4), 8);
     func_wa(1,2,func_wa(1,5));
     func_wa(1, 2);
 
-    func_wa(1,2,);
+    func_wa(1,2);
 
 
     ВЕРНУТЬ mul(9, mul(mul(3, 1, 2), 5, 4), 8) * mul(9, mul(mul(3, 1, 2), 5, 4), 8);
