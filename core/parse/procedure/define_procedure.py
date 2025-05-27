@@ -81,7 +81,7 @@ class DefineProcedureParser(Parser):
                     for arg in self.arguments_name:
                         if arg in NOT_ALLOWED_TOKENS or not is_identifier(arg):
                             raise InvalidSyntaxError(
-                                f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {arg}",
+                                f"Неверный синтаксис. Нельзя использовать операторы в объявлениях аргументов: {arg}",
                                 info=info_line
                             )
 
