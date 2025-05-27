@@ -58,7 +58,7 @@ def preprocess(raw_code, path: str) -> list:
                 try:
                     files = os.listdir(dir_path)
                 except FileNotFoundError:
-                    kill_process(f"Модуль для включения не найден: '{path}'")
+                    kill_process(f"Модуль для включения не найден: '{dir_path}'")
 
                 try:
                     checked_files = []
