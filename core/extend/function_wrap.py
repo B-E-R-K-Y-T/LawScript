@@ -25,7 +25,10 @@ class PyExtendWrapper(BaseType, ABC):
         if not self.empty_args and args is None:
             raise ArgumentError(f"Необходимо передать аргументы в процедуру '{self.func_name}'")
 
-        if self.offset_required_args > 0:
+        if self.count_args == 0 and args is None:
+            return
+
+        elif self.offset_required_args > 0:
             if len(args) < self.offset_required_args:
                 raise ArgumentError(
                     f"Неверное количество аргументов процедуры '{self.func_name}'. "
@@ -33,7 +36,7 @@ class PyExtendWrapper(BaseType, ABC):
                     f"но передано: {len(args)}"
                 )
 
-            if len(args) > self.count_args:
+            if len(args) > self.count_args != -1:
                 raise ArgumentError(
                     f"Неверное количество аргументов процедуры '{self.func_name}'. Ожидалось максимум: {self.count_args}, "
                     f"но передано: {len(args)}"

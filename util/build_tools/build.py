@@ -18,7 +18,7 @@ def build(path: str):
 
         compiler = Compiler(ast)
 
-        new_path = f"{os.path.splitext(path)[0]}.{settings.compiled_postfix}"
+    new_path = f"{os.path.splitext(path)[0]}.{settings.compiled_postfix}"
 
-        with open(f"{new_path}", 'wb') as write_file:
-            dill.dump(compiler.compile(), write_file)
+    with open(f"{new_path}", 'wb') as write_file:
+        dill.dump(compiler.compile(), write_file)

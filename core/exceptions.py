@@ -148,6 +148,19 @@ class DivisionByZeroError(BaseError):
         super().__init__(msg, info=info)
 
 
+class ErrorOverflow(BaseError):
+    def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Переполнение стека!"
+
+        msg = f"{msg} Ошибка: 'Переполнение стека."
+
+        super().__init__(
+            msg=msg,
+            info=info
+        )
+
+
 class ArgumentError(BaseError):
     def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:

@@ -7,7 +7,7 @@ from core.exceptions import (
     BaseError,
     NameNotDefine,
     MaxRecursionError,
-    DivisionByZeroError
+    DivisionByZeroError, ErrorOverflow
 )
 from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
@@ -349,6 +349,11 @@ class ExpressionExecutor(Executor):
         except ZeroDivisionError:
             raise DivisionByZeroError(
                 f"Деление на ноль в выражении '{self.expression.meta_info.raw_line}'!",
+                info=self.expression.meta_info
+            )
+        except OverflowError:
+            raise ErrorOverflow(
+                f"Выражение вышло за пределы типа данных в выражении: '{self.expression.meta_info.raw_line}'!",
                 info=self.expression.meta_info
             )
         except Exception:
