@@ -6,7 +6,6 @@ from core.parse.procedure.body import BodyParser
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.line import Line, Info
 from core.types.procedure import Procedure, Expression
-from core.types.variable import Variable
 from core.util import is_ignore_line
 from util.console_worker import printer
 
