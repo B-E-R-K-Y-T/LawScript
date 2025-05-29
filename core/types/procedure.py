@@ -1,3 +1,4 @@
+from _ast import Expression
 from typing import Optional, Union
 
 from core.extend.function_wrap import PyExtendWrapper
@@ -21,11 +22,15 @@ class CodeBlock(BaseType):
 
 
 class Procedure(BaseType):
-    def __init__(self, name: str, body: Body, arguments_names: list[Optional[str]]):
+    def __init__(
+            self, name: str, body: Body,
+            arguments_names: list[Optional[str]], default_arguments: Optional[dict[str, 'Expression']] = None
+    ):
         super().__init__(name)
 
         self.body = body
         self.arguments_names = arguments_names
+        self.default_arguments = default_arguments
         self.tree_variables: Optional[ScopeStack] = None
 
     def __repr__(self):

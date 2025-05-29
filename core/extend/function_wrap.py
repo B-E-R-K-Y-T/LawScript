@@ -5,7 +5,7 @@ import dill
 
 from config import settings
 from core.exceptions import BaseError, ArgumentError
-from core.types.atomic import Void
+from core.types.atomic import Void, Array, Number
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.line import Info
 
@@ -58,6 +58,25 @@ class PyExtendWrapper(BaseType, ABC):
         for arg in args:
             if not isinstance(arg, BaseAtomicType):
                 raise ArgumentError(f"Аргумент '{arg}' не является экземпляром типа: '{BaseAtomicType.__name__}'")
+
+            if isinstance(arg, Array):
+                def _parse_array(array: Array) -> list:
+                    new_array = []
+
+                    for idx, item in enumerate(array.value):
+                        if isinstance(item, Array):
+                            new_array.append(_parse_array(item))
+
+                        elif isinstance(item, BaseAtomicType):
+                            new_array.append(item.value)
+
+                        else:
+                            new_array.append(item)
+
+                    return new_array
+
+                result.append(_parse_array(arg))
+                continue
 
             result.append(arg.value)
 

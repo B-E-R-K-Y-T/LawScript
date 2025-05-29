@@ -282,8 +282,7 @@ class Compiler:
 
         return compiled_obj
 
-    def expr_compile(self, body: Body):
-        def _compile(expr_: Expression):
+    def expr_compile(self, expr_: Expression):
             raw = expr_.raw_operations
 
             for op in raw:
@@ -309,38 +308,39 @@ class Compiler:
 
             expr_.operations = build_rpn_stack(raw, expr_.meta_info)
 
+    def body_compile(self, body: Body):
         for statement in body.commands:
             if isinstance(statement, Expression):
-                _compile(statement)
+                self.expr_compile(statement)
 
             elif isinstance(statement, While):
-                _compile(statement.expression)
+                self.expr_compile(statement.expression)
 
             elif isinstance(statement, Loop):
-                _compile(statement.expression_from)
-                _compile(statement.expression_to)
+                self.expr_compile(statement.expression_from)
+                self.expr_compile(statement.expression_to)
 
             elif isinstance(statement, AssignOverrideVariable):
-                _compile(statement.target_expr)
-                _compile(statement.override_expr)
+                self.expr_compile(statement.target_expr)
+                self.expr_compile(statement.override_expr)
 
             elif isinstance(statement, Print):
-                _compile(statement.expression)
+                self.expr_compile(statement.expression)
 
             elif isinstance(statement, AssignField):
-                _compile(statement.expression)
+                self.expr_compile(statement.expression)
 
             elif isinstance(statement, When):
-                _compile(statement.expression)
+                self.expr_compile(statement.expression)
 
                 if statement.else_ is not None:
-                    self.expr_compile(statement.else_.body)
+                    self.body_compile(statement.else_.body)
 
             elif isinstance(statement, Return):
-                _compile(statement.expression)
+                self.expr_compile(statement.expression)
 
             if isinstance(statement, CodeBlock):
-                self.expr_compile(statement.body)
+                self.body_compile(statement.body)
 
     def compile(self) -> Compiled:
         compiled_modules = {}
@@ -366,6 +366,10 @@ class Compiler:
 
         for name, compiled in compiled_without_build_modules.items():
             if isinstance(compiled, Procedure):
-                self.expr_compile(compiled.body)
+                self.body_compile(compiled.body)
+
+                if compiled.default_arguments is not None:
+                    for expr in compiled.default_arguments.values():
+                        self.expr_compile(expr)
 
         return Compiled(self.compiled)

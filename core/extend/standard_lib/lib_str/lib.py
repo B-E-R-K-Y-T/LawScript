@@ -40,13 +40,22 @@ class StringFormat(PyExtendWrapper):
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         from core.types.atomic import String
         from core.exceptions import ErrorValue
+        from core.tokens import Tokens
 
         if not isinstance(args[0], String):
             raise ErrorValue("Первый аргумент должен быть строкой.")
 
-        line, *pattern = self.parse_args(args)
+        line, *tail_args = self.parse_args(args)
 
-        return String(line.format(*pattern))
+        for idx, tail_arg in enumerate(tail_args):
+            if isinstance(tail_arg, bool):
+                tail_arg = Tokens.true if tail_arg else Tokens.false
+                tail_args[idx] = tail_arg
+
+            elif tail_arg is None:
+                tail_args[idx] = Tokens.void
+
+        return String(line.format(*tail_args))
 
 
 if __name__ == '__main__':

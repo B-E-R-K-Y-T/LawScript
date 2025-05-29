@@ -140,4 +140,4 @@ class Void(BaseAtomicType):
         super().__init__(None)
 
     def __str__(self) -> str:
-        return "Пустое значение"
+        return Tokens.void

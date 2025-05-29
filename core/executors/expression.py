@@ -148,6 +148,36 @@ class ExpressionExecutor(Executor):
                         info=self.expression.meta_info
                     )
 
+        default_args_count = 0
+
+        if procedure.default_arguments is not None:
+            default_args_count = len(procedure.default_arguments)
+
+        if default_args_count > 0:
+            procedure_variables = procedure.tree_variables.scopes[0].variables
+
+            new_procedure_variables = {}
+
+            for arg_name, (default_name, default_arg) in zip(procedure.arguments_names, reversed(procedure_variables.items())):
+                default_arg.name = arg_name
+                new_procedure_variables[arg_name] = default_arg
+
+            procedure.tree_variables.scopes[0].variables.update(new_procedure_variables)
+
+            fact_default_args_count = 0
+
+            for arg_num, (name, expr) in enumerate(reversed(procedure.default_arguments.items())):
+                if arg_num + 1 > len(procedure.arguments_names) - count_args:
+                    break
+
+                fact_default_args_count += 1
+
+                value = ExpressionExecutor(expr, self.tree_variable, self.compiled).evaluate()
+
+                procedure.tree_variables.set(Variable(name, value))
+
+            count_args += fact_default_args_count
+
         if count_args != len(procedure.arguments_names):
             raise InvalidExpression(
                 f"Функция {procedure.name} принимает '{len(procedure.arguments_names)}' "
