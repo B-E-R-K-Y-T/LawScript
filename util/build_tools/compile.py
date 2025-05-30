@@ -281,82 +281,108 @@ class Compiler:
             raise UnknownType(f"Невозможно скомпилировать {compiled_obj}")
 
         return compiled_obj
-
     def expr_compile(self, expr_: Expression, previous_statements: list[BaseType] = None):
-            raw = expr_.raw_operations
+        printer.logging(f"Компиляция выражения в файле {expr_.meta_info.file}", level="INFO")
+        raw = expr_.raw_operations
 
-            for op in raw:
-                if op in NOT_ALLOWED_TOKENS:
-                    raise InvalidSyntaxError(
-                        f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {op}",
-                        info=expr_.meta_info
-                    )
+        # Проверка на недопустимые токены
+        for op in raw:
+            if op in NOT_ALLOWED_TOKENS:
+                error_msg = f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {op}"
+                printer.logging(error_msg, level="ERROR")
+                raise InvalidSyntaxError(
+                    error_msg,
+                    info=expr_.meta_info
+                )
 
-            for offset, op in enumerate(raw):
-                if not (op not in Tokens and op in self.compiled):
+        # Обработка операторов и процедур
+        for offset, op in enumerate(raw):
+            if not (op not in Tokens and op in self.compiled):
+                continue
+
+            command = self.compiled[op]
+            printer.logging(f"Обработка оператора '{op}' как команды типа {type(command).__name__}", level="DEBUG")
+
+            if isinstance(command, (Procedure, PyExtendWrapper)):
+                if offset < len(raw) - 1:
+                    if raw[offset + 1] != Tokens.left_bracket:
+                        printer.logging(f"Преобразование '{op}' в LinkedProcedure (без скобок)", level="DEBUG")
+                        raw[offset] = LinkedProcedure(name=command.name, func=command)
                     continue
 
-                command = self.compiled[op]
+                printer.logging(f"Преобразование '{op}' в LinkedProcedure", level="DEBUG")
+                raw[offset] = LinkedProcedure(name=command.name, func=command)
 
-                if isinstance(command, (Procedure, PyExtendWrapper)):
-                    if offset < len(raw) - 1:
-                        if raw[offset + 1] != Tokens.left_bracket:
-                            raw[offset] = LinkedProcedure(name=command.name, func=command)
-                        continue
+        # Обработка предыдущих statements
+        if previous_statements is not None:
+            printer.logging("Проверка предыдущих statements для связывания процедур", level="DEBUG")
+            for command in reversed(previous_statements):
+                if isinstance(command, AssignField) and len(command.expression.operations) == 1:
+                    for offset, op in enumerate(raw):
+                        if op == command.name and isinstance(command.expression.operations[0], LinkedProcedure):
+                            func: Procedure = command.expression.operations[0].func
+                            printer.logging(f"Связывание переменной '{op}' с процедурой '{func.name}'", level="DEBUG")
+                            raw[offset] = func
+                            continue
 
-                    raw[offset] = LinkedProcedure(name=command.name, func=command)
-
-            if previous_statements is not None:
-                for command in reversed(previous_statements):
-                    if isinstance(command, AssignField) and len(command.expression.operations) == 1:
-                        for offset, op in enumerate(raw):
-                            if op == command.name and isinstance(command.expression.operations[0], LinkedProcedure):
-                                func: Procedure = command.expression.operations[0].func
-                                # func.name = command.name
-
-                                raw[offset] = func
-                                continue
-
-            expr_.operations = build_rpn_stack(raw, expr_.meta_info)
+        # Построение RPN стека
+        printer.logging("Построение RPN стека для выражения", level="DEBUG")
+        expr_.operations = build_rpn_stack(raw, expr_.meta_info)
+        printer.logging(f"Выражение успешно скомпилировано. Операции: {expr_.operations}", level="INFO")
 
     def body_compile(self, body: Body):
+        printer.logging(f"Компиляция тела кода (начало)", level="INFO")
         statements = []
 
         for statement in body.commands:
+            printer.logging(f"Обработка statement типа {type(statement).__name__}", level="DEBUG")
+
             if isinstance(statement, Expression):
+                printer.logging("Компиляция Expression", level="DEBUG")
                 self.expr_compile(statement, statements)
 
             elif isinstance(statement, While):
+                printer.logging("Компиляция While условия", level="DEBUG")
                 self.expr_compile(statement.expression, statements)
 
             elif isinstance(statement, Loop):
+                printer.logging("Компиляция Loop выражений (from/to)", level="DEBUG")
                 self.expr_compile(statement.expression_from, statements)
                 self.expr_compile(statement.expression_to, statements)
 
             elif isinstance(statement, AssignOverrideVariable):
+                printer.logging("Компиляция AssignOverrideVariable выражений", level="DEBUG")
                 self.expr_compile(statement.target_expr, statements)
                 self.expr_compile(statement.override_expr, statements)
 
             elif isinstance(statement, Print):
+                printer.logging("Компиляция Print выражения", level="DEBUG")
                 self.expr_compile(statement.expression, statements)
 
             elif isinstance(statement, AssignField):
+                printer.logging("Компиляция AssignField выражения", level="DEBUG")
                 self.expr_compile(statement.expression, statements)
 
             elif isinstance(statement, When):
+                printer.logging("Компиляция When условия", level="DEBUG")
                 self.expr_compile(statement.expression, statements)
 
                 if statement.else_ is not None:
+                    printer.logging("Компиляция else ветки When", level="DEBUG")
                     self.body_compile(statement.else_.body)
 
             elif isinstance(statement, Return):
+                printer.logging("Компиляция Return выражения", level="DEBUG")
                 self.expr_compile(statement.expression, statements)
 
             if isinstance(statement, CodeBlock):
+                printer.logging("Рекурсивная компиляция CodeBlock", level="DEBUG")
                 self.body_compile(statement.body)
 
             statements.append(statement)
+            printer.logging(f"Statement добавлен в контекст: {statement}", level="DEBUG")
 
+        printer.logging(f"Компиляция тела кода завершена (всего statements: {len(statements)})", level="INFO")
     def compile(self) -> Compiled:
         compiled_modules = {}
 

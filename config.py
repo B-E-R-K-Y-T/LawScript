@@ -1,3 +1,4 @@
+import os
 import sys
 
 from pydantic import Field
@@ -14,6 +15,9 @@ class Settings(BaseSettings):
     raw_postfix: str = Field(default="raw")
     compiled_postfix: str = Field(default="law")
     py_extend_postfix: str = Field(default="pyl")
+    max_background_processes: int = Field(default=4)
+    max_process_threads: int = Field(default=os.cpu_count())
+    max_tasks_in_thread: int = Field(default=100)
 
     model_config = SettingsConfigDict(env_file="law_config.env")
 
