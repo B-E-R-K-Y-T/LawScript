@@ -1,13 +1,14 @@
 from typing import Union
 
 from core.exceptions import InvalidExpression, BaseError
+from core.extend.function_wrap import PyExtendWrapper
 from core.parse.base import is_integer, is_float, is_identifier
 from core.tokens import Tokens, ServiceTokens
 from core.types.atomic import Number, String, Boolean
 from core.types.basetype import BaseAtomicType
 from core.types.line import Info
 from core.types.operation import Operator
-from core.types.procedure import LinkedProcedure
+from core.types.procedure import LinkedProcedure, Procedure
 from util.console_worker import printer
 
 ALLOW_OPERATORS = {
@@ -103,7 +104,7 @@ def check_correct_expr(expr: list[str]):
     }
 
     for op in filtered_expr:
-        if isinstance(op, LinkedProcedure):
+        if isinstance(op, (LinkedProcedure, Procedure, PyExtendWrapper)):
             continue
 
         if op not in allowed_ops:
@@ -455,7 +456,7 @@ def compile_rpn(expr):
             compiled_stack.append(Operator(op))
             continue
 
-        if isinstance(op, LinkedProcedure):
+        if isinstance(op, (LinkedProcedure, Procedure, PyExtendWrapper)):
             compiled_stack.append(op)
             continue
 

@@ -16,6 +16,10 @@ class ToString(PyExtendWrapper):
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         from core.types.atomic import String
         from core.tokens import Tokens
+        from core.types.procedure import LinkedProcedure
+
+        if isinstance(args[0], LinkedProcedure):
+            return String(str(args[0].func))
 
         args = self.parse_args(args)
         arg = args[0]

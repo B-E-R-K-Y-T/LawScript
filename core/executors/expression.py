@@ -65,13 +65,15 @@ class ExpressionExecutor(Executor):
         new_expression_stack = []
 
         for operation in self.expression.operations:
-            if isinstance(operation, LinkedProcedure):
-                new_expression_stack.append(self.tree_variable.get(operation.name).value)
-                continue
-
             for variable in traverse_scope(self.tree_variable.scopes[-1]):
                 if operation.name == variable.name:
-                    new_expression_stack.append(variable.value)
+                    if isinstance(operation, LinkedProcedure):
+                        new_expression_stack.append(operation)
+                    # elif isinstance(operation, Procedure):
+                    #     new_expression_stack.append(operation)
+                    else:
+                        new_expression_stack.append(variable.value)
+
                     break
             else:
                 new_expression_stack.append(operation)
@@ -251,7 +253,12 @@ class ExpressionExecutor(Executor):
 
         evaluate_stack: list[Union[BaseAtomicType, BaseType]] = []
 
-        for operation in prepared_operations:
+        for offset, operation in enumerate(prepared_operations):
+            if isinstance(operation, LinkedProcedure):
+                operation.func.name = operation.name
+                evaluate_stack.append(operation.func)
+                continue
+
             if isinstance(operation, Procedure):
                 try:
                     self.call_procedure_evaluate(operation, evaluate_stack)
@@ -261,10 +268,6 @@ class ExpressionExecutor(Executor):
                         info=self.expression.meta_info
                     )
 
-                continue
-
-            elif isinstance(operation, LinkedProcedure):
-                evaluate_stack.append(operation.func)
                 continue
 
             elif isinstance(operation, PyExtendWrapper):

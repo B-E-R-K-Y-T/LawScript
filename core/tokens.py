@@ -77,6 +77,7 @@ class Tokens(StrEnum):
     continue_ = "ПРОПУСТИТЬ"
     break_ = "ПРЕРВАТЬ"
     void = "ПУСТОТА"
+    wait = "ЖДАТЬ"
 
 
 class ServiceTokens(StrEnum):

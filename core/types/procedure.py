@@ -51,7 +51,6 @@ class Expression(BaseType):
         self.raw_operations = operations
 
 
-
 class AssignOverrideVariable(BaseType):
     def __init__(self, name: str, target_expr: Expression, override_expr: Expression, info_line: Info):
         super().__init__(name)

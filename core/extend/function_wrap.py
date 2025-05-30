@@ -5,7 +5,7 @@ import dill
 
 from config import settings
 from core.exceptions import BaseError, ArgumentError
-from core.types.atomic import Void, Array, Number
+from core.types.atomic import Array
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.line import Info
 

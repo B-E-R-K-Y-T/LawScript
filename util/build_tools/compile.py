@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Type, Union, Optional
 
 from core.exceptions import (
     NameNotDefine,
@@ -282,7 +282,7 @@ class Compiler:
 
         return compiled_obj
 
-    def expr_compile(self, expr_: Expression):
+    def expr_compile(self, expr_: Expression, previous_statements: list[BaseType] = None):
             raw = expr_.raw_operations
 
             for op in raw:
@@ -306,41 +306,56 @@ class Compiler:
 
                     raw[offset] = LinkedProcedure(name=command.name, func=command)
 
+            if previous_statements is not None:
+                for command in reversed(previous_statements):
+                    if isinstance(command, AssignField) and len(command.expression.operations) == 1:
+                        for offset, op in enumerate(raw):
+                            if op == command.name and isinstance(command.expression.operations[0], LinkedProcedure):
+                                func: Procedure = command.expression.operations[0].func
+                                # func.name = command.name
+
+                                raw[offset] = func
+                                continue
+
             expr_.operations = build_rpn_stack(raw, expr_.meta_info)
 
     def body_compile(self, body: Body):
+        statements = []
+
         for statement in body.commands:
             if isinstance(statement, Expression):
-                self.expr_compile(statement)
+                self.expr_compile(statement, statements)
 
             elif isinstance(statement, While):
-                self.expr_compile(statement.expression)
+                self.expr_compile(statement.expression, statements)
 
             elif isinstance(statement, Loop):
-                self.expr_compile(statement.expression_from)
-                self.expr_compile(statement.expression_to)
+                self.expr_compile(statement.expression_from, statements)
+                self.expr_compile(statement.expression_to, statements)
 
             elif isinstance(statement, AssignOverrideVariable):
-                self.expr_compile(statement.target_expr)
-                self.expr_compile(statement.override_expr)
+                self.expr_compile(statement.target_expr, statements)
+                self.expr_compile(statement.override_expr, statements)
 
             elif isinstance(statement, Print):
-                self.expr_compile(statement.expression)
+                self.expr_compile(statement.expression, statements)
 
             elif isinstance(statement, AssignField):
-                self.expr_compile(statement.expression)
+                self.expr_compile(statement.expression, statements)
 
             elif isinstance(statement, When):
-                self.expr_compile(statement.expression)
+                self.expr_compile(statement.expression, statements)
 
                 if statement.else_ is not None:
                     self.body_compile(statement.else_.body)
 
             elif isinstance(statement, Return):
-                self.expr_compile(statement.expression)
+                self.expr_compile(statement.expression, statements)
 
             if isinstance(statement, CodeBlock):
                 self.body_compile(statement.body)
+
+            statements.append(statement)
 
     def compile(self) -> Compiled:
         compiled_modules = {}
