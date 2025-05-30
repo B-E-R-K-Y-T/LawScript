@@ -5,8 +5,20 @@ from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
 from core.types.atomic import Void, Number
 from core.types.basetype import BaseAtomicType
-from core.types.procedure import Print, Return, AssignField, Body, When, Loop, Expression, Procedure, Continue, \
-    CodeBlock, Break, AssignOverrideVariable, While
+from core.types.procedure import (
+    Print,
+    Return,
+    AssignField,
+    Body,
+    When,
+    Loop,
+    Expression,
+    Procedure,
+    Continue,
+    Break,
+    AssignOverrideVariable,
+    While
+)
 from core.executors.base import Executor
 from core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
 from util.console_worker import printer
@@ -17,11 +29,12 @@ if TYPE_CHECKING:
 
 
 class BodyExecutor(Executor):
-    def __init__(self, body: Body, tree_variables: ScopeStack, compiled: "Compiled"):
+    def __init__(self, body: Body, tree_variables: ScopeStack, compiled: "Compiled", async_mode: bool = False):
         self.body = body
         self.tree_variables = tree_variables
         self.compiled = compiled
         self.catch_comprehensive_procedures()
+        self.async_mode = async_mode
 
     def catch_comprehensive_procedures(self):
         local_vars_names = {lv.name for lv in traverse_scope(self.tree_variables.scopes[-1])}
