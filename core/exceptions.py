@@ -181,25 +181,3 @@ class ErrorIndex(BaseError):
             msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         super().__init__(msg)
-
-
-class MaxThreadsError(BaseError):
-    def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
-        if msg is None:
-            msg = "Превышено максимальное количество потоков!"
-
-        if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
-
-        super().__init__(msg)
-
-
-class MaxTasksError(BaseError):
-    def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
-        if msg is None:
-            msg = "Превышено максимальное количество задач!"
-
-        if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
-
-        super().__init__(msg)

@@ -1,122 +1,97 @@
+import time
 from itertools import cycle
-from multiprocessing import Queue as ProcessQueue, Process
 from threading import Lock, Thread, Event
 from typing import Optional
 
 from config import settings
-from core.exceptions import MaxThreadsError
-
-
-class RoundRobinTaskList:
-    def __init__(self, max_len: int = settings.max_tasks_in_thread):
-        self.items = []
-        self.max_len = max_len
-        self.cycled_items = cycle(self.items)
-        self._lock = Lock()
-
-    def append(self, item):
-        if self.is_full():
-            raise MaxThreadsError
-
-        with self._lock:
-            self.items.append(item)
-
-    def get_task(self, index: int):
-        return self.items[index]
-
-    def is_full(self):
-        if self.max_len == -1:
-            return False
-
-        return len(self.items) >= self.max_len
-
-    def __iter__(self):
-        return self.cycled_items
+from core.background_task.task import AbstractBackgroundTask
 
 
 class ThreadWorker:
     def __init__(self):
-        self.thread = None
-        self.tasks = RoundRobinTaskList()
-        self.max_tasks_in_thread = settings.max_tasks_in_thread
+        self.thread: Optional[Thread] = None
+        self.tasks: list[AbstractBackgroundTask] = []
         self._stop_event = Event()
+        self._lock = Lock()
         self._task_added_event = Event()
+        self._start_time = time.time()
+        self._is_active = True
 
-    def add_task(self, task):
-        while self.tasks.is_full() and not self._stop_event.is_set():
-            self._task_added_event.wait(timeout=0.1)
-            self._task_added_event.clear()
-
-        if self._stop_event.is_set():
-            raise RuntimeError("ThreadWorker is stopping")
-
-        self.tasks.append(task)
+    def add_task(self, task: AbstractBackgroundTask):
+        with self._lock:
+            self.tasks.append(task)
 
     def start(self):
         self.thread = Thread(target=self._work)
         self.thread.daemon = True
         self.thread.start()
 
-    def _work(self): ...
-
-
-class ProcessWorker:
-    def __init__(self):
-        self.process: Optional[Process] = None
-        self.threads = []
-        self.max_processes = settings.max_process_threads
-        self.tasks_queue = ProcessQueue()
-        self._round_robin_thread = None
-
-    def run_task(self, task):
-        self.tasks_queue.put(task)
-
-    def start(self):
-        self.process = Process(target=self._work)
-
-    def next_thread(self) -> ThreadWorker:
-        if len(self.threads) >= self.max_processes:
-            if self._round_robin_thread is None:
-                self._round_robin_thread = cycle(self.threads)
-
-            return next(self._round_robin_thread)
-
-        thread = ThreadWorker()
-        self.threads.append(thread)
-
-        return thread
+    def is_active(self):
+        return self._is_active
 
     def _work(self):
-        while True:
-            task = self.tasks_queue.get()
+        while not self._stop_event.is_set():
+            current_time = time.time()
+            elapsed = current_time - self._start_time
 
-            if task is None:
+            if not self.tasks and elapsed > settings.ttl_thread:
+                with self._lock:
+                    self._is_active = False
+                self._stop_event.set()
+                break
+
+            if len(self.tasks) == 0:
+                self._task_added_event.wait(timeout=settings.wait_task_time)
+                self._task_added_event.clear()
                 continue
 
-            self.next_thread().add_task(task)
+            self._start_time = time.time()
+
+            for offset, task in enumerate(self.tasks):
+                try:
+                    next(task.next_command())
+                except StopIteration:
+                    with self._lock:
+                        task.done = True
+                        self.tasks.pop(offset)
 
 
 class TaskScheduler:
     def __init__(self):
-        self.processes = []
+        self.threads = []
         self._round_robin_process_list = None
+        self._lock = Lock()
 
-    def schedule_task(self, task):
+    def schedule_task(self, task: AbstractBackgroundTask):
         worker = self.next_worker()
-        worker.run_task(task)
 
-    def next_worker(self) -> ProcessWorker:
-        if len(self.processes) >= settings.max_background_processes:
-            if self._round_robin_process_list is None:
-                self._round_robin_process_list = cycle(self.processes)
+        while not worker.is_active():
+            worker = self.next_worker()
 
-            return next(self._round_robin_process_list)
+        worker.add_task(task)
 
-        worker = ProcessWorker()
-        worker.start()
-        self.processes.append(worker)
+    def next_worker(self) -> ThreadWorker:
+        with self._lock:
+            for idx, worker in enumerate(self.threads):
+                if not worker.is_active():
+                    self.threads.pop(idx)
 
-        return worker
+            if len(self.threads) >= settings.max_running_threads_tasks:
+                if self._round_robin_process_list is None:
+                    self._round_robin_process_list = cycle(self.threads)
+
+                return next(self._round_robin_process_list)
+
+            worker = ThreadWorker()
+            worker.start()
+            self.threads.append(worker)
+
+            return worker
 
 
-task_scheduler = TaskScheduler()
+def get_task_scheduler() -> TaskScheduler:
+    """Лениво создаёт планировщик задач при первом вызове."""
+    if not hasattr(get_task_scheduler, '_instance'):
+        get_task_scheduler._instance = TaskScheduler()
+
+    return get_task_scheduler._instance

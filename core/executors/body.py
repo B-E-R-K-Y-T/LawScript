@@ -60,13 +60,7 @@ class BodyExecutor(Executor):
     def async_execute(self):
         self.async_mode = True
 
-        gen = self._execute()
-
-        while True:
-            try:
-                yield gen.send(None)
-            except StopIteration as exc:
-                raise exc
+        return self._execute()
 
     def _execute(self) -> Union[Generator, Union[BaseAtomicType, Continue, Break]]:
         for command in self.body.commands:
@@ -168,7 +162,7 @@ class BodyExecutor(Executor):
 
             elif isinstance(command, Expression):
                 executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
-                executor.execute()
+                yield executor.execute(self.async_mode)
 
             elif isinstance(command, AssignOverrideVariable):
                 target_expr_executor = ExpressionExecutor(command.target_expr, self.tree_variables, self.compiled)

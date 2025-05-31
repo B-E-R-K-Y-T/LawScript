@@ -1,5 +1,7 @@
 from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable
 
+from core.background_task.schedule import get_task_scheduler
+from core.background_task.task import ProcedureBackgroundTask, AbstractBackgroundTask
 from core.call_func_stack import call_func_stack_builder
 from core.exceptions import (
     ErrorType,
@@ -7,11 +9,12 @@ from core.exceptions import (
     BaseError,
     NameNotDefine,
     MaxRecursionError,
-    DivisionByZeroError, ErrorOverflow
+    DivisionByZeroError,
+    ErrorOverflow
 )
 from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
-from core.types.atomic import Void, Boolean
+from core.types.atomic import Void, Boolean, Yield
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.operation import Operator
 from core.types.procedure import Expression, Procedure, LinkedProcedure
@@ -56,12 +59,18 @@ class Operands(NamedTuple):
     atomic_type: Type[BaseAtomicType]
 
 
+class ProcedureWrapper(NamedTuple):
+    procedure: Optional[Union[Procedure, PyExtendWrapper]] = None
+    args: Optional[list[BaseAtomicType]] = None
+
+
 class ExpressionExecutor(Executor):
     def __init__(self, expression: Expression, tree_variable: ScopeStack, compiled: "Compiled"):
         self.expression = expression
         self.tree_variable = tree_variable
         self.compiled = compiled
         self.procedure_executor = _get_procedure_executor()
+        self.task_scheduler = get_task_scheduler()
 
     def prepare_operations(self) -> list[Union[BaseAtomicType, Operator]]:
         new_expression_stack = []
@@ -71,8 +80,9 @@ class ExpressionExecutor(Executor):
                 if operation.name == variable.name:
                     if isinstance(operation, LinkedProcedure):
                         new_expression_stack.append(operation)
-                    # elif isinstance(operation, Procedure):
-                    #     new_expression_stack.append(operation)
+                    elif isinstance(variable.value, AbstractBackgroundTask):
+                        variable.value.name = operation.name
+                        new_expression_stack.append(variable.value)
                     else:
                         new_expression_stack.append(variable.value)
 
@@ -89,6 +99,8 @@ class ExpressionExecutor(Executor):
                     not isinstance(operation, PyExtendWrapper)
                     and
                     not isinstance(operation, LinkedProcedure)
+                    and
+                    not isinstance(operation, AbstractBackgroundTask)
             ):
                 if operation.name not in ALL_TOKENS:
                     raise NameNotDefine(
@@ -108,12 +120,12 @@ class ExpressionExecutor(Executor):
             atomic_type=atomic_type,
         )
 
-    def call_procedure_evaluate(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
+    def init_procedure_evaluate(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
         if not evaluate_stack:
             evaluate_stack.append(procedure)
-            return
+            return ProcedureWrapper()
 
-        call_func_stack_builder.push(func_name=procedure.name, meta_info=self.expression.meta_info)
+        # call_func_stack_builder.push(func_name=procedure.name, meta_info=self.expression.meta_info)
         procedure.tree_variables = ScopeStack()
 
         rev_arguments_names = list(reversed(procedure.arguments_names))
@@ -176,7 +188,7 @@ class ExpressionExecutor(Executor):
 
                 fact_default_args_count += 1
 
-                value = ExpressionExecutor(expr, self.tree_variable, self.compiled).evaluate()
+                value = ExpressionExecutor(expr, self.tree_variable, self.compiled).execute()
 
                 procedure.tree_variables.set(Variable(name, value))
 
@@ -189,19 +201,21 @@ class ExpressionExecutor(Executor):
                 info=self.expression.meta_info
             )
 
+        return ProcedureWrapper(
+            procedure=procedure,
+        )
+
+    def call_procedure(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
         executor = self.procedure_executor(procedure, self.compiled)
         evaluate_stack.append(executor.execute())
 
-        call_func_stack_builder.pop()
-
-    def call_py_extend_procedure_evaluate(
-            self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
-    ):
+    @staticmethod
+    def init_py_extend_procedure_evaluate(
+            py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
+    ) -> ProcedureWrapper:
         if not evaluate_stack:
             evaluate_stack.append(py_extend_procedure)
-            return
-
-        call_func_stack_builder.push(func_name=py_extend_procedure.name, meta_info=self.expression.meta_info)
+            return ProcedureWrapper()
 
         args = None
 
@@ -232,6 +246,12 @@ class ExpressionExecutor(Executor):
         if args is not None:
             args = list(reversed(args))
 
+        return ProcedureWrapper(
+            procedure=py_extend_procedure,
+            args=args
+        )
+
+    def call_py_extend_procedure(self, py_extend_procedure, args, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]):
         try:
             py_extend_procedure.check_args(args)
             result = py_extend_procedure.call(args)
@@ -245,7 +265,6 @@ class ExpressionExecutor(Executor):
             )
 
         evaluate_stack.append(result)
-        call_func_stack_builder.pop()
 
     def evaluate(self) -> BaseAtomicType:
         try:
@@ -253,7 +272,7 @@ class ExpressionExecutor(Executor):
         except BaseError as e:
             raise InvalidExpression(str(e), info=self.expression.meta_info)
 
-        evaluate_stack: list[Union[BaseAtomicType, BaseType]] = []
+        evaluate_stack: list[Union[AbstractBackgroundTask, BaseAtomicType, BaseType]] = []
 
         for offset, operation in enumerate(prepared_operations):
             if isinstance(operation, LinkedProcedure):
@@ -271,7 +290,12 @@ class ExpressionExecutor(Executor):
                             continue
 
                 try:
-                    self.call_procedure_evaluate(operation, evaluate_stack)
+                    call_metadata = self.init_procedure_evaluate(operation, evaluate_stack)
+
+                    if call_metadata.procedure is not None:
+                        call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
+                        self.call_procedure(call_metadata.procedure, evaluate_stack)
+                        call_func_stack_builder.pop()
                 except RecursionError:
                     raise MaxRecursionError(
                         f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
@@ -289,7 +313,13 @@ class ExpressionExecutor(Executor):
                             evaluate_stack.append(operation)
                             continue
 
-                self.call_py_extend_procedure_evaluate(operation, evaluate_stack)
+                call_metadata = self.init_py_extend_procedure_evaluate(operation, evaluate_stack)
+
+                if call_metadata.procedure is not None:
+                    call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
+                    self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
+                    call_func_stack_builder.pop()
+
                 continue
 
             if operation.name not in ALLOW_OPERATORS:
@@ -331,15 +361,32 @@ class ExpressionExecutor(Executor):
                 evaluate_stack.append(atomic_type(operand.pos()))
 
             elif operation.operator == Tokens.wait:
-                operand = evaluate_stack.pop(-1)
+                task = evaluate_stack.pop(-1)
 
-                evaluate_stack.append(operand)
+                if not isinstance(task, AbstractBackgroundTask):
+                    raise ErrorType(
+                        f"Операция '{Tokens.wait}' "
+                        f"поддерживается только для задач!",
+                        info=self.expression.meta_info
+                    )
+
+                while not task.done:
+                    yield Yield()
+
+                evaluate_stack.append(task.result)
 
             elif operation.operator == ServiceTokens.in_background:
                 func = evaluate_stack.pop(-1)
 
                 if isinstance(func, PyExtendWrapper):
-                    self.call_py_extend_procedure_evaluate(func, evaluate_stack)
+                    call_metadata = self.init_py_extend_procedure_evaluate(func, evaluate_stack)
+
+                    if call_metadata.procedure is not None:
+                        # TODO: Увести этот вызов в планировщик фоновых задач
+                        call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
+                        self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
+                        call_func_stack_builder.pop()
+
                     continue
 
                 if not isinstance(func, Procedure):
@@ -360,7 +407,15 @@ class ExpressionExecutor(Executor):
                     )
 
                 try:
-                    self.call_procedure_evaluate(func, evaluate_stack)
+                    call_metadata = self.init_procedure_evaluate(func, evaluate_stack)
+
+                    if call_metadata.procedure is not None:
+                        executor = self.procedure_executor(call_metadata.procedure, self.compiled)
+                        background_task = ProcedureBackgroundTask(call_metadata.procedure.name, executor)
+
+                        self.task_scheduler.schedule_task(background_task)
+                        evaluate_stack.append(background_task)
+
                 except RecursionError:
                     raise MaxRecursionError(
                         f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
@@ -426,9 +481,30 @@ class ExpressionExecutor(Executor):
 
         return Void()
 
-    def execute(self) -> BaseAtomicType:
+    def execute(self, async_execute=False) -> BaseAtomicType:
+        if async_execute:
+            return self.async_execute()
+
+        return self.sync_execute()
+
+    def async_execute(self):
+        gen = self.evaluate()
+
+        while True:
+            try:
+                yield from gen
+            except StopIteration as exc:
+                return exc
+
+    def sync_execute(self) -> BaseAtomicType:
         try:
-            return self.evaluate()
+            gen = self.evaluate()
+
+            try:
+                while True:
+                    next(gen)
+            except StopIteration as exc:
+                return exc.value
         except BaseError as e:
             raise e
         except TypeError:
