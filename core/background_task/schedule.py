@@ -47,13 +47,13 @@ class ThreadWorker:
 
             self._start_time = time.time()
 
-            for offset, task in enumerate(self.tasks):
+            for idx, task in enumerate(self.tasks):
                 try:
                     next(task.next_command())
                 except StopIteration:
                     with self._lock:
                         task.done = True
-                        self.tasks.pop(offset)
+                        self.tasks.pop(idx)
 
 
 class TaskScheduler:
