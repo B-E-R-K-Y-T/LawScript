@@ -1,6 +1,6 @@
 from itertools import cycle
 from multiprocessing import Queue as ProcessQueue, Process
-from threading import Lock, Thread
+from threading import Lock, Thread, Event
 from typing import Optional
 
 from config import settings
@@ -39,10 +39,16 @@ class ThreadWorker:
         self.thread = None
         self.tasks = RoundRobinTaskList()
         self.max_tasks_in_thread = settings.max_tasks_in_thread
+        self._stop_event = Event()
+        self._task_added_event = Event()
 
     def add_task(self, task):
-        while self.tasks.is_full():
-            continue
+        while self.tasks.is_full() and not self._stop_event.is_set():
+            self._task_added_event.wait(timeout=0.1)
+            self._task_added_event.clear()
+
+        if self._stop_event.is_set():
+            raise RuntimeError("ThreadWorker is stopping")
 
         self.tasks.append(task)
 

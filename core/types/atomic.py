@@ -141,3 +141,8 @@ class Void(BaseAtomicType):
 
     def __str__(self) -> str:
         return Tokens.void
+
+
+class Yield(BaseAtomicType):
+    def __init__(self):
+        super().__init__(None)

@@ -43,8 +43,10 @@ ALLOW_OPERATORS = {
     Tokens.greater,
     Tokens.less,
     Tokens.exponentiation,
+    Tokens.wait,
     ServiceTokens.unary_minus,
     ServiceTokens.unary_plus,
+    ServiceTokens.in_background
 }
 
 
@@ -260,6 +262,14 @@ class ExpressionExecutor(Executor):
                 continue
 
             if isinstance(operation, Procedure):
+                if offset + 1 < len(prepared_operations):
+                    next_op = prepared_operations[offset + 1]
+
+                    if isinstance(next_op, Operator):
+                        if prepared_operations[offset + 1].operator == ServiceTokens.in_background:
+                            evaluate_stack.append(operation)
+                            continue
+
                 try:
                     self.call_procedure_evaluate(operation, evaluate_stack)
                 except RecursionError:
@@ -271,6 +281,14 @@ class ExpressionExecutor(Executor):
                 continue
 
             elif isinstance(operation, PyExtendWrapper):
+                if offset + 1 < len(prepared_operations):
+                    next_op = prepared_operations[offset + 1]
+
+                    if isinstance(next_op, Operator):
+                        if prepared_operations[offset + 1].operator == ServiceTokens.in_background:
+                            evaluate_stack.append(operation)
+                            continue
+
                 self.call_py_extend_procedure_evaluate(operation, evaluate_stack)
                 continue
 
@@ -311,6 +329,45 @@ class ExpressionExecutor(Executor):
                 atomic_type = type(operand)
 
                 evaluate_stack.append(atomic_type(operand.pos()))
+
+            elif operation.operator == Tokens.wait:
+                operand = evaluate_stack.pop(-1)
+
+                evaluate_stack.append(operand)
+
+            elif operation.operator == ServiceTokens.in_background:
+                func = evaluate_stack.pop(-1)
+
+                if isinstance(func, PyExtendWrapper):
+                    self.call_py_extend_procedure_evaluate(func, evaluate_stack)
+                    continue
+
+                if not isinstance(func, Procedure):
+                    if isinstance(func, Operator):
+                        err_msg = (
+                            f"Операция '{Tokens.in_} {Tokens.background}' "
+                            f"не поддерживается для '{func.operator}'!"
+                        )
+                    else:
+                        err_msg = (
+                            f"Операция '{Tokens.in_} {Tokens.background}' "
+                            f"не поддерживается для '{func}'!"
+                        )
+
+                    raise ErrorType(
+                        err_msg,
+                        info=self.expression.meta_info
+                    )
+
+                try:
+                    self.call_procedure_evaluate(func, evaluate_stack)
+                except RecursionError:
+                    raise MaxRecursionError(
+                        f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
+                        info=self.expression.meta_info
+                    )
+
+                continue
 
             elif operation.operator == Tokens.star:
                 operands = self.get_operands(evaluate_stack)

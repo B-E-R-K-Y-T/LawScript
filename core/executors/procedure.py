@@ -17,3 +17,7 @@ class ProcedureExecutor(Executor):
     def execute(self) -> BaseAtomicType:
         body = BodyExecutor(self.procedure.body, self.procedure.tree_variables, self.compiled)
         return body.execute()
+
+    def async_execute(self):
+        body = BodyExecutor(self.procedure.body, self.procedure.tree_variables, self.compiled)
+        return body.async_execute()

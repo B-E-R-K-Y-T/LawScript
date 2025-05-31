@@ -27,8 +27,10 @@ ALLOW_OPERATORS = {
     Tokens.less,
     Tokens.exponentiation,
     Tokens.comma,
+    Tokens.wait,
     ServiceTokens.unary_minus,
     ServiceTokens.unary_plus,
+    ServiceTokens.in_background,
 }
 
 
@@ -49,8 +51,17 @@ def check_correct_expr(expr: list[str]):
     if filtered_expr:
         if filtered_expr[-1] in ALLOW_OPERATORS - {Tokens.left_bracket, Tokens.right_bracket, Tokens.true, Tokens.false}:
             raise InvalidExpression(
-                f"Выражение: {' '.join(expr)} не может заканчиваться на: '{filtered_expr[-1]}'"
+                f"Выражение: {' '.join(str(item) for item in expr)} не может заканчиваться на: '{filtered_expr[-1]}'"
             )
+
+    in_count = sum(1 for op in filtered_expr if op == Tokens.in_)
+    background_count = sum(1 for op in filtered_expr if op == Tokens.background)
+
+    if in_count != background_count:
+        raise InvalidExpression(
+            f"В выражении: {' '.join(str(item) for item in expr)} "
+            f"не может быть оператора '{Tokens.in_}' без '{Tokens.background}'"
+        )
 
     count_left_bracket = sum(1 for op in filtered_expr if op == Tokens.left_bracket)
     count_right_bracket = sum(1 for op in filtered_expr if op == Tokens.right_bracket)
@@ -59,14 +70,14 @@ def check_correct_expr(expr: list[str]):
         diff = count_left_bracket - count_right_bracket
 
         raise InvalidExpression(
-            f"В выражении: '{' '.join(expr)}' не хватает {diff} закрывающих скобок: '{Tokens.right_bracket}'"
+            f"В выражении: '{' '.join(str(item) for item in expr)}' не хватает {diff} закрывающих скобок: '{Tokens.right_bracket}'"
         )
 
     if count_right_bracket > count_left_bracket:
         diff = count_right_bracket - count_left_bracket
 
         raise InvalidExpression(
-            f"В выражении: '{' '.join(expr)}' не хватает {diff} открывающих скобок: '{Tokens.left_bracket}'"
+            f"В выражении: '{' '.join(str(item) for item in expr)}' не хватает {diff} открывающих скобок: '{Tokens.left_bracket}'"
         )
 
     previous_op = None
@@ -83,12 +94,13 @@ def check_correct_expr(expr: list[str]):
         Tokens.bool_not_equal,
         Tokens.greater,
         Tokens.less,
+        Tokens.wait
     )
 
     for op in filtered_expr:
         if op == previous_op:
             raise InvalidExpression(
-                f"В выражении: '{' '.join(expr)}' не может быть подряд два оператора: '{op}'"
+                f"В выражении: '{' '.join(str(item) for item in expr)}' не может быть подряд два оператора: '{op}'"
             )
 
         if op in not_repeated_ops:
@@ -110,29 +122,40 @@ def check_correct_expr(expr: list[str]):
         if op not in allowed_ops:
             if not is_integer(op) and not is_float(op) and not is_identifier(op):
                 raise InvalidExpression(
-                    f"В выражении: '{' '.join(expr)}' не может быть оператора: '{op}'"
+                    f"В выражении: '{' '.join(str(item) for item in expr)}' не может быть оператора: '{op}'"
                 )
 
     count_double_comma = 0
 
     for op in filtered_expr:
         if count_double_comma > 1:
-            raise InvalidExpression(f"В выражении: {' '.join(expr)} не может быть подряд больше одной запятой")
+            raise InvalidExpression(f"В выражении: {' '.join(str(item) for item in expr)} не может быть подряд больше одной запятой")
 
         if op == Tokens.comma:
             count_double_comma += 1
         else:
             count_double_comma = 0
 
+
 def prepare_expr(expr: list[str]) -> None:
     for offset, op in enumerate(expr):
-        if len(expr) - 1 > offset >= 0 and op == Tokens.not_:
-            next_op = expr[offset + 1]
+        if len(expr) - 1 > offset >= 0:
+            if op == Tokens.not_:
+                next_op = expr[offset + 1]
 
-            if next_op == Tokens.bool_equal:
-                expr[offset:offset+2] = [Tokens.bool_not_equal]
-                printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[offset]}'", level="INFO")
-                continue
+                if next_op == Tokens.bool_equal:
+                    expr[offset:offset+2] = [Tokens.bool_not_equal]
+                    printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[offset]}'", level="INFO")
+                    continue
+
+            if op == Tokens.in_:
+                next_op = expr[offset + 1]
+
+                if next_op == Tokens.background:
+                    expr[offset:offset+2] = [ServiceTokens.in_background]
+                    printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[offset]}'", level="INFO")
+                    continue
+
 
 def detect_unary(expr: list[str], offset, op, type_op) -> bool:
     aw_without_right_bracket = ALLOW_OPERATORS - {Tokens.right_bracket}
@@ -265,7 +288,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
                     break
 
-                if stack[-1] in [Tokens.exponentiation, Tokens.left_bracket, Tokens.right_bracket]:
+                if stack[-1] in [Tokens.exponentiation, Tokens.left_bracket, Tokens.right_bracket, Tokens.wait]:
                     for _ in range(len(stack)):
                         if stack[-1] in [
                             Tokens.left_bracket, Tokens.right_bracket, Tokens.exponentiation
@@ -277,6 +300,38 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                 stack.append(op)
                 break
+
+        elif op == ServiceTokens.in_background:
+            while True:
+                if len(stack) == 0:
+                    if detect_unary(expr, offset, op, ServiceTokens.in_background):
+                        stack.append(ServiceTokens.in_background)
+                        printer.logging(f"Оператор '{ServiceTokens.in_background}' добавлен в стек (пустой стек)", level="INFO")
+                        break
+
+                    stack.append(op)
+                    printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
+                    break
+                else:
+                    stack.append(op)
+                    printer.logging(f"Оператор '{op}' добавлен в стек", level="INFO")
+                    break
+
+        elif op == Tokens.wait:
+            while True:
+                if len(stack) == 0:
+                    if detect_unary(expr, offset, op, Tokens.wait):
+                        stack.append(Tokens.wait)
+                        printer.logging(f"Оператор '{Tokens.wait}' добавлен в стек (пустой стек)", level="INFO")
+                        break
+
+                    stack.append(op)
+                    printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
+                    break
+                else:
+                    stack.append(op)
+                    printer.logging(f"Оператор '{op}' добавлен в стек", level="INFO")
+                    break
 
         elif op in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus]:
             while True:
@@ -297,7 +352,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 if op in [Tokens.plus, Tokens.minus]:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.exponentiation,
-                        ServiceTokens.unary_minus, ServiceTokens.unary_plus,
+                        ServiceTokens.unary_minus, ServiceTokens.unary_plus, Tokens.wait
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -326,12 +381,12 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         break
 
                     elif stack[-1] in [
-                        Tokens.star, Tokens.div, Tokens.exponentiation,
+                        Tokens.star, Tokens.div, Tokens.exponentiation, Tokens.wait,
                         ServiceTokens.unary_minus, ServiceTokens.unary_plus
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] not in [
-                                Tokens.star, Tokens.div,
+                                Tokens.star, Tokens.div, Tokens.wait,
                                 Tokens.left_bracket, Tokens.right_bracket,
                             ]:
                                 break
@@ -363,7 +418,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     break
 
                 if op == Tokens.not_:
-                    if stack[-1] in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_]:
+                    if stack[-1] in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.wait]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
@@ -380,7 +435,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                 if op == Tokens.and_:
                     if stack[-1] in [
-                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.and_
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.and_, Tokens.wait,
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -398,7 +453,8 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                 if op == Tokens.or_:
                     if stack[-1] in [
-                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.and_, Tokens.or_
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
+                        Tokens.not_, Tokens.and_, Tokens.or_, Tokens.wait,
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -418,7 +474,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
                         Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,Tokens.bool_not_equal,
-                        Tokens.greater, Tokens.less, Tokens.exponentiation,
+                        Tokens.greater, Tokens.less, Tokens.exponentiation, Tokens.wait,
                         ServiceTokens.unary_plus, ServiceTokens.unary_minus,
                     ]:
                         for _ in range(len(stack)):

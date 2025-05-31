@@ -33,6 +33,9 @@ class Procedure(BaseType):
         self.default_arguments = default_arguments
         self.tree_variables: Optional[ScopeStack] = None
 
+    def __str__(self):
+        return self.name
+
     def __repr__(self):
         return f"Процедура('{self.name}') кол-во аргументов: {len(self.arguments_names)}"
 
@@ -42,6 +45,8 @@ class LinkedProcedure(BaseType):
         super().__init__(name)
         self.func = func
 
+    def __str__(self):
+        return self.name
 
 class Expression(BaseType):
     def __init__(self, name: str, operations, info_line: Info):

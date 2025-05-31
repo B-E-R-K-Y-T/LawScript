@@ -4,6 +4,7 @@ from typing import Any, TYPE_CHECKING
 from core.call_func_stack import call_func_stack_builder
 from core.exceptions import NameNotDefine
 from core.executors.procedure import ProcedureExecutor
+from core.types.atomic import Yield
 from core.types.basetype import BaseType, BaseAtomicType
 from core.types.criteria import Criteria
 from core.types.procedure import Procedure
@@ -122,7 +123,10 @@ class Condition(BaseType):
                 executor = ProcedureExecutor(procedure, compiled)
 
                 call_func_stack_builder.push(executor.procedure.name, procedure.meta_info)
-                modify.nested_modify.value = executor.execute()
+
+                returned_value = executor.execute()
+
+                modify.nested_modify.value = returned_value
                 call_func_stack_builder.pop()
 
             try:

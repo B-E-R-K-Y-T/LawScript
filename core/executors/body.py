@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Generator
 
 from core.exceptions import ErrorType, NameNotDefine
 from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
-from core.types.atomic import Void, Number
+from core.types.atomic import Void, Number, Yield
 from core.types.basetype import BaseAtomicType
 from core.types.procedure import (
     Print,
@@ -29,12 +29,12 @@ if TYPE_CHECKING:
 
 
 class BodyExecutor(Executor):
-    def __init__(self, body: Body, tree_variables: ScopeStack, compiled: "Compiled", async_mode: bool = False):
+    def __init__(self, body: Body, tree_variables: ScopeStack, compiled: "Compiled"):
         self.body = body
         self.tree_variables = tree_variables
         self.compiled = compiled
         self.catch_comprehensive_procedures()
-        self.async_mode = async_mode
+        self.async_mode = False
 
     def catch_comprehensive_procedures(self):
         local_vars_names = {lv.name for lv in traverse_scope(self.tree_variables.scopes[-1])}
@@ -48,7 +48,27 @@ class BodyExecutor(Executor):
             elif isinstance(var, PyExtendWrapper):
                 self.tree_variables.set(Variable(var.name, var))
 
-    def execute(self) -> Union[BaseAtomicType, Continue, Break]:
+    def execute(self) -> Union[Generator, Union[BaseAtomicType, Continue, Break]]:
+        gen = self._execute()
+
+        try:
+            while True:
+                next(gen)
+        except StopIteration as exc:
+            return exc.value
+
+    def async_execute(self):
+        self.async_mode = True
+
+        gen = self._execute()
+
+        while True:
+            try:
+                yield gen.send(None)
+            except StopIteration as exc:
+                raise exc
+
+    def _execute(self) -> Union[Generator, Union[BaseAtomicType, Continue, Break]]:
         for command in self.body.commands:
             if isinstance(command, Return):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
@@ -106,6 +126,9 @@ class BodyExecutor(Executor):
                         elif not isinstance(executed, Void):
                             return executed
 
+                        if self.async_mode:
+                            yield Yield()
+
             elif isinstance(command, Loop):
                 executor_from = ExpressionExecutor(command.expression_from, self.tree_variables, self.compiled)
                 executor_to = ExpressionExecutor(command.expression_to, self.tree_variables, self.compiled)
@@ -139,6 +162,9 @@ class BodyExecutor(Executor):
 
                         elif not isinstance(executed, Void):
                             return executed
+
+                        if self.async_mode:
+                            yield Yield()
 
             elif isinstance(command, Expression):
                 executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
@@ -180,5 +206,8 @@ class BodyExecutor(Executor):
 
             else:
                 raise ErrorType(f"Неизвестная команда '{command.name}'!", info=command.meta_info)
+
+            if self.async_mode:
+                yield Yield()
 
         return Void()
