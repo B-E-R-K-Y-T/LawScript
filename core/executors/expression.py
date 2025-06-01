@@ -495,6 +495,28 @@ class ExpressionExecutor(Executor):
                 yield from gen
             except StopIteration as exc:
                 return exc
+            except BaseError as e:
+                raise e
+            except TypeError:
+                raise ErrorType(
+                    f"Ошибка выполнения операции между операндами в выражении '{self.expression.meta_info.raw_line}'!",
+                    info=self.expression.meta_info
+                )
+            except ZeroDivisionError:
+                raise DivisionByZeroError(
+                    f"Деление на ноль в выражении '{self.expression.meta_info.raw_line}'!",
+                    info=self.expression.meta_info
+                )
+            except OverflowError:
+                raise ErrorOverflow(
+                    f"Выражение вышло за пределы типа данных в выражении: '{self.expression.meta_info.raw_line}'!",
+                    info=self.expression.meta_info
+                )
+            except Exception:
+                raise InvalidExpression(
+                    f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                    info=self.expression.meta_info
+                )
 
     def sync_execute(self) -> BaseAtomicType:
         try:

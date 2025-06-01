@@ -162,7 +162,11 @@ class BodyExecutor(Executor):
 
             elif isinstance(command, Expression):
                 executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
-                yield executor.execute(self.async_mode)
+
+                if self.async_mode:
+                    yield from executor.execute(self.async_mode)
+                else:
+                    executor.execute()
 
             elif isinstance(command, AssignOverrideVariable):
                 target_expr_executor = ExpressionExecutor(command.target_expr, self.tree_variables, self.compiled)

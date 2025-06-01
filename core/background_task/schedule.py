@@ -1,3 +1,4 @@
+import atexit
 import time
 from itertools import cycle
 from threading import Lock, Thread, Event
@@ -5,6 +6,7 @@ from typing import Optional
 
 from config import settings
 from core.background_task.task import AbstractBackgroundTask
+from util.console_worker import printer
 
 
 class ThreadWorker:
@@ -23,8 +25,14 @@ class ThreadWorker:
 
     def start(self):
         self.thread = Thread(target=self._work)
-        self.thread.daemon = True
         self.thread.start()
+
+    def stop(self):
+        self._stop_event.set()
+        self._task_added_event.set()
+
+        if self.thread:
+            self.thread.join(timeout=1.0)
 
     def is_active(self):
         return self._is_active
@@ -54,6 +62,14 @@ class ThreadWorker:
                     with self._lock:
                         task.done = True
                         self.tasks.pop(idx)
+                except Exception as e:
+                    with self._lock:
+                        task.done = True
+                        self.tasks.pop(idx)
+
+                    err_message = f"Ошибка при выполнении задачи: '{task}'.\n\nДетали: {e}"
+
+                    printer.print_error(err_message)
 
 
 class TaskScheduler:
@@ -61,6 +77,13 @@ class TaskScheduler:
         self.threads = []
         self._round_robin_process_list = None
         self._lock = Lock()
+        atexit.register(self.shutdown)
+
+    def shutdown(self):
+        with self._lock:
+            for worker in self.threads:
+                worker.stop()
+            self.threads.clear()
 
     def schedule_task(self, task: AbstractBackgroundTask):
         worker = self.next_worker()

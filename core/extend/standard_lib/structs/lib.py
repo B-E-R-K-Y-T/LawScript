@@ -76,7 +76,10 @@ class ArrayGetItem(PyExtendWrapper):
 
         array, item = parse_arr_args_two(args)
 
-        if not isinstance(item, Number) and item.is_int():
+        if isinstance(item, Number) and item.is_int():
+            raise ErrorType("Индекс должен быть целым числом.")
+
+        if not isinstance(item, Number):
             raise ErrorType("Индекс должен быть целым числом.")
 
         try:
