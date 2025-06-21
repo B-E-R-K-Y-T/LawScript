@@ -285,8 +285,16 @@ class Compiler:
         printer.logging(f"Компиляция выражения в файле {expr_.meta_info.file}", level="INFO")
         raw = expr_.raw_operations
 
+        str_flag = False
+
         # Проверка на недопустимые токены
         for op in raw:
+            if op == Tokens.quotation:
+                str_flag = not str_flag
+
+            if str_flag:
+                continue
+
             if op in NOT_ALLOWED_TOKENS:
                 error_msg = f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {op}"
                 printer.logging(error_msg, level="ERROR")
@@ -372,6 +380,7 @@ class Compiler:
                     self.body_compile(statement.else_.body)
 
                 if statement.else_whens:
+                    printer.logging("Компиляция else_when веток When", level="DEBUG")
                     for else_when in statement.else_whens:
                         self.expr_compile(else_when.expression, statements)
                         self.body_compile(else_when.body)
