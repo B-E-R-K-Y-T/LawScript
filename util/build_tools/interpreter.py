@@ -1,4 +1,6 @@
+from core.executors.execute_block import ExecuteBlockExecutor
 from core.types.checkers import CheckerSituation
+from core.types.execute_block import ExecuteBlock
 from util.build_tools.compile import Compiled
 from core.executors.checker_execute import CheckerSituationExecute
 
@@ -11,4 +13,7 @@ class Interpreter:
         for name, obj in self.compiled.compiled_code.items():
             if isinstance(obj, CheckerSituation):
                 executor = CheckerSituationExecute(obj, self.compiled)
+                executor.execute()
+            elif isinstance(obj, ExecuteBlock):
+                executor = ExecuteBlockExecutor(obj, self.compiled)
                 executor.execute()

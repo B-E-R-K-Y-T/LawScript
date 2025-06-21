@@ -17,6 +17,7 @@ from core.types.conditions import Condition
 from core.types.criteria import Criteria
 from core.types.dispositions import Disposition
 from core.types.documents import FactSituation, Document
+from core.types.execute_block import ExecuteBlock
 from core.types.hypothesis import Hypothesis
 from core.types.objects import Object
 from core.types.obligations import Obligation
@@ -147,6 +148,12 @@ class Compiler:
             return compiled_obj
 
         if isinstance(compiled_obj, Criteria):
+            return compiled_obj
+
+        if isinstance(compiled_obj, ExecuteBlock):
+            for expression in compiled_obj.expressions:
+                self.expr_compile(expression, [])
+
             return compiled_obj
 
         elif isinstance(compiled_obj, CheckerSituation):

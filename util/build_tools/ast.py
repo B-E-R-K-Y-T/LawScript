@@ -11,6 +11,7 @@ from core.parse.define_object import DefineObjectParser
 from core.parse.define_law import DefineLawParser
 from core.parse.define_rule import DefineRuleParser
 from core.parse.define_subject import DefineSubjectParser
+from core.parse.procedure.define_execute_block import DefineExecuteBlockParser
 from core.parse.procedure.define_procedure import DefineProcedureParser
 from core.parse.type_sanction import TypeSanctionParser
 from core.tokens import Tokens
@@ -74,6 +75,8 @@ class AbstractSyntaxTreeBuilder:
                     self.create_meta(DefineObjectParser, num)
                 case [Tokens.define, Tokens.condition, *_]:
                     self.create_meta(DefineConditionParser, num)
+                case [Tokens.execute, *_]:
+                    self.create_meta(DefineExecuteBlockParser, num)
                 case _:
                     printer.logging(f"Ошибка синтаксиса в строке {num}: {line}", level="ERROR")
                     raise InvalidSyntaxError(f"Некорректная строка: {line}")
