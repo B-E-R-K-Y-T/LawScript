@@ -381,7 +381,6 @@ class ExpressionExecutor(Executor):
                     call_metadata = self.init_py_extend_procedure_evaluate(func, evaluate_stack)
 
                     if call_metadata.procedure is not None:
-                        # TODO: Увести этот вызов в планировщик фоновых задач
                         call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
                         self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
                         call_func_stack_builder.pop()
