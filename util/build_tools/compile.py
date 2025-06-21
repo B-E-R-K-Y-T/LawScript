@@ -371,6 +371,11 @@ class Compiler:
                     printer.logging("Компиляция else ветки When", level="DEBUG")
                     self.body_compile(statement.else_.body)
 
+                if statement.else_whens:
+                    for else_when in statement.else_whens:
+                        self.expr_compile(else_when.expression, statements)
+                        self.body_compile(else_when.body)
+
             elif isinstance(statement, Return):
                 printer.logging("Компиляция Return выражения", level="DEBUG")
                 self.expr_compile(statement.expression, statements)

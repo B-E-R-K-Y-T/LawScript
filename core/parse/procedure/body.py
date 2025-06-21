@@ -8,7 +8,7 @@ from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.basetype import BaseType
 from core.types.line import Line, Info
 from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
-    AssignOverrideVariable, While
+    AssignOverrideVariable, While, ElseWhen
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -94,11 +94,46 @@ class BodyParser(Parser):
                     if not self.commands:
                         raise InvalidSyntaxError(err_msg, line=line, info=self.info)
 
-                    if not isinstance(self.commands[len(self.commands) - 1], When):
+                    previous_command = self.commands[len(self.commands) - 1]
+
+                    if (
+                            not isinstance(previous_command, When) and
+                            not isinstance(previous_command, ElseWhen)
+                    ):
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    if isinstance(previous_command, When) and previous_command.else_ is not None:
                         raise InvalidSyntaxError(err_msg, line=line, info=self.info)
 
                     self.commands.append(Else(str(), self.execute_parse(BodyParser, body, self.next_num_line(num))))
                     printer.logging("Добавлена команда Else", level="INFO")
+                case [Tokens.else_, Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
+                    err_msg = (
+                        f"Перед '{Tokens.else_} {Tokens.when}' "
+                        f"всегда должен быть блок '{Tokens.when}' или '{Tokens.else_} {Tokens.when}'"
+                    )
+
+                    if not self.commands:
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    previous_command = self.commands[len(self.commands) - 1]
+
+                    if (
+                            not isinstance(previous_command, When) and
+                            not isinstance(previous_command, ElseWhen)
+                    ):
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    if isinstance(previous_command, When) and previous_command.else_ is not None:
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    self.commands.append(
+                        ElseWhen(
+                            str(), Expression(str(), expr, self.info),
+                            self.execute_parse(BodyParser, body, self.next_num_line(num))
+                        )
+                    )
+                    printer.logging("Добавлена команда ElseWhen", level="INFO")
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
                     if not is_identifier(name):
                         raise InvalidSyntaxError(
@@ -119,13 +154,45 @@ class BodyParser(Parser):
                 case [Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
                     when_body = self.execute_parse(BodyParser, body, self.next_num_line(num))
                     else_ = None
+                    else_whens = []
+                    right_brackets = 0
+
+                    for num_, line_ in enumerate(body[self.jump:]):
+                        if is_ignore_line(line_):
+                            continue
+
+                        tokens = self.separate_line_to_token(line_)
+
+                        match tokens:
+                            case [Tokens.else_, Tokens.left_bracket]:
+                                break
+
+                            case [Tokens.when, *_, Tokens.then, Tokens.left_bracket]:
+                                break
+
+                            case [Tokens.right_bracket]:
+                                right_brackets += 1
+
+                                if right_brackets == 2:
+                                    break
+
+                            case [Tokens.else_, Tokens.when, *expr_, Tokens.then, Tokens.left_bracket]:
+                                body_else_when = self.execute_parse(BodyParser, body, self.next_num_line(self.jump))
+                                else_whens.append(
+                                        ElseWhen(
+                                        str(), Expression(str(), expr_, self.info), body_else_when
+                                    )
+                                )
+
+                            case _:
+                                right_brackets = 0
 
                     if body[self.jump].startswith(Tokens.else_):
                         body_else_ = self.execute_parse(BodyParser, body, self.next_num_line(self.jump))
                         else_ = Else(str(), body_else_)
 
                     when = When(
-                        str(), Expression(str(), expr, self.info), when_body, else_
+                        str(), Expression(str(), expr, self.info), when_body, else_, else_whens
                     )
                     when.set_info(self.info)
 

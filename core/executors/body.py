@@ -93,6 +93,16 @@ class BodyExecutor(Executor):
                     if result.value:
                         body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
                         executed = body_executor.execute()
+
+                    elif command.else_whens:
+                        for else_when in command.else_whens:
+                            when_executor = ExpressionExecutor(else_when.expression, self.tree_variables, self.compiled)
+                            result = when_executor.execute()
+
+                            if result.value:
+                                body_executor = BodyExecutor(else_when.body, self.tree_variables, self.compiled)
+                                executed = body_executor.execute()
+
                     elif command.else_ is not None:
                         body_executor = BodyExecutor(command.else_.body, self.tree_variables, self.compiled)
                         executed = body_executor.execute()

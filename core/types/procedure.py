@@ -96,11 +96,22 @@ class Else(CodeBlock):
         super().__init__(name, body)
 
 
-class When(CodeBlock):
-    def __init__(self, name: str, expression: Expression, body: Body, else_: Optional[Else] = None):
+class ElseWhen(CodeBlock):
+    def __init__(self, name: str, expression: Expression, body: Body):
         super().__init__(name, body)
 
         self.expression = expression
+
+
+class When(CodeBlock):
+    def __init__(
+            self, name: str, expression: Expression, body: Body,
+            else_: Optional[Else] = None, else_whens: Optional[list[ElseWhen]] = None
+    ):
+        super().__init__(name, body)
+
+        self.expression = expression
+        self.else_whens = else_whens
         self.else_ = else_
 
 
