@@ -285,14 +285,14 @@ class Compiler:
         printer.logging(f"Компиляция выражения в файле {expr_.meta_info.file}", level="INFO")
         raw = expr_.raw_operations
 
-        str_flag = False
+        is_str_flag = False
 
         # Проверка на недопустимые токены
         for op in raw:
             if op == Tokens.quotation:
-                str_flag = not str_flag
+                is_str_flag = not is_str_flag
 
-            if str_flag:
+            if is_str_flag:
                 continue
 
             if op in NOT_ALLOWED_TOKENS:
