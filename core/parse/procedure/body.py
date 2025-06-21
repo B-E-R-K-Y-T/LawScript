@@ -88,24 +88,16 @@ class BodyParser(Parser):
                 case [Tokens.print_, *expr, Tokens.end_expr]:
                     self.commands.append(Print(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Print с выражением: {expr}", level="INFO")
-                case [Tokens.else_, Tokens.left_bracket]:
-                    err_msg = f"Перед '{Tokens.else_}' всегда должен быть блок '{Tokens.when}'"
+                case [Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
+                    when_body = self.execute_parse(BodyParser, body, self.next_num_line(num))
+                    when = When(
+                        str(), Expression(str(), expr, self.info), when_body,
+                    )
+                    when.else_whens = []
+                    when.set_info(self.info)
 
-                    if not self.commands:
-                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
-
-                    previous_command = self.commands[len(self.commands) - 1]
-
-                    if not isinstance(previous_command, When):
-                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
-
-                    if previous_command.else_ is not None:
-                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
-
-                    else_ = Else(str(), self.execute_parse(BodyParser, body, self.next_num_line(num)))
-                    previous_command.else_ = else_
-
-                    printer.logging("Добавлена команда Else", level="INFO")
+                    self.commands.append(when)
+                    printer.logging("Добавлена команда When", level="INFO")
                 case [Tokens.else_, Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
                     err_msg = (
                         f"Перед '{Tokens.else_} {Tokens.when}' "
@@ -130,6 +122,24 @@ class BodyParser(Parser):
 
                     previous_command.else_whens.append(else_when)
                     printer.logging("Добавлена команда ElseWhen", level="INFO")
+                case [Tokens.else_, Tokens.left_bracket]:
+                    err_msg = f"Перед '{Tokens.else_}' всегда должен быть блок '{Tokens.when}'"
+
+                    if not self.commands:
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    previous_command = self.commands[len(self.commands) - 1]
+
+                    if not isinstance(previous_command, When):
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    if previous_command.else_ is not None:
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    else_ = Else(str(), self.execute_parse(BodyParser, body, self.next_num_line(num)))
+                    previous_command.else_ = else_
+
+                    printer.logging("Добавлена команда Else", level="INFO")
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
                     if not is_identifier(name):
                         raise InvalidSyntaxError(
@@ -147,16 +157,6 @@ class BodyParser(Parser):
                     self.commands.append(AssignField(name, Expression(str(), expr, self.info), self.info))
                     printer.logging(f"Добавлена команда AssignField с именем: {name} и выражением: {expr}",
                                     level="INFO")
-                case [Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
-                    when_body = self.execute_parse(BodyParser, body, self.next_num_line(num))
-                    when = When(
-                        str(), Expression(str(), expr, self.info), when_body,
-                    )
-                    when.else_whens = []
-                    when.set_info(self.info)
-
-                    self.commands.append(when)
-                    printer.logging("Добавлена команда When", level="INFO")
                 case [Tokens.while_, *expr, Tokens.left_bracket]:
                     self.commands.append(
                         While(
