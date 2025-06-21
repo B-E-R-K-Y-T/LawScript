@@ -93,8 +93,7 @@ class BodyExecutor(Executor):
                     if result.value:
                         body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
                         executed = body_executor.execute()
-
-                    elif command.else_whens:
+                    else:
                         for else_when in command.else_whens:
                             when_executor = ExpressionExecutor(else_when.expression, self.tree_variables, self.compiled)
                             result = when_executor.execute()
@@ -104,9 +103,10 @@ class BodyExecutor(Executor):
                                 executed = body_executor.execute()
                                 break
 
-                    elif command.else_ is not None:
-                        body_executor = BodyExecutor(command.else_.body, self.tree_variables, self.compiled)
-                        executed = body_executor.execute()
+                        else:
+                            if command.else_ is not None:
+                                body_executor = BodyExecutor(command.else_.body, self.tree_variables, self.compiled)
+                                executed = body_executor.execute()
 
                     if not isinstance(executed, Void):
                         return executed

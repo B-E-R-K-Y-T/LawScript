@@ -169,6 +169,8 @@ def build_rpn_stack(expr: list[str], meta_info: Info) -> list[Union[Operator, Ba
         return _build_rpn(expr)
     except BaseError as e:
         raise InvalidExpression(str(e), meta_info)
+    except IndexError:
+        raise InvalidExpression(f"Выражение: '{' '.join(expr)}' не может быть преобразовано в RPN-стек")
 
 
 def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:

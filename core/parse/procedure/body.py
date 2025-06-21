@@ -128,9 +128,6 @@ class BodyParser(Parser):
                             self.execute_parse(BodyParser, body, self.next_num_line(num))
                         )
 
-                    if previous_command.else_whens is None:
-                        previous_command.else_whens = []
-
                     previous_command.else_whens.append(else_when)
                     printer.logging("Добавлена команда ElseWhen", level="INFO")
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
@@ -155,6 +152,7 @@ class BodyParser(Parser):
                     when = When(
                         str(), Expression(str(), expr, self.info), when_body,
                     )
+                    when.else_whens = []
                     when.set_info(self.info)
 
                     self.commands.append(when)
