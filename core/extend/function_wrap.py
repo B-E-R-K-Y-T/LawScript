@@ -11,7 +11,7 @@ from core.types.line import Info
 
 
 class PyExtendWrapper(BaseType, ABC):
-    def __init__(self, func_name: str, ):
+    def __init__(self, func_name: str):
         super().__init__(func_name)
         self.func_name = func_name
         self.empty_args = False
