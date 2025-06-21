@@ -125,7 +125,6 @@ class ExpressionExecutor(Executor):
             evaluate_stack.append(procedure)
             return ProcedureWrapper()
 
-        # call_func_stack_builder.push(func_name=procedure.name, meta_info=self.expression.meta_info)
         procedure.tree_variables = ScopeStack()
 
         rev_arguments_names = list(reversed(procedure.arguments_names))
@@ -387,6 +386,16 @@ class ExpressionExecutor(Executor):
                         self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
                         call_func_stack_builder.pop()
 
+                        background_task = evaluate_stack.pop(-1)
+
+                        if not isinstance(background_task, AbstractBackgroundTask):
+                            raise ErrorType(
+                                f"Возвращаемое значение процедуры '{func.name}' должно быть задачей!",
+                            )
+
+                        self.task_scheduler.schedule_task(background_task)
+                        evaluate_stack.append(background_task)
+
                     continue
 
                 if not isinstance(func, Procedure):
@@ -492,7 +501,10 @@ class ExpressionExecutor(Executor):
 
         while True:
             try:
-                yield from gen
+                res = yield from gen
+
+                if not isinstance(res, Yield):
+                    return res
             except StopIteration as exc:
                 return exc
             except BaseError as e:

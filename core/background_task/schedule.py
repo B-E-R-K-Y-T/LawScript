@@ -26,6 +26,7 @@ class ThreadWorker:
     def start(self):
         self.thread = Thread(target=self._work)
         self.thread.start()
+        printer.logging(f"{self.thread=} Запущен")
 
     def stop(self):
         self._stop_event.set()
@@ -37,6 +38,11 @@ class ThreadWorker:
     def is_active(self):
         return self._is_active
 
+    def done_task(self, task: AbstractBackgroundTask, task_id: int):
+        with self._lock:
+            task.done = True
+            self.tasks.pop(task_id)
+
     def _work(self):
         while not self._stop_event.is_set():
             current_time = time.time()
@@ -46,6 +52,9 @@ class ThreadWorker:
                 with self._lock:
                     self._is_active = False
                 self._stop_event.set()
+                printer.logging(
+                    f"{self.thread=} Нет задач, работа завершена по таймауту {settings.ttl_thread}"
+                )
                 break
 
             if len(self.tasks) == 0:
@@ -59,13 +68,9 @@ class ThreadWorker:
                 try:
                     next(task.next_command())
                 except StopIteration:
-                    with self._lock:
-                        task.done = True
-                        self.tasks.pop(idx)
+                    self.done_task(task, idx)
                 except Exception as e:
-                    with self._lock:
-                        task.done = True
-                        self.tasks.pop(idx)
+                    self.done_task(task, idx)
 
                     err_message = f"Ошибка при выполнении задачи: '{task}'.\n\nДетали: {e}"
 
@@ -108,6 +113,7 @@ class TaskScheduler:
             worker = ThreadWorker()
             worker.start()
             self.threads.append(worker)
+            self._round_robin_process_list = cycle(self.threads)
 
             return worker
 

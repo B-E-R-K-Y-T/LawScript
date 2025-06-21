@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from threading import Lock
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator, Any
 
 from core.types.basetype import BaseAtomicType
 
@@ -8,8 +8,9 @@ if TYPE_CHECKING:
     from core.executors.procedure import ProcedureExecutor
 
 
-class AbstractBackgroundTask(ABC):
-    def __init__(self, name: str):
+class AbstractBackgroundTask(BaseAtomicType, ABC):
+    def __init__(self, name: str, value: Any):
+        super().__init__(value)
         self.name = name
 
     @abstractmethod
@@ -22,9 +23,9 @@ class AbstractBackgroundTask(ABC):
     def result(self): ...
 
 
-class ProcedureBackgroundTask(BaseAtomicType, AbstractBackgroundTask):
+class ProcedureBackgroundTask(AbstractBackgroundTask):
     def __init__(self,  name: str, executor: 'ProcedureExecutor'):
-        super().__init__(name)
+        super().__init__(name, executor)
         self.executor = executor
         self._generator = executor.async_execute()
         self._current_result = None
@@ -52,7 +53,11 @@ class ProcedureBackgroundTask(BaseAtomicType, AbstractBackgroundTask):
     def next_command(self):
         try:
             self._current_result = next(self._generator)
-            yield self._current_result
+
+            if not isinstance(self._current_result, Generator):
+                yield self._current_result
+
+            yield from self._current_result
         except StopIteration as e:
             self._current_result = e.value
             return

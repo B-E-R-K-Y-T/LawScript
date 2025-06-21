@@ -2,6 +2,7 @@ import sys
 import time
 
 from config import settings
+from core.background_task.schedule import get_task_scheduler
 from core.call_func_stack import get_stack_pretty_str
 from core.exceptions import BaseError
 from core.util import kill_process, success_process, yellow_print
@@ -41,6 +42,10 @@ class Law:
                 raise
 
             kill_process(f"{get_stack_pretty_str()}\n{str(e)}")
+
+        except KeyboardInterrupt:
+            get_task_scheduler().shutdown()
+
         except Exception as e:
             if settings.debug:
                 raise

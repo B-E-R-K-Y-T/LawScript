@@ -1,4 +1,3 @@
-from _ast import Expression
 from typing import Optional, Union
 
 from core.extend.function_wrap import PyExtendWrapper
@@ -47,6 +46,7 @@ class LinkedProcedure(BaseType):
 
     def __str__(self):
         return self.name
+
 
 class Expression(BaseType):
     def __init__(self, name: str, operations, info_line: Info):
