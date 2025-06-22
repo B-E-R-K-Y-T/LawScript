@@ -90,20 +90,17 @@ class ExpressionExecutor(Executor):
             else:
                 new_expression_stack.append(operation)
 
+        valid_types = (
+            BaseAtomicType,
+            Procedure,
+            PyExtendWrapper,
+            LinkedProcedure,
+            AbstractBackgroundTask
+        )
+
         for operation in new_expression_stack:
-            if (
-                    not isinstance(operation, BaseAtomicType)
-                    and
-                    not isinstance(operation, Procedure)
-                    and
-                    not isinstance(operation, PyExtendWrapper)
-                    and
-                    not isinstance(operation, LinkedProcedure)
-                    and
-                    not isinstance(operation, AbstractBackgroundTask)
-            ):
-                if operation.name not in ALL_TOKENS:
-                    raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
+            if not isinstance(operation, valid_types) and operation.name not in ALL_TOKENS:
+                raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
 
         return new_expression_stack
 
