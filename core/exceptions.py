@@ -70,10 +70,10 @@ class InvalidSyntaxError(BaseError):
         if line is not None:
             for word in line:
                 if word not in Tokens:
-                    sorted_tokens = get_probable_tokens(word)
+                    sorted_matches = get_probable_tokens(word)
                     probable_tokens = ""
 
-                    for i, (token, percent) in enumerate(sorted_tokens[:3], 1):
+                    for i, (token, percent) in enumerate(sorted_matches[:3], 1):
                         probable_tokens += f"{i}. {token}\n"
 
                     if probable_tokens:
@@ -148,7 +148,7 @@ class NameNotDefine(BaseError):
             msg = "Имя не определено!"
 
         if name is not None:
-            sorted_tokens = []
+            sorted_matches = []
 
             if scopes is not None:
                 seq = []
@@ -157,14 +157,14 @@ class NameNotDefine(BaseError):
                     for var in scope.variables.values():
                         seq.append(var.name)
 
-                sorted_tokens = get_probable_tokens(name, seq)
+                sorted_matches = get_probable_tokens(name, seq)
 
-            if not sorted_tokens:
-                sorted_tokens = get_probable_tokens(name)
+            if not sorted_matches:
+                sorted_matches = get_probable_tokens(name)
 
             probable_tokens = ""
 
-            for i, (token, percent) in enumerate(sorted_tokens[:3], 1):
+            for i, (token, percent) in enumerate(sorted_matches[:3], 1):
                 probable_tokens += f"{i}. {token}\n"
 
             if probable_tokens:
