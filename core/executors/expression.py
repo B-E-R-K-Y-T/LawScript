@@ -1,4 +1,4 @@
-from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable
+from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable, Any
 
 from core.background_task.schedule import get_task_scheduler
 from core.background_task.task import ProcedureBackgroundTask, AbstractBackgroundTask
@@ -71,9 +71,21 @@ class ExpressionExecutor(Executor):
         self.compiled = compiled
         self.procedure_executor = _get_procedure_executor()
         self.task_scheduler = get_task_scheduler()
+        self._scope_cache = {}
+
+    def _get_scope_variables(self) -> dict[str, Any]:
+        """Возвращает переменные текущей области видимости с кешированием."""
+        scope_id = id(self.tree_variable.scopes[-1])  # Уникальный идентификатор области видимости
+        if scope_id not in self._scope_cache:
+            self._scope_cache[scope_id] = {
+                var.name: var.value
+                for var in traverse_scope(self.tree_variable.scopes[-1])
+            }
+        return self._scope_cache[scope_id]
 
     def prepare_operations(self) -> list[Union[BaseAtomicType, Operator]]:
-        scope_vars = {var.name: var.value for var in traverse_scope(self.tree_variable.scopes[-1])}
+        # scope_vars = {var.name: var.value for var in traverse_scope(self.tree_variable.scopes[-1])}
+        scope_vars = self._get_scope_variables()
         new_expression_stack = []
 
         for operation in self.expression.operations:
