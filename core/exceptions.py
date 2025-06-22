@@ -1,8 +1,37 @@
-from typing import Optional, Any
+from collections.abc import Iterable
+from difflib import SequenceMatcher
+from typing import Optional, Any, TYPE_CHECKING
 
 from core.tokens import Tokens
 from core.types.line import Info
 from core.types.severitys import Levels
+
+if TYPE_CHECKING:
+    from core.types.variable import Scope
+
+
+def get_probable_tokens(word: str, sequence: Optional[Iterable[str]] = Tokens, threshold=0.6):
+    """Возвращает вероятные токены с учётом опечаток и регистра."""
+    word = word.upper()  # Нормализуем регистр
+    suggestions = []
+
+    for item in sequence:
+        normalized_item = item.upper()
+        # Используем SequenceMatcher для учёта опечаток
+        ratio = SequenceMatcher(None, word, normalized_item).ratio()
+
+        # Дополнительные критерии
+        starts_with_match = normalized_item.startswith(word[0])
+        length_similarity = 1 - abs(len(normalized_item) - len(word)) / max(len(normalized_item), len(word))
+
+        # Комбинированный рейтинг
+        score = 0.7 * ratio + 0.2 * length_similarity + 0.1 * starts_with_match
+
+        if score >= threshold:
+            suggestions.append((item, score))
+
+    # Сортируем по убыванию рейтинга
+    return sorted(suggestions, key=lambda x: x[1], reverse=True)
 
 
 class BaseError(Exception):
@@ -14,7 +43,7 @@ class BaseError(Exception):
             msg = f"{msg} Строка: '{" ".join(line)}'"
 
         if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+            msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         super().__init__(msg)
 
@@ -39,7 +68,22 @@ class InvalidSyntaxError(BaseError):
             msg = "Некорректный синтаксис"
 
         if line is not None:
-            msg = f"{msg} Строка: '{" ".join(line)}'"
+            for word in line:
+                if word not in Tokens:
+                    sorted_tokens = get_probable_tokens(word)
+                    probable_tokens = ""
+
+                    for i, (token, percent) in enumerate(sorted_tokens[:3], 1):
+                        probable_tokens += f"{i}. {token}\n"
+
+                    if probable_tokens:
+                        msg = (
+                            f"{msg}\n\n"
+                            f"Возможно, Вы имели ввиду? \n{probable_tokens}\n"
+                        )
+                        break
+                else:
+                    msg = f"{msg} Строка: '{" ".join(line)}'"
 
         super().__init__(msg, info=info)
 
@@ -76,7 +120,7 @@ class ErrorType(BaseError):
             msg = "Ошибка типа!"
 
         if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+            msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         super().__init__(msg)
 
@@ -90,23 +134,51 @@ class ErrorValue(BaseError):
             msg = f"{msg} Значение: '{value}'"
 
         if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+            msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         super().__init__(msg)
 
 
 class NameNotDefine(BaseError):
-    def __init__(self, msg: Optional[str] = None, name: Optional[str] = None, info: Optional[Info] = None):
+    def __init__(
+            self, msg: Optional[str] = None, name: Optional[str] = None,
+            info: Optional[Info] = None, scopes: Optional[list['Scope']] = None
+    ):
         if msg is None:
             msg = "Имя не определено!"
 
         if name is not None:
-            msg = f"Ошибка: '{msg}' Имя: '{name}' используется до его определения!"
+            sorted_tokens = []
+
+            if scopes is not None:
+                seq = []
+
+                for scope in scopes:
+                    for var in scope.variables.values():
+                        seq.append(var.name)
+
+                sorted_tokens = get_probable_tokens(name, seq)
+
+            if not sorted_tokens:
+                sorted_tokens = get_probable_tokens(name)
+
+            probable_tokens = ""
+
+            for i, (token, percent) in enumerate(sorted_tokens[:3], 1):
+                probable_tokens += f"{i}. {token}\n"
+
+            if probable_tokens:
+                msg = (
+                    f"{msg} Имя: '{name}' используется до его определения!\n\n"
+                    f"Возможно, Вы имели ввиду? \n{probable_tokens}\n"
+                )
+            else:
+                msg = f"{msg} Имя: '{name}' используется до его определения! "
 
         if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+            msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
-        super().__init__(msg)
+        super().__init__(f"{msg}")
 
 
 class FieldNotDefine(BaseError):
@@ -135,9 +207,9 @@ class InvalidExpression(BaseError):
            msg = "Некорректное выражение"
 
         if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+            msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
-        super().__init__(msg)
+        super().__init__(f"{msg}")
 
 
 class DivisionByZeroError(BaseError):
@@ -153,7 +225,7 @@ class ErrorOverflow(BaseError):
         if msg is None:
             msg = "Переполнение стека!"
 
-        msg = f"{msg} Ошибка: 'Переполнение стека."
+        msg = f"{msg} 'Переполнение стека."
 
         super().__init__(
             msg=msg,
@@ -175,9 +247,9 @@ class ErrorIndex(BaseError):
             msg = "Некорректный индекс"
 
         if index is not None:
-            msg = f"Ошибка: '{msg}' Индекс: '{index}'"
+            msg = f"{msg} Индекс: '{index}'"
 
         if info is not None:
-            msg = f"Ошибка: '{msg}' Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+            msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         super().__init__(msg)

@@ -103,9 +103,7 @@ class ExpressionExecutor(Executor):
                     not isinstance(operation, AbstractBackgroundTask)
             ):
                 if operation.name not in ALL_TOKENS:
-                    raise NameNotDefine(
-                        f"Имя '{operation.name}' не определено."
-                    )
+                    raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
 
         return new_expression_stack
 

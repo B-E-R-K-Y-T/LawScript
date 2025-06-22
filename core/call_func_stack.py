@@ -38,6 +38,6 @@ def get_stack_pretty_str() -> str:
         )
 
     if not call_func_stack_builder:
-        call_stack_str += "\n\tСтек пуст.\n"
+        return ""
 
     return call_stack_str

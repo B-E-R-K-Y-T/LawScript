@@ -41,7 +41,12 @@ class Law:
             if settings.debug:
                 raise
 
-            kill_process(f"{get_stack_pretty_str()}\n{str(e)}")
+            stack_trace = get_stack_pretty_str()
+
+            if stack_trace:
+                stack_trace += "\n"
+
+            kill_process(f"{stack_trace}{str(e)}")
 
         except KeyboardInterrupt:
             get_task_scheduler().shutdown()
@@ -50,7 +55,12 @@ class Law:
             if settings.debug:
                 raise
 
-            printer.print_error(f"{get_stack_pretty_str()}\n{str(e)}")
+            stack_trace = get_stack_pretty_str()
+
+            if stack_trace:
+                stack_trace += "\n"
+
+            printer.print_error(f"{stack_trace}{str(e)}")
         else:
             success_process(f"Операция {command} завершена успешно.")
         finally:
@@ -60,7 +70,7 @@ class Law:
 
 if __name__ == '__main__':
     law = Law()
-    # law.run()
-    file = "tests\\test_11.raw"
-    run_file(file)
+    law.run()
+    # file = "tests\\test_11.raw"
+    # run_file(file)
     # build(file)

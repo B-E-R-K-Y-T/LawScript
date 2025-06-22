@@ -79,7 +79,7 @@ class AbstractSyntaxTreeBuilder:
                     self.create_meta(DefineExecuteBlockParser, num)
                 case _:
                     printer.logging(f"Ошибка синтаксиса в строке {num}: {line}", level="ERROR")
-                    raise InvalidSyntaxError(f"Некорректная строка: {line}")
+                    raise InvalidSyntaxError(line=line.split(), info=line.get_file_info())
 
         printer.logging("Построение AST завершено", level="INFO")
         return self.meta_code
