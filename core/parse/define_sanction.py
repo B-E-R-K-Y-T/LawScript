@@ -20,7 +20,7 @@ class SanctionMetaObject(MetaObject):
         super().__init__(stop_num)
         self.types = types
         self.severity = severity
-        self.procedural_aspects = procedural_aspects,
+        self.procedural_aspects = procedural_aspects
         self.info = info
         printer.logging(f"Создано SanctionMetadata с stop_num={stop_num}, types={types}, severity={severity}, "
                         f"procedural_aspects={procedural_aspects}", level="INFO")
@@ -88,7 +88,7 @@ class DefineSanctionParser(Parser):
                     printer.logging(f"Уровень строгости установлен: {self.severity}", level="INFO")
                 case [Tokens.procedural, Tokens.aspect, *procedural_aspect, Tokens.comma]:
                     self.procedural_aspects = self.parse_sequence_words_to_str(procedural_aspect)
-                    printer.logging(f"Определены процедурные аспекты: {self.procedural_aspects}", level="INFO")
+                    printer.logging(f"{self.procedural_aspects}", level="INFO")
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг санкции завершен: 'end_body' найден", level="INFO")
                     return num

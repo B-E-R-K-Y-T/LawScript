@@ -6,7 +6,7 @@ from util.console_worker import printer
 from core.executors.base import Executor
 
 
-class CheckerSituationExecute(Executor):
+class CheckerSituationExecutor(Executor):
     def __init__(self, obj: CheckerSituation, compiled: Compiled):
         self.obj = obj
         self.compiled = compiled

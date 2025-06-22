@@ -161,6 +161,32 @@
             box-shadow: none;
         }
     }
+
+    .entity {
+        background: white;
+        border-radius: 3px;
+        padding: 30px;
+        margin-bottom: 40px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--accent);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .entity::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--accent), #d69e2e);
+    }
+
+    .criteria {
+        margin-top: 15px;
+        padding-left: 20px;
+    }
 </style>
 </head>
 <body>
@@ -175,36 +201,154 @@
     <h1>{{ title }}</h1>
     <h2>Модуль: {{ filename }}</h2>
 
-    {% for func in functions %}
-    <div class="function" id="{{ func.name }}">
-        <h3>Процедура: {{ func.name }}</h3>
+    <!-- Санкции -->
+    {% if sanctions %}
+    <h2 style="margin-top: 50px;">Санкции</h2>
+    {% for sanction in sanctions %}
+    <div class="entity" id="{{ sanction.name }}">
+        <h3>Санкция: {{ sanction.name }}</h3>
+        <div class="docs"><strong>Статья:</strong> {{ sanction.article }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
 
-        {% if func.docs %}
-        <div class="docs">{{ func.docs }}</div>
+    <!-- Права -->
+    {% if laws %}
+    <h2 style="margin-top: 50px;">Права</h2>
+    {% for law in laws %}
+    <div class="entity" id="{{ law.name }}">
+        <h3>Право: {{ law.name }}</h3>
+        <div class="docs">{{ law.desc }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Обязанности -->
+    {% if duties %}
+    <h2 style="margin-top: 50px;">Обязанности</h2>
+    {% for duty in duties %}
+    <div class="entity" id="{{ duty.name }}">
+        <h3>Обязанность: {{ duty.name }}</h3>
+        <div class="docs">{{ duty.desc }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Правила -->
+    {% if rules %}
+    <h2 style="margin-top: 50px;">Правила</h2>
+    {% for rule in rules %}
+    <div class="entity" id="{{ rule.name }}">
+        <h3>Правило: {{ rule.name }}</h3>
+        <div class="docs">{{ rule.desc }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Субъекты -->
+    {% if subjects %}
+    <h2 style="margin-top: 50px;">Субъекты</h2>
+    {% for subject in subjects %}
+    <div class="entity" id="{{ subject.name }}">
+        <h3>Субъект: {{ subject.name }}</h3>
+        <div class="docs"><strong>Имя:</strong> {{ subject.subject_name }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Объекты -->
+    {% if objects %}
+    <h2 style="margin-top: 50px;">Объекты</h2>
+    {% for object in objects %}
+    <div class="entity" id="{{ object.name }}">
+        <h3>Объект: {{ object.name }}</h3>
+        <div class="docs"><strong>Имя:</strong> {{ object.name_object }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Документы -->
+    {% if documents %}
+    <h2 style="margin-top: 50px;">Документы</h2>
+    {% for document in documents %}
+    <div class="entity" id="{{ document.name }}">
+        <h3>Документ: {{ document.name }}</h3>
+        <h4>Гипотеза:</h4>
+        <div class="docs">{{ document.hypothesis }}</div>
+        <h4>Диспозиция:</h4>
+        <div class="docs">{{ document.disposition }}</div>
+        <h4>Санкция:</h4>
+        <div class="docs">{{ document.sanction }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Фактические ситуации -->
+    {% if fact_situations %}
+    <h2 style="margin-top: 50px;">Фактические ситуации</h2>
+    {% for fact_situation in fact_situations %}
+    <div class="entity" id="{{ fact_situation.name }}">
+        <h3>Фактическая ситуация: {{ fact_situation.name }}</h3>
+        <div class="docs"><strong>Объект:</strong> {{ fact_situation.object_name }}</div>
+        <div class="docs"><strong>Субъект:</strong> {{ fact_situation.subject_name }}</div>
+        <h4>Фактические данные:</h4>
+        <div class="docs">{{ fact_situation.data }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Проверки -->
+    {% if verifications %}
+    <h2 style="margin-top: 50px;">Проверки</h2>
+    {% for verification in verifications %}
+    <div class="entity" id="{{ verification.name }}">
+        <h3>Проверка: {{ verification.name }}</h3>
+        <div class="docs"><strong>Документ:</strong> {{ verification.document_name }}</div>
+        <div class="docs"><strong>Фактическая ситуация:</strong> {{ verification.fact_situation_name }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Условия -->
+    {% if conditions %}
+    <h2 style="margin-top: 50px;">Условия</h2>
+    {% for condition in conditions %}
+    <div class="entity" id="{{ condition.name }}">
+        <h3>Условие: {{ condition.name }}</h3>
+        <div class="docs">{{ condition.desc }}</div>
+        {% if condition.criteria %}
+        <h4>Критерии:</h4>
+        <div class="criteria">
+            {% for criterion in condition.criteria %}
+            <div class="docs">{{ criterion }}</div>
+            {% endfor %}
+        </div>
         {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
 
+    <!-- Процедуры -->
+    {% if functions %}
+    <h2 style="margin-top: 50px;">Процедуры</h2>
+    {% for func in functions %}
+    <div class="entity" id="{{ func.name }}">
+        <h3>Процедура: {{ func.name }}</h3>
+        {% if func.docs %}<div class="docs">{{ func.docs }}</div>{% endif %}
         {% if func.args %}
         <h4>Аргументы:</h4>
-        <ul>
-            {% for arg in func.args %}
-            <li><strong>{{ arg.name }}</strong>: {{ arg.docs }}</li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <h4>Не принимает аргументов</h4>
+        <ul>{% for arg in func.args %}<li><strong>{{ arg.name }}</strong>: {{ arg.docs }}</li>{% endfor %}</ul>
         {% endif %}
-
         {% for block in func.blocks %}
         <div class="block">
-            {% if block.wrap %}
-            <h5>вложенный блок: "{{ block.type|upper }}"</h5>
-            {% else %}
-            <h5>блок: "{{ block.type|upper }}"</h5>
-            {% endif %}
+            {% if block.wrap %}<h5>вложенный блок: "{{ block.type|upper }}"</h5>
+            {% else %}<h5>блок: "{{ block.type|upper }}"</h5>{% endif %}
             <div class="docs">{{ block.docs }}</div>
         </div>
         {% endfor %}
     </div>
     {% endfor %}
+    {% endif %}
+
 </body>
 </html>

@@ -25,8 +25,11 @@ def build(path: str):
     with open(f"{new_path}", 'wb') as write_file:
         dill.dump(compiled, write_file)
 
-    # Генерация документации
+    generate_docs(path, compiled)
+
+
+def generate_docs(path: str, compiled):
     docs_gen = DocsGenerator()
-    docs_gen.set_code(compiled)
+    docs_gen.prepare_code(compiled)
     docs_path = f"{os.path.splitext(path)[0]}_docs.html"
     docs_gen.generate(docs_path, module=os.path.basename(path).split('.')[0])

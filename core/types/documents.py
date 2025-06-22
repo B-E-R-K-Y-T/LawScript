@@ -22,6 +22,7 @@ class Document(BaseType):
                 f"\tsanction={self.sanction}\n"
                 f")")
 
+
 class FactSituation(BaseType):
     def __init__(self, name: str, object_: Object, subject: Subject, data: dict[str, Any]):
         super().__init__(name)
