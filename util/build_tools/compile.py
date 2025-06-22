@@ -16,6 +16,7 @@ from core.types.checkers import CheckerSituation
 from core.types.conditions import Condition
 from core.types.criteria import Criteria
 from core.types.dispositions import Disposition
+from core.types.docs import Docs
 from core.types.documents import FactSituation, Document
 from core.types.execute_block import ExecuteBlock
 from core.types.hypothesis import Hypothesis
@@ -183,6 +184,9 @@ class Compiler:
         elif isinstance(compiled_obj, Subject):
             return compiled_obj
 
+        elif isinstance(compiled_obj, Docs):
+            return compiled_obj
+
         elif isinstance(compiled_obj, Procedure):
             self.check_code_body(compiled_obj.body)
 
@@ -206,6 +210,9 @@ class Compiler:
 
                 return filtered_names
 
+
+            if compiled_obj.body.docs is not None:
+                compiled_obj.body.docs = self.execute_compile(compiled_obj.body.docs)
 
             for offset, command in enumerate(compiled_obj.body.commands):
                 compiled_obj.body.commands[offset] = self.execute_compile(command)
@@ -288,6 +295,7 @@ class Compiler:
             raise UnknownType(f"Невозможно скомпилировать {compiled_obj}")
 
         return compiled_obj
+
     def expr_compile(self, expr_: Expression, previous_statements: list[BaseType] = None):
         printer.logging(f"Компиляция выражения в файле {expr_.meta_info.file}", level="INFO")
         raw = expr_.raw_operations

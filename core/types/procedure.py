@@ -2,16 +2,18 @@ from typing import Optional, Union
 
 from core.extend.function_wrap import PyExtendWrapper
 from core.types.basetype import BaseType, BaseAtomicType
+from core.types.docs import Docs
 from core.types.line import Info
 from core.types.operation import Operator
 from core.types.variable import ScopeStack
 
 
 class Body(BaseType):
-    def __init__(self, name: str, commands: list[BaseType]):
+    def __init__(self, name: str, commands: list[BaseType], docs: Optional[Docs] = None):
         super().__init__(name)
 
         self.commands = commands
+        self.docs = docs
 
 class CodeBlock(BaseType):
     def __init__(self, name: str, body: Body):
@@ -20,14 +22,13 @@ class CodeBlock(BaseType):
         self.body = body
 
 
-class Procedure(BaseType):
+class Procedure(CodeBlock):
     def __init__(
             self, name: str, body: Body,
             arguments_names: list[Optional[str]], default_arguments: Optional[dict[str, 'Expression']] = None
     ):
-        super().__init__(name)
+        super().__init__(name, body)
 
-        self.body = body
         self.arguments_names = arguments_names
         self.default_arguments = default_arguments
         self.tree_variables: Optional[ScopeStack] = None

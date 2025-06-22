@@ -82,6 +82,8 @@ class Tokens(StrEnum):
     in_ = "В"
     background = "ФОНЕ"
     execute = "ВЫПОЛНИТЬ"
+    docs = "ДОКУМЕНТАЦИЯ"
+    space = "ПРОБЕЛ"
 
 
 class ServiceTokens(StrEnum):

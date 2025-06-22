@@ -1,11 +1,11 @@
-from typing import Union
-
-from numba.core.target_extension import target_override
+from typing import Union, Optional
 
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import MetaObject, Image, Parser, is_identifier
+from core.parse.procedure.docs_block import DocsBlockParser
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.basetype import BaseType
+from core.types.docs import Docs
 from core.types.line import Line, Info
 from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
     AssignOverrideVariable, While, ElseWhen
@@ -14,17 +14,21 @@ from util.console_worker import printer
 
 
 class DefineBodyMetaObject(MetaObject):
-    def __init__(self, stop_num: int, name: str, commands: list[Union[MetaObject, BaseType]], info: Info):
+    def __init__(
+            self, stop_num: int, name: str,
+            commands: list[Union[MetaObject, BaseType]], docs: Optional[Docs], info: Info
+    ):
         super().__init__(stop_num)
         self.name = name
         self.commands = commands
+        self.docs = docs
         self.info = info
 
     def create_image(self) -> Image:
         return Image(
             name=self.name,
             obj=Body,
-            image_args=(self.commands,),
+            image_args=(self.commands, self.docs),
             info=self.info
         )
 
@@ -34,6 +38,7 @@ class BodyParser(Parser):
         super().__init__()
         self.info = None
         self.commands: list[Union[MetaObject, BaseType]] = []
+        self.docs_block: Optional[Docs] = None
         printer.logging("Инициализация BodyParser", level="INFO")
 
     def create_metadata(self, stop_num: int) -> MetaObject:
@@ -42,6 +47,7 @@ class BodyParser(Parser):
             stop_num,
             name=str(id(self)),
             commands=self.commands,
+            docs=self.docs_block,
             info=self.info
         )
 
@@ -85,6 +91,11 @@ class BodyParser(Parser):
             printer.logging(f"Парсинг строки: {line}", level="INFO")
 
             match line:
+                case [Tokens.docs, Tokens.left_bracket]:
+                    meta_docs = self.execute_parse(DocsBlockParser, body, self.next_num_line(num))
+                    self.docs_block = meta_docs
+
+                    printer.logging(f"Добавлен блок комментариев: {meta_docs}", level="INFO")
                 case [Tokens.print_, *expr, Tokens.end_expr]:
                     self.commands.append(Print(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Print с выражением: {expr}", level="INFO")

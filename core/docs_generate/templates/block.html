@@ -1,0 +1,30 @@
+<div class="block" id="{{ name }}">
+    <div class="block-header">
+        <h2>
+            {% if type == 'function' %}
+                Процедура:
+            {% elif type == 'module' %}
+                Модуль:
+            {% else %}
+                {{ type | capitalize }}:
+            {% endif %}
+            <code>{{ name }}</code>
+        </h2>
+    </div>
+
+    {% if docs %}
+    <div class="docs-content">
+        {{ docs }}
+    </div>
+    {% endif %}
+
+    {% if args %}
+    <h3>Аргументы</h3>
+    <ul>
+        {% for arg in args %}
+        <li><code>{{ arg.name }}</code> - {{ arg.docs }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+</div>
