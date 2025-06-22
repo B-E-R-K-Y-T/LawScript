@@ -87,7 +87,10 @@ class PyExtendWrapper(BaseType, ABC):
         return result
 
     def __repr__(self):
-        return f"Процедура('{self.func_name}') кол-во аргументов: {self.count_args}"
+        return (
+            f"Процедура('{self.func_name}') "
+            f"кол-во аргументов: {self.count_args if self.count_args != -1 else 'неограниченное'}"
+        )
 
 
 class CallableWrapper:

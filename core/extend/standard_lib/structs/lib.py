@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 from core.extend.function_wrap import PyExtendWrapper, PyExtendBuilder
@@ -5,6 +6,7 @@ from core.types.atomic import Array
 from core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
+standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/"
 
 
 @builder.collect(func_name='массив')
@@ -251,4 +253,4 @@ class TableLen(PyExtendWrapper):
 
 
 if __name__ == '__main__':
-    builder.build_python_extend("структуры")
+    builder.build_python_extend(f"{standard_lib_path}структуры")

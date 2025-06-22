@@ -1,9 +1,11 @@
+from pathlib import Path
 from typing import Optional
 
 from core.extend.function_wrap import PyExtendWrapper, PyExtendBuilder
 from core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
+standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/"
 
 
 @builder.collect(func_name='в_строку')
@@ -63,4 +65,4 @@ class StringFormat(PyExtendWrapper):
 
 
 if __name__ == '__main__':
-    builder.build_python_extend("строки")
+    builder.build_python_extend(f"{standard_lib_path}строки")

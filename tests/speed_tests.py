@@ -4,7 +4,7 @@ from random import randint
 from util.build_tools.compile import Compiled
 from util.build_tools.starter import compile_string, run_compiled_code
 
-PATH_TO_LIB = "Programs.JetBrains.Toolbox.apps.PyCharm-C.Projects.LawScript.tests.libs.*"
+PATH_TO_LIB = "стандартная_библиотека.*"
 
 cases = {
     "Простой тест":

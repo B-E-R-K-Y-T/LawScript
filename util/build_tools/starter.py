@@ -2,6 +2,7 @@ import os
 import re
 from typing import Optional, Union
 
+from pathlib import Path
 import dill
 
 from config import settings
@@ -12,6 +13,21 @@ from core.util import kill_process
 from util.build_tools.ast import AbstractSyntaxTreeBuilder
 from util.build_tools.compile import Compiler, Compiled
 from util.build_tools.interpreter import Interpreter
+
+standard_lib_path = Path(__file__).resolve().parent.parent.parent
+standard_lib_path = f"{standard_lib_path}{settings.standard_lib_path_postfix}"
+std_name = settings.std_name
+
+
+def _standard_lib_alias(path: str) -> str:
+    if _is_std(path):
+        return path.replace(std_name, standard_lib_path)
+
+    return path
+
+
+def _is_std(path: str) -> bool:
+    return std_name in path
 
 
 def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled, str]:
@@ -47,6 +63,9 @@ def preprocess(raw_code, path: str) -> list:
     for offset, line in enumerate(code):
         match line.split(" "):
             case [Tokens.include, package] if package.endswith(Tokens.star):
+                is_std_path = _is_std(package)
+                package = _standard_lib_alias(package)
+
                 if package in imports:
                     continue
 
@@ -54,7 +73,11 @@ def preprocess(raw_code, path: str) -> list:
 
                 # Удаляем * из пути и получаем директорию
                 package = package[:-1].replace(Tokens.dot, "/")
-                dir_path = os.path.join(os.getcwd(), f"{folder}/{package}")
+
+                dir_path = os.path.dirname(package)
+
+                if not is_std_path:
+                    dir_path = os.path.join(os.getcwd(), f"{folder}/{package}")
                 try:
                     files = os.listdir(dir_path)
                 except FileNotFoundError:
@@ -88,13 +111,19 @@ def preprocess(raw_code, path: str) -> list:
                     )
 
             case [Tokens.include, module] if re.search(r'\.\S+$', module):
+                is_std_path = _is_std(module)
+                module = _standard_lib_alias(module)
+
                 if module in imports:
                     continue
 
                 imports.add(module)
 
                 module = module.replace(".", "/", module.count("."))
-                path = os.path.join(os.getcwd(), f"{folder}/{module}")
+                path = module
+
+                if not is_std_path:
+                    path = os.path.join(os.getcwd(), f"{folder}/{module}")
 
                 law_path = (f"{path}.{settings.compiled_postfix}", True)
                 pyl_path = (f"{path}.{settings.py_extend_postfix}", True)

@@ -34,10 +34,10 @@ class Procedure(CodeBlock):
         self.tree_variables: Optional[ScopeStack] = None
 
     def __str__(self):
-        return self.name
+        return f"Процедура('{self.name}') кол-во аргументов: {len(self.arguments_names)}"
 
     def __repr__(self):
-        return f"Процедура('{self.name}') кол-во аргументов: {len(self.arguments_names)}"
+        return self.name
 
 
 class LinkedProcedure(BaseType):
@@ -45,7 +45,7 @@ class LinkedProcedure(BaseType):
         super().__init__(name)
         self.func = func
 
-    def __str__(self):
+    def __repr__(self):
         return self.name
 
 

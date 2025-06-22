@@ -1,7 +1,7 @@
 import os
 import sys
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from rich.console import Console
@@ -18,6 +18,27 @@ class Settings(BaseSettings):
     max_running_threads_tasks: int = Field(default=1, ge=1, le=os.cpu_count() or 1)
     ttl_thread: float = Field(default=1)
     wait_task_time: float = Field(default=.001)
+    std_name: str = Field(default="стандартная_библиотека")
+    standard_lib_path_postfix: str = Field(default="/core/extend/standard_lib/modules")
+
+    @field_validator("std_name")
+    def validate_std_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("std_name не может быть пустой строкой")
+        return value
+
+    @field_validator("standard_lib_path_postfix")
+    def validate_standard_lib_path_postfix(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("standard_lib_path_postfix не может быть пустой строкой")
+
+        if not value.startswith("/"):
+            raise ValueError("standard_lib_path_postfix должен начинаться с символа '/'")
+
+        if value.endswith("/"):
+            raise ValueError("standard_lib_path_postfix не должен заканчиваться на символ '/'")
+
+        return value
 
     model_config = SettingsConfigDict(env_file="law_config.env")
 
