@@ -78,8 +78,16 @@ class Parser(ABC):
         self.__check_quotes(line)
         raw_line = line.raw_data
 
-        # Убираем комментарии из строки
+        is_string = False
+
+        # Убираем комментарии из сырой строки
         for offset, symbol in enumerate(raw_line):
+            if symbol == Tokens.quotation:
+                is_string = not is_string
+
+            if is_string:
+                continue
+
             match symbol:
                 case Tokens.comment:
                     raw_line = raw_line[:offset].rstrip()

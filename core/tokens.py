@@ -2,7 +2,7 @@ from enum import StrEnum
 
 
 class Tokens(StrEnum):
-    comment = "#"
+    comment = "!"
     star = "*"
     left_bracket = "("
     right_bracket = ")"
