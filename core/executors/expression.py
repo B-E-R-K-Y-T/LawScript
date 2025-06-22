@@ -73,20 +73,18 @@ class ExpressionExecutor(Executor):
         self.task_scheduler = get_task_scheduler()
 
     def prepare_operations(self) -> list[Union[BaseAtomicType, Operator]]:
+        scope_vars = {var.name: var.value for var in traverse_scope(self.tree_variable.scopes[-1])}
         new_expression_stack = []
 
         for operation in self.expression.operations:
-            for variable in traverse_scope(self.tree_variable.scopes[-1]):
-                if operation.name == variable.name:
-                    if isinstance(operation, LinkedProcedure):
-                        new_expression_stack.append(operation)
-                    elif isinstance(variable.value, AbstractBackgroundTask):
-                        variable.value.name = operation.name
-                        new_expression_stack.append(variable.value)
-                    else:
-                        new_expression_stack.append(variable.value)
-
-                    break
+            if operation.name in scope_vars:
+                if isinstance(operation, LinkedProcedure):
+                    new_expression_stack.append(operation)
+                elif isinstance(scope_vars[operation.name], AbstractBackgroundTask):
+                    scope_vars[operation.name].name = operation.name
+                    new_expression_stack.append(scope_vars[operation.name])
+                else:
+                    new_expression_stack.append(scope_vars[operation.name])
             else:
                 new_expression_stack.append(operation)
 
