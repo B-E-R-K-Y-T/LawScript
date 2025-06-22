@@ -161,6 +161,16 @@ def preprocess(raw_code, path: str) -> list:
     return [line for line in preprocessed if line]
 
 
+def compile_string(raw_code: str) -> Compiled:
+    code = preprocess(raw_code, "")
+
+    ast_builder = AbstractSyntaxTreeBuilder(code)
+    ast: list[MetaObject] = ast_builder.build()
+
+    compiler = Compiler(ast)
+    return compiler.compile()
+
+
 def run_compiled_code(compiled: Compiled):
     interpreter = Interpreter(compiled)
     interpreter.run()
@@ -174,6 +184,9 @@ def run(raw_code: str, path: str):
 
     compiler = Compiler(ast)
     run_compiled_code(compiler.compile())
+
+def run_string(raw_code: str):
+    run(raw_code, "")
 
 
 def run_file(path: str):
