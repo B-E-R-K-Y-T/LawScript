@@ -1,4 +1,4 @@
-from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable, Any
+from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable
 
 from core.background_task.schedule import get_task_scheduler
 from core.background_task.task import ProcedureBackgroundTask, AbstractBackgroundTask
@@ -113,7 +113,7 @@ class ExpressionExecutor(Executor):
             atomic_type=atomic_type,
         )
 
-    def init_procedure_evaluate(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
+    def init_procedure_context(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
         if not evaluate_stack:
             evaluate_stack.append(procedure)
             return ProcedureWrapper()
@@ -202,7 +202,7 @@ class ExpressionExecutor(Executor):
         evaluate_stack.append(executor.execute())
 
     @staticmethod
-    def init_py_extend_procedure_evaluate(
+    def init_py_extend_procedure_context(
             py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
     ) -> ProcedureWrapper:
         if not evaluate_stack:
@@ -282,7 +282,7 @@ class ExpressionExecutor(Executor):
                             continue
 
                 try:
-                    call_metadata = self.init_procedure_evaluate(operation, evaluate_stack)
+                    call_metadata = self.init_procedure_context(operation, evaluate_stack)
 
                     if call_metadata.procedure is not None:
                         call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
@@ -305,7 +305,7 @@ class ExpressionExecutor(Executor):
                             evaluate_stack.append(operation)
                             continue
 
-                call_metadata = self.init_py_extend_procedure_evaluate(operation, evaluate_stack)
+                call_metadata = self.init_py_extend_procedure_context(operation, evaluate_stack)
 
                 if call_metadata.procedure is not None:
                     call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
@@ -371,7 +371,7 @@ class ExpressionExecutor(Executor):
                 func = evaluate_stack.pop(-1)
 
                 if isinstance(func, PyExtendWrapper):
-                    call_metadata = self.init_py_extend_procedure_evaluate(func, evaluate_stack)
+                    call_metadata = self.init_py_extend_procedure_context(func, evaluate_stack)
 
                     if call_metadata.procedure is not None:
                         call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
@@ -408,7 +408,7 @@ class ExpressionExecutor(Executor):
                     )
 
                 try:
-                    call_metadata = self.init_procedure_evaluate(func, evaluate_stack)
+                    call_metadata = self.init_procedure_context(func, evaluate_stack)
 
                     if call_metadata.procedure is not None:
                         executor = self.procedure_executor(call_metadata.procedure, self.compiled)

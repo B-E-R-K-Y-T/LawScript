@@ -2,28 +2,10 @@ from typing import Optional, Union
 
 from core.extend.function_wrap import PyExtendWrapper
 from core.types.basetype import BaseType, BaseAtomicType
-from core.types.docs import Docs
+from core.types.code_block import CodeBlock, Body
 from core.types.line import Info
 from core.types.operation import Operator
 from core.types.variable import ScopeStack
-
-
-class Body(BaseType):
-    __slots__ = ("commands", "docs")
-
-    def __init__(self, name: str, commands: list[BaseType], docs: Optional[Docs] = None):
-        super().__init__(name)
-
-        self.commands = commands
-        self.docs = docs
-
-class CodeBlock(BaseType):
-    __slots__ = ('body',)
-
-    def __init__(self, name: str, body: Body):
-        super().__init__(name)
-
-        self.body = body
 
 
 class Procedure(CodeBlock):

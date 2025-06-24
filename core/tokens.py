@@ -17,7 +17,9 @@ class Tokens(StrEnum):
     percent = "%"
     div = "/"
     end_expr = ";"
+    attr_access = ":"
     quotation = "\""
+
     define = "ОПРЕДЕЛИТЬ"
     print_ = "НАПЕЧАТАТЬ"
     types = "ТИПЫ"
@@ -51,6 +53,7 @@ class Tokens(StrEnum):
     not_ = "НЕ"
     may = "МОЖЕТ"
     be = "БЫТЬ"
+
     and_ = "И"
     or_ = "ИЛИ"
     bool_equal = "РАВНО"
@@ -84,6 +87,10 @@ class Tokens(StrEnum):
     execute = "ВЫПОЛНИТЬ"
     docs = "ДОКУМЕНТАЦИЯ"
     space = "ПРОБЕЛ"
+    class_ = "КЛАСС"
+    extend = "НАСЛЕДОВАТЬ"
+    constructor = "КОНСТРУКТОР"
+    method = "МЕТОД"
 
 
 class ServiceTokens(StrEnum):

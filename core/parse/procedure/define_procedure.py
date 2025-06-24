@@ -173,6 +173,20 @@ class DefineProcedureParser(Parser):
             self.arguments_name = arguments
             printer.logging(f"Финальный список аргументов: {self.arguments_name}", level="INFO")
 
+    def parse_define_procedure(self, body: list[Line], name_condition: str, arguments: list[str], num, info_line: Info) -> None:
+        self.parse_args(arguments, info_line)
+
+        for arg in self.arguments_name:
+            if arg in NOT_ALLOWED_TOKENS or not is_identifier(arg):
+                raise InvalidSyntaxError(
+                    f"Неверный синтаксис. Нельзя использовать операторы в объявлениях аргументов: {arg}",
+                    info=info_line
+                )
+
+        self.procedure_name = name_condition
+        self.body = self.execute_parse(BodyParser, body, self.next_num_line(num))
+        self.jump = self.previous_num_line(self.jump)
+
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга процедуры с jump={self.jump} {Procedure.__name__}", level="INFO")
@@ -193,18 +207,7 @@ class DefineProcedureParser(Parser):
 
             match line:
                 case [Tokens.define, Tokens.a_procedure, name_condition, Tokens.left_bracket, *arguments, Tokens.right_bracket, Tokens.left_bracket]:
-                    self.parse_args(arguments, info_line)
-
-                    for arg in self.arguments_name:
-                        if arg in NOT_ALLOWED_TOKENS or not is_identifier(arg):
-                            raise InvalidSyntaxError(
-                                f"Неверный синтаксис. Нельзя использовать операторы в объявлениях аргументов: {arg}",
-                                info=info_line
-                            )
-
-                    self.procedure_name = name_condition
-                    self.body = self.execute_parse(BodyParser, body, self.next_num_line(num))
-                    self.jump = self.previous_num_line(self.jump)
+                    self.parse_define_procedure(body, name_condition, arguments, num, info_line)
 
                     printer.logging(
                         f"Добавлена процедура: name={self.procedure_name}, arguments_name={self.arguments_name}",
