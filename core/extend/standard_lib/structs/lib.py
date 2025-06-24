@@ -128,10 +128,15 @@ class ArrayLen(PyExtendWrapper):
         self.count_args = 1
 
     def call(self, args: Optional[list[Array]] = None):
-        from core.types.atomic import Number
-        arr = self.parse_args(args)[0]
+        from core.types.atomic import Number, Array
+        from core.exceptions import ErrorValue
 
-        return Number(len(arr))
+        arr = args[0]
+
+        if not isinstance(arr, Array):
+            raise ErrorValue("Аргумент должен быть массивом.")
+
+        return Number(len(arr.value))
 
 
 @builder.collect(func_name='таблица')

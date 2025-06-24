@@ -1,58 +1,61 @@
-from typing import TypeVar, Generic, Iterable
-
+from typing import TypeVar, Generic, Iterable, Dict, Optional, List
 from core.exceptions import NameNotDefine
 from core.types.basetype import BaseType
-
 
 _T = TypeVar("_T")
 
 
 class Variable(BaseType, Generic[_T]):
+    __slots__ = ('value',)
+
     def __init__(self, name: str, val: _T):
         super().__init__(name)
         self.value = val
 
-    def get_value(self):
+    def get_value(self) -> _T:
         return self.value
 
-    def set_value(self, val: _T):
+    def set_value(self, val: _T) -> None:
         self.value = val
 
-    def __repr__(self):
-        return f"{Variable.__name__}({self.name=}, {self.value=})"
+    def __repr__(self) -> str:
+        return f"{Variable.__name__}(name={self.name}, value={self.value})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.value)
 
 
 class Scope:
-    def __init__(self, parent=None):
-        self.variables: dict[str, Variable] = {}
-        self.parent = parent
+    __slots__ = ('variables', 'parent')
 
-    def set(self, variable: Variable):
+    def __init__(self, parent: Optional['Scope'] = None):
+        self.variables: Dict[str, Variable] = {}
+        self.parent: Optional['Scope'] = parent
+
+    def set(self, variable: Variable) -> None:
         self.variables[variable.name] = variable
 
     def get(self, name: str) -> Variable:
         if name in self.variables:
             return self.variables[name]
-        elif self.parent is not None:
+        if self.parent is not None:
             return self.parent.get(name)
-        else:
-            raise NameNotDefine(f"Переменная '{name}' не определена")
+        raise NameNotDefine(f"Переменная '{name}' не определена")
 
 
 class ScopeStack:
-    def __init__(self):
-        self.scopes = [Scope()]
+    __slots__ = ('scopes',)
 
-    def push(self):
+    def __init__(self):
+        self.scopes: List[Scope] = [Scope()]
+
+    def push(self) -> None:
         self.scopes.append(Scope(self.scopes[-1]))
 
-    def pop(self):
+    def pop(self) -> None:
         self.scopes.pop()
 
-    def set(self, variable: Variable):
+    def set(self, variable: Variable) -> None:
         self.scopes[-1].set(variable)
 
     def get(self, name: str) -> Variable:
@@ -60,13 +63,15 @@ class ScopeStack:
 
 
 class VariableContextCreator:
-    def __init__(self, tree_variables: ScopeStack):
-        self.tree_variables = tree_variables
+    __slots__ = ('tree_variables',)
 
-    def __enter__(self):
+    def __init__(self, tree_variables: ScopeStack):
+        self.tree_variables: ScopeStack = tree_variables
+
+    def __enter__(self) -> None:
         self.tree_variables.push()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.tree_variables.pop()
 
 

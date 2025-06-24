@@ -9,6 +9,8 @@ from core.types.variable import ScopeStack
 
 
 class Body(BaseType):
+    __slots__ = ("commands", "docs")
+
     def __init__(self, name: str, commands: list[BaseType], docs: Optional[Docs] = None):
         super().__init__(name)
 
@@ -16,6 +18,8 @@ class Body(BaseType):
         self.docs = docs
 
 class CodeBlock(BaseType):
+    __slots__ = ('body',)
+
     def __init__(self, name: str, body: Body):
         super().__init__(name)
 
@@ -23,6 +27,8 @@ class CodeBlock(BaseType):
 
 
 class Procedure(CodeBlock):
+    __slots__ = ('arguments_names', 'default_arguments', 'tree_variables')
+
     def __init__(
             self, name: str, body: Body,
             arguments_names: list[Optional[str]], default_arguments: Optional[dict[str, 'Expression']] = None
@@ -41,6 +47,8 @@ class Procedure(CodeBlock):
 
 
 class LinkedProcedure(BaseType):
+    __slots__ = ('func',)
+
     def __init__(self, name: str, func: Union[Procedure, PyExtendWrapper]):
         super().__init__(name)
         self.func = func
@@ -50,6 +58,8 @@ class LinkedProcedure(BaseType):
 
 
 class Expression(BaseType):
+    __slots__ = ('meta_info', 'operations', 'raw_operations')
+
     def __init__(self, name: str, operations, info_line: Info):
         super().__init__(name)
         self.meta_info = info_line
@@ -58,6 +68,8 @@ class Expression(BaseType):
 
 
 class AssignOverrideVariable(BaseType):
+    __slots__ = ('meta_info', 'operations', 'raw_operations')
+
     def __init__(self, name: str, target_expr: Expression, override_expr: Expression, info_line: Info):
         super().__init__(name)
         self.meta_info = info_line
@@ -66,18 +78,24 @@ class AssignOverrideVariable(BaseType):
 
 
 class Continue(BaseType):
+    __slots__ = ('meta_info',)
+
     def __init__(self, name: str, info_line: Info):
         super().__init__(name)
         self.meta_info = info_line
 
 
 class Break(BaseType):
+    __slots__ = ('meta_info',)
+
     def __init__(self, name: str, info_line: Info):
         super().__init__(name)
         self.meta_info = info_line
 
 
 class Print(BaseType):
+    __slots__ = ('expression',)
+
     def __init__(self, name: str, expression: Expression):
         super().__init__(name)
 
@@ -85,6 +103,8 @@ class Print(BaseType):
 
 
 class AssignField(BaseType):
+    __slots__ = ('meta_info', 'expression')
+
     def __init__(self, name: str, expression: Expression, info_line: Info):
         super().__init__(name)
 
@@ -93,11 +113,15 @@ class AssignField(BaseType):
 
 
 class Else(CodeBlock):
+    __slots__ = ()
+
     def __init__(self, name: str, body: Body):
         super().__init__(name, body)
 
 
 class ElseWhen(CodeBlock):
+    __slots__ = ('expression',)
+
     def __init__(self, name: str, expression: Expression, body: Body):
         super().__init__(name, body)
 
@@ -105,6 +129,8 @@ class ElseWhen(CodeBlock):
 
 
 class When(CodeBlock):
+    __slots__ = ('expression', 'else_whens', 'else_')
+
     def __init__(
             self, name: str, expression: Expression, body: Body,
             else_: Optional[Else] = None, else_whens: Optional[list[ElseWhen]] = None
@@ -117,6 +143,8 @@ class When(CodeBlock):
 
 
 class Return(BaseType):
+    __slots__ = ('expression',)
+
     def __init__(self, name: str, expression: Expression):
         super().__init__(name)
 
@@ -124,6 +152,8 @@ class Return(BaseType):
 
 
 class Loop(CodeBlock):
+    __slots__ = ('expression_from', 'expression_to', 'name_loop_var')
+
     def __init__(self, name: str, expression_from: Expression, expression_to: Expression, body: Body):
         super().__init__(name, body)
 
@@ -133,6 +163,8 @@ class Loop(CodeBlock):
 
 
 class While(CodeBlock):
+    __slots__ = ('expression',)
+
     def __init__(self, name: str, expression: Expression, body: Body):
         super().__init__(name, body)
         self.expression = expression

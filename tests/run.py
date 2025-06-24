@@ -13,7 +13,10 @@ for file in os.listdir("."):
         time.sleep(0.5)
         print(f"#{test_num}: Запуск файла: {file}")
 
+        st0 = time.perf_counter()
         run_file(f"{path}{file}")
+        st1 = time.perf_counter()
 
+        print(f"Тест #{test_num}: Время выполнения: {st1 - st0}")
         print(f"Тест #{test_num} успешно завершен")
         time.sleep(0.5)

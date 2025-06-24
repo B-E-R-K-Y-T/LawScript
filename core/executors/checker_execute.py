@@ -8,19 +8,19 @@ from core.executors.base import Executor
 
 class CheckerSituationExecutor(Executor):
     def __init__(self, obj: CheckerSituation, compiled: Compiled):
-        self.obj = obj
+        self.checker = obj
         self.compiled = compiled
 
     def execute(self):
         try:
-            check_result: dict[str, ResultCondition] = self.obj.check(self.compiled)
+            check_result: dict[str, ResultCondition] = self.checker.check(self.compiled)
         except TypeError as e:
-            kill_process(f"{e}Имя проверки: {self.obj.name}")
+            kill_process(f"{e}Имя проверки: {self.checker.name}")
             return
 
         printer.print_info(
-            f"Отчет проверки: {self.obj.name} об анализе соответствия ситуации: '{self.obj.fact_situation.name}' "
-            f"документу '{self.obj.document.name}' "
+            f"Отчет проверки: {self.checker.name} об анализе соответствия ситуации: '{self.checker.fact_situation.name}' "
+            f"документу '{self.checker.document.name}' "
             f"по следующим критериям:\n"
         )
 
@@ -32,11 +32,11 @@ class CheckerSituationExecutor(Executor):
         }
 
         for criteria, result_condition in check_result.items():
-            result = self.obj.check_result_map[result_condition.result]
+            result = self.checker.check_result_map[result_condition.result]
 
             table_data["Название критерия"].append(criteria)
             table_data["Фактические данные"].append(result_condition.value_fact_data)
             table_data["Результат"].append(result)
             table_data["Тип проверки"].append(result_condition.modify)
 
-        printer.print_table(table_data, title=f"Результаты анализа проверкой: '{self.obj.name}'")
+        printer.print_table(table_data, title=f"Результаты анализа проверкой: '{self.checker.name}'")

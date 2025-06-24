@@ -338,6 +338,8 @@
         {% if func.args %}
         <h4>Аргументы:</h4>
         <ul>{% for arg in func.args %}<li><strong>{{ arg.name }}</strong>: {{ arg.docs }}</li>{% endfor %}</ul>
+        {% else %}
+        <h4>Аргументы отсутствуют.</h4>
         {% endif %}
         {% for block in func.blocks %}
         <div class="block">
