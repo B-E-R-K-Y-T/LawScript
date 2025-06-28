@@ -16,6 +16,7 @@ from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean, Yield
 from core.types.basetype import BaseAtomicType, BaseType
+from core.types.classes import ClassDefinition, ClassInstance, Method, ClassField
 from core.types.operation import Operator
 from core.types.procedure import Expression, Procedure, LinkedProcedure
 from core.types.variable import ScopeStack, traverse_scope, Variable
@@ -47,6 +48,7 @@ ALLOW_OPERATORS = {
     Tokens.less,
     Tokens.exponentiation,
     Tokens.wait,
+    Tokens.attr_access,
     ServiceTokens.unary_minus,
     ServiceTokens.unary_plus,
     ServiceTokens.in_background
@@ -76,7 +78,16 @@ class ExpressionExecutor(Executor):
         scope_vars = {var.name: var.value for var in traverse_scope(self.tree_variable.scopes[-1])}
         new_expression_stack = []
 
-        for operation in self.expression.operations:
+        for offset, operation in enumerate(self.expression.operations):
+            next_operation = self.expression.operations[offset+1] if offset+1 < len(self.expression.operations) else None
+
+            if next_operation is not None and isinstance(next_operation, Operator):
+                if next_operation.operator == Tokens.attr_access:
+                    field = ClassField()
+                    field.name = operation.name
+                    new_expression_stack.append(field)
+                    continue
+
             if operation.name in scope_vars:
                 if isinstance(operation, LinkedProcedure):
                     new_expression_stack.append(operation)
@@ -93,7 +104,10 @@ class ExpressionExecutor(Executor):
             Procedure,
             PyExtendWrapper,
             LinkedProcedure,
-            AbstractBackgroundTask
+            AbstractBackgroundTask,
+            ClassDefinition,
+            ClassInstance,
+            ClassField,
         )
 
         for operation in new_expression_stack:
@@ -147,6 +161,7 @@ class ExpressionExecutor(Executor):
             if not isinstance(operand, Operator):
                 if rev_arguments_names and arg_position < len(rev_arguments_names):
                     argument = rev_arguments_names[arg_position]
+                    operand.name = argument
                     procedure.tree_variables.set(Variable(argument, operand))
                     arg_position += 1
 
@@ -156,12 +171,7 @@ class ExpressionExecutor(Executor):
                         info=self.expression.meta_info
                     )
 
-        default_args_count = 0
-
         if procedure.default_arguments is not None:
-            default_args_count = len(procedure.default_arguments)
-
-        if default_args_count > 0:
             procedure_variables = procedure.tree_variables.scopes[0].variables
 
             new_procedure_variables = {}
@@ -200,6 +210,20 @@ class ExpressionExecutor(Executor):
     def call_procedure(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
         executor = self.procedure_executor(procedure, self.compiled)
         evaluate_stack.append(executor.execute())
+
+    def call_method(self, method: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]], this: Variable):
+        method.tree_variables.set(this)
+        self.call_procedure(method, evaluate_stack)
+
+    def call_constructor(
+            self, method: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]],
+            this: Variable, instance: ClassInstance
+    ):
+        self.call_method(method, evaluate_stack, this)
+        evaluate_stack.pop(-1)
+        instance.this = instance
+
+        evaluate_stack.append(instance)
 
     @staticmethod
     def init_py_extend_procedure_context(
@@ -267,6 +291,16 @@ class ExpressionExecutor(Executor):
         evaluate_stack: list[Union[AbstractBackgroundTask, BaseAtomicType, BaseType]] = []
 
         for offset, operation in enumerate(prepared_operations):
+            if isinstance(operation, Operator) and operation.operator == Tokens.attr_access:
+                operands = self.get_operands(evaluate_stack)
+                res = operands.left.get_attribute(operands.right.name)
+
+                if isinstance(res, Method):
+                    operation = res
+                else:
+                    evaluate_stack.append(res)
+                    continue
+
             if isinstance(operation, LinkedProcedure):
                 operation.func.name = operation.name
                 evaluate_stack.append(operation.func)
@@ -312,6 +346,27 @@ class ExpressionExecutor(Executor):
                     self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
                     call_func_stack_builder.pop()
 
+                continue
+
+            elif isinstance(operation, ClassDefinition):
+                try:
+                    call_metadata = self.init_procedure_context(operation.constructor, evaluate_stack)
+
+                    if call_metadata.procedure is not None:
+                        call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
+                        instance = operation.create_instance()
+                        self.call_constructor(
+                            call_metadata.procedure,
+                            evaluate_stack,
+                            Variable(operation.constructor.this, instance),
+                            instance
+                        )
+                        call_func_stack_builder.pop()
+                except RecursionError:
+                    raise MaxRecursionError(
+                        f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
+                        info=self.expression.meta_info
+                    )
                 continue
 
             if operation.name not in ALLOW_OPERATORS:

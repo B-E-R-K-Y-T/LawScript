@@ -28,7 +28,7 @@ class Image:
         self.info = info
 
     def build(self) -> BaseType:
-        unpacked_obj = self.obj(self.name, *self.image_args)
+        unpacked_obj = self.obj(self.name, *self.image_args) # noqa
         unpacked_obj.set_info(self.info)
 
         return unpacked_obj
@@ -121,6 +121,7 @@ class Parser(ABC):
                         Tokens.left_bracket, Tokens.right_bracket, Tokens.comma, Tokens.star,
                         Tokens.left_square_bracket, Tokens.right_square_bracket, Tokens.equal,
                         Tokens.plus, Tokens.minus, Tokens.div, Tokens.quotation, Tokens.exponentiation,
+                        Tokens.attr_access
                 ):
                     if unknown_token:
                         tokens.append(unknown_token)

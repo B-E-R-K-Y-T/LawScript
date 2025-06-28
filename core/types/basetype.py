@@ -1,6 +1,9 @@
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 
 from core.types.line import Info
+
+if TYPE_CHECKING:
+    from core.types.classes import ClassField
 
 
 class BaseType:
@@ -16,6 +19,7 @@ class BaseAtomicType(BaseType):
     def __init__(self, value: Any):
         super().__init__(str())
         self.value = value
+        self.fields: dict[str, "ClassField"] = {}
 
     def add(self, other: "BaseAtomicType"):
         return self.value + other.value
@@ -67,6 +71,14 @@ class BaseAtomicType(BaseType):
 
     def not_(self):
         return not self.value
+
+    def get_attribute(self, name: str) -> "ClassField":
+        from core.types.classes import ClassField
+
+        if isinstance(self, ClassField):
+            return self.value.get_attribute(name)
+
+        return self.fields.setdefault(name, ClassField())
 
     @classmethod
     def type_name(cls):

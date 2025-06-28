@@ -35,7 +35,7 @@ class DefineProcedureParser(Parser):
     def __init__(self):
         super().__init__()
         self.info = None
-        self.procedure_name: Optional[str] = None
+        self.name: Optional[str] = None
         self.arguments_name: list[Optional[str]] = []
         self.default_arguments: Optional[dict[str, Expression]] = None
         self.body: Optional[MetaObject] = None
@@ -43,11 +43,11 @@ class DefineProcedureParser(Parser):
 
     def create_metadata(self, stop_num: int) -> MetaObject:
         printer.logging(
-            f"Создание метаданных процедуры с stop_num={stop_num}, name={self.procedure_name}, body={self.body}, arguments_name={self.arguments_name}",
+            f"Создание метаданных процедуры с stop_num={stop_num}, name={self.name}, body={self.body}, arguments_name={self.arguments_name}",
             level="INFO")
         return DefineProcedureMetaObject(
             stop_num,
-            name=self.procedure_name,
+            name=self.name,
             body=self.body,
             arguments_name=self.arguments_name,
             default_arguments=self.default_arguments,
@@ -173,7 +173,7 @@ class DefineProcedureParser(Parser):
             self.arguments_name = arguments
             printer.logging(f"Финальный список аргументов: {self.arguments_name}", level="INFO")
 
-    def parse_define_procedure(self, body: list[Line], name_condition: str, arguments: list[str], num, info_line: Info) -> None:
+    def parse_define_procedure(self, body: list[Line], name: str, arguments: list[str], num, info_line: Info) -> None:
         self.parse_args(arguments, info_line)
 
         for arg in self.arguments_name:
@@ -183,7 +183,7 @@ class DefineProcedureParser(Parser):
                     info=info_line
                 )
 
-        self.procedure_name = name_condition
+        self.name = name
         self.body = self.execute_parse(BodyParser, body, self.next_num_line(num))
         self.jump = self.previous_num_line(self.jump)
 
@@ -206,11 +206,11 @@ class DefineProcedureParser(Parser):
             line = self.separate_line_to_token(line)
 
             match line:
-                case [Tokens.define, Tokens.a_procedure, name_condition, Tokens.left_bracket, *arguments, Tokens.right_bracket, Tokens.left_bracket]:
-                    self.parse_define_procedure(body, name_condition, arguments, num, info_line)
+                case [Tokens.define, Tokens.a_procedure, name, Tokens.left_bracket, *arguments, Tokens.right_bracket, Tokens.left_bracket]:
+                    self.parse_define_procedure(body, name, arguments, num, info_line)
 
                     printer.logging(
-                        f"Добавлена процедура: name={self.procedure_name}, arguments_name={self.arguments_name}",
+                        f"Добавлена процедура: name={self.name}, arguments_name={self.arguments_name}",
                         level="INFO"
                     )
                 case [Tokens.right_bracket]:

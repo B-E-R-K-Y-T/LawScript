@@ -108,5 +108,5 @@ NOT_ALLOWED_TOKENS = set(Tokens) - {
     Tokens.equal, Tokens.plus, Tokens.minus, Tokens.exponentiation, Tokens.percent,
     Tokens.div, Tokens.end_expr, Tokens.quotation, Tokens.not_,Tokens.and_, Tokens.or_,
     Tokens.bool_equal, Tokens.bool_not_equal, Tokens.less, Tokens.greater, Tokens.true, Tokens.false,
-    Tokens.in_, Tokens.background, Tokens.wait
+    Tokens.in_, Tokens.background, Tokens.wait, Tokens.attr_access
 }

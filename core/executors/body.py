@@ -5,6 +5,7 @@ from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
 from core.types.atomic import Void, Number, Yield
 from core.types.basetype import BaseAtomicType
+from core.types.classes import ClassDefinition, ClassField
 from core.types.procedure import (
     Print,
     Return,
@@ -47,6 +48,8 @@ class BodyExecutor(Executor):
                 self.tree_variables.set(Variable(var.name, var))
             elif isinstance(var, PyExtendWrapper):
                 self.tree_variables.set(Variable(var.name, var))
+            elif isinstance(var, ClassDefinition):
+                self.tree_variables.set(Variable(var.name, var))
 
     def execute(self) -> Union[Generator, Union[BaseAtomicType, Continue, Break]]:
         gen = self._execute()
@@ -74,14 +77,17 @@ class BodyExecutor(Executor):
                     raise ErrorType(f"Переменная '{command.name}' уже определена!", info=command.meta_info)
 
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
-                var = Variable(command.name, executor.execute())
+                executed = executor.execute()
+
+                var = Variable(command.name, executed)
 
                 self.tree_variables.set(var)
 
             elif isinstance(command, Print):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
+                executed = executor.execute()
 
-                printer.raw_print(executor.execute())
+                printer.raw_print(executed)
 
             elif isinstance(command, When):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
@@ -194,11 +200,16 @@ class BodyExecutor(Executor):
                     except NameNotDefine as e:
                         raise NameNotDefine(str(e), info=command.meta_info)
 
+                    override_expr_result.name = target_name
                     var.set_value(override_expr_result)
 
                     continue
 
                 target = target_expr_execute()
+
+                if isinstance(target, ClassField):
+                    target.value = override_expr_result.value
+                    continue
 
                 try:
                     var = self.tree_variables.get(target.name)

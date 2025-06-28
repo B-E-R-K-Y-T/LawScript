@@ -3,6 +3,7 @@ from typing import Type
 from core.exceptions import InvalidSyntaxError
 from core.parse.base import parse_execute, Parser, MetaObject
 from core.parse.checker_actual_situation import CheckerParser
+from core.parse.classes.define_class import DefineClassParser
 from core.parse.create_document import CreateDocumentParser
 from core.parse.create_actual_situation import CreateActualSituationParser
 from core.parse.define_condition import DefineConditionParser
@@ -77,6 +78,10 @@ class AbstractSyntaxTreeBuilder:
                     self.create_meta(DefineConditionParser, num)
                 case [Tokens.execute, *_]:
                     self.create_meta(DefineExecuteBlockParser, num)
+                case [Tokens.define, Tokens.class_, *_]:
+                    self.create_meta(DefineClassParser, num)
+                case [Tokens.extend, Tokens.class_, *_]:
+                    self.create_meta(DefineClassParser, num)
                 case _:
                     printer.logging(f"Ошибка синтаксиса в строке {num}: {line}", level="ERROR")
                     raise InvalidSyntaxError(line=line.split(), info=line.get_file_info())

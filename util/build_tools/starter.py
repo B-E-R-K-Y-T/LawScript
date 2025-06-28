@@ -214,6 +214,7 @@ def run(raw_code: str, path: str):
     compiler = Compiler(ast)
     run_compiled_code(compiler.compile())
 
+
 def run_string(raw_code: str):
     run(raw_code, "")
 

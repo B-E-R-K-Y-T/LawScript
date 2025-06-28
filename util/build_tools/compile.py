@@ -13,6 +13,7 @@ from core.parse.util.rpn import build_rpn_stack
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from core.types.basetype import BaseType
 from core.types.checkers import CheckerSituation
+from core.types.classes import Method, Constructor, ClassDefinition
 from core.types.conditions import Condition
 from core.types.criteria import Criteria
 from core.types.dispositions import Disposition
@@ -134,6 +135,58 @@ class Compiler:
             elif isinstance(statement, CodeBlock):
                 self.check_code_body(statement.body)
 
+    def compile_procedure(self, compiled_obj: Union[Procedure, Method, Constructor]) -> Union[Procedure, Method, Constructor]:
+        self.check_code_body(compiled_obj.body)
+
+        def get_all_uses_names(obj_: Union[CodeBlock, BaseType]) -> list[tuple[BaseType, str]]:
+            names = []
+
+            if isinstance(obj_, AssignField):
+                return [(obj_, obj_.name)]
+
+            elif isinstance(obj_, (CodeBlock, Procedure)):
+                for nested_obj in obj_.body.commands:
+                    names.extend(get_all_uses_names(nested_obj))
+
+            filtered_names = []
+
+            for item in names:
+                _, name_ = item
+
+                if isinstance(name_, str):
+                    filtered_names.append(item)
+
+            return filtered_names
+
+        if compiled_obj.body.docs is not None:
+            compiled_obj.body.docs = self.execute_compile(compiled_obj.body.docs)
+
+        for offset, command in enumerate(compiled_obj.body.commands):
+            compiled_obj.body.commands[offset] = self.execute_compile(command)
+
+        uses_names = get_all_uses_names(compiled_obj)
+        check_seq = set()
+
+        for obj, name in uses_names:
+            if isinstance(obj, AssignField):
+                check_seq.add(name)
+                continue
+
+            if name in compiled_obj.arguments_names:
+                check_seq.add(name)
+                continue
+
+            if name not in check_seq:
+                msg = (
+                    f"Объект '{name}' используется до определения в процедуре '{compiled_obj.name}'. "
+                    f"Файл: {compiled_obj.meta_info.file}"
+                )
+
+                printer.logging(msg, level="ERROR")
+                raise NameNotDefine(msg=msg)
+
+        return compiled_obj
+
     def execute_compile(self, meta: Union[BaseType, MetaObject, Compiled]) -> Union[str, BaseType, Compiled]:
         if isinstance(meta, Compiled):
             return meta
@@ -187,58 +240,27 @@ class Compiler:
         elif isinstance(compiled_obj, Docs):
             return compiled_obj
 
-        elif isinstance(compiled_obj, Procedure):
-            self.check_code_body(compiled_obj.body)
+        elif isinstance(compiled_obj, ClassDefinition):
+            compiled_obj.constructor = self.execute_compile(compiled_obj.constructor)
 
-            def get_all_uses_names(obj_: Union[CodeBlock, BaseType]) -> list[tuple[BaseType, str]]:
-                names = []
-
-                if isinstance(obj_, AssignField):
-                    return [(obj_, obj_.name)]
-
-                elif isinstance(obj_, (CodeBlock, Procedure)):
-                    for nested_obj in obj_.body.commands:
-                        names.extend(get_all_uses_names(nested_obj))
-
-                filtered_names = []
-
-                for item in names:
-                    _, name_ = item
-
-                    if isinstance(name_, str):
-                        filtered_names.append(item)
-
-                return filtered_names
-
-
-            if compiled_obj.body.docs is not None:
-                compiled_obj.body.docs = self.execute_compile(compiled_obj.body.docs)
-
-            for offset, command in enumerate(compiled_obj.body.commands):
-                compiled_obj.body.commands[offset] = self.execute_compile(command)
-
-            uses_names = get_all_uses_names(compiled_obj)
-            check_seq = set()
-
-            for obj, name in uses_names:
-                if isinstance(obj, AssignField):
-                    check_seq.add(name)
-                    continue
-
-                if name in compiled_obj.arguments_names:
-                    check_seq.add(name)
-                    continue
-
-                if name not in check_seq:
-                    msg = (
-                        f"Объект '{name}' используется до определения в процедуре '{compiled_obj.name}'. "
-                        f"Файл: {compiled_obj.meta_info.file}"
-                    )
-
-                    printer.logging(msg, level="ERROR")
-                    raise NameNotDefine(msg=msg)
+            for method_name, method in compiled_obj.methods.items():
+                method: Method = self.execute_compile(method)
+                compiled_obj.methods[method_name] = method
 
             return compiled_obj
+
+        elif isinstance(compiled_obj, Constructor):
+            constructor: Constructor = self.compile_procedure(compiled_obj)
+
+            return constructor
+
+        elif isinstance(compiled_obj, Method):
+            method: Method = self.compile_procedure(compiled_obj)
+
+            return method
+
+        elif isinstance(compiled_obj, Procedure):
+            return self.compile_procedure(compiled_obj)
 
         elif isinstance(compiled_obj, Object):
             return compiled_obj
@@ -441,5 +463,19 @@ class Compiler:
                 if compiled.default_arguments is not None:
                     for expr in compiled.default_arguments.values():
                         self.expr_compile(expr)
+
+            elif isinstance(compiled, ClassDefinition):
+                self.body_compile(compiled.constructor.body)
+                compiled.constructor.name = compiled.name
+
+                for method in compiled.methods.values():
+                    self.body_compile(method.body)
+
+                for cmd in compiled.constructor.body.commands:
+                    if isinstance(cmd, Return):
+                        raise InvalidSyntaxError(
+                            f"Конструктор класса '{compiled.name}' не может содержать '{Tokens.return_}'",
+                            info=cmd.expression.meta_info
+                        )
 
         return Compiled(self.compiled)

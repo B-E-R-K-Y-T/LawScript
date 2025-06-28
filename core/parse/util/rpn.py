@@ -28,6 +28,7 @@ ALLOW_OPERATORS = {
     Tokens.exponentiation,
     Tokens.comma,
     Tokens.wait,
+    Tokens.attr_access,
     ServiceTokens.unary_minus,
     ServiceTokens.unary_plus,
     ServiceTokens.in_background,
@@ -206,6 +207,13 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 next_op = expr[offset + 1]
 
                 if next_op == Tokens.left_bracket:
+                    if stack and stack[-1] == Tokens.attr_access:
+                        previous_res = result_stack.pop(-1)
+
+                        stack.append(op)
+                        stack.append(previous_res)
+                        continue
+
                     stack.append(op)
                     printer.logging(f"Функция '{op}' добавлена в стек, так как за ней следует открывающая скобка",
                                     level="INFO")
@@ -283,6 +291,28 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 result_stack.append(op)
                 break
 
+        elif op == Tokens.attr_access:
+            while True:
+                if len(stack) == 0:
+                    stack.append(op)
+                    printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
+                    break
+
+                if stack[-1] in [
+                    Tokens.exponentiation, Tokens.left_bracket, Tokens.right_bracket, Tokens.wait, Tokens.attr_access
+                ]:
+                    for _ in range(len(stack)):
+                        if stack[-1] in [
+                            Tokens.left_bracket, Tokens.right_bracket, Tokens.exponentiation
+                        ]:
+                            break
+
+                        op_ = stack.pop(-1)
+                        result_stack.append(op_)
+
+                stack.append(op)
+                break
+
         elif op == Tokens.exponentiation:
             while True:
                 if len(stack) == 0:
@@ -290,7 +320,9 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     printer.logging(f"Оператор '{op}' добавлен в стек (пустой стек)", level="INFO")
                     break
 
-                if stack[-1] in [Tokens.exponentiation, Tokens.left_bracket, Tokens.right_bracket, Tokens.wait]:
+                if stack[-1] in [
+                    Tokens.exponentiation, Tokens.left_bracket, Tokens.right_bracket, Tokens.wait, Tokens.attr_access
+                ]:
                     for _ in range(len(stack)):
                         if stack[-1] in [
                             Tokens.left_bracket, Tokens.right_bracket, Tokens.exponentiation
@@ -354,7 +386,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 if op in [Tokens.plus, Tokens.minus]:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.exponentiation,
-                        ServiceTokens.unary_minus, ServiceTokens.unary_plus, Tokens.wait
+                        ServiceTokens.unary_minus, ServiceTokens.unary_plus, Tokens.wait, Tokens.attr_access
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -384,7 +416,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                     elif stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.exponentiation, Tokens.wait,
-                        ServiceTokens.unary_minus, ServiceTokens.unary_plus
+                        ServiceTokens.unary_minus, ServiceTokens.unary_plus, Tokens.attr_access
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] not in [
@@ -420,7 +452,9 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     break
 
                 if op == Tokens.not_:
-                    if stack[-1] in [Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.wait]:
+                    if stack[-1] in [
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.wait, Tokens.attr_access
+                    ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
                                 Tokens.left_bracket, Tokens.right_bracket,
@@ -438,6 +472,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 if op == Tokens.and_:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.not_, Tokens.and_, Tokens.wait,
+                        Tokens.attr_access
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -456,7 +491,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 if op == Tokens.or_:
                     if stack[-1] in [
                         Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
-                        Tokens.not_, Tokens.and_, Tokens.or_, Tokens.wait,
+                        Tokens.not_, Tokens.and_, Tokens.or_, Tokens.wait, Tokens.attr_access
                     ]:
                         for _ in range(len(stack)):
                             if stack[-1] in [
@@ -474,7 +509,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                 if op in [Tokens.bool_equal, Tokens.bool_not_equal, Tokens.greater, Tokens.less]:
                     if stack[-1] in [
-                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus,
+                        Tokens.star, Tokens.div, Tokens.plus, Tokens.minus, Tokens.attr_access,
                         Tokens.not_, Tokens.and_, Tokens.or_, Tokens.bool_equal,Tokens.bool_not_equal,
                         Tokens.greater, Tokens.less, Tokens.exponentiation, Tokens.wait,
                         ServiceTokens.unary_plus, ServiceTokens.unary_minus,

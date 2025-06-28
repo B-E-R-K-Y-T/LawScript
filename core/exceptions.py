@@ -189,8 +189,16 @@ class FieldNotDefine(BaseError):
 
 
 class NameAlreadyExist(BaseError):
-    def __init__(self, name: str):
-        super().__init__(f"Имя: '{name}' уже существует")
+    def __init__(self, name: str, info: Optional[Info] = None):
+        msg = f"Имя: '{name}' уже существует"
+
+        if info is not None:
+            if info.file is not None:
+                msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+            else:
+                msg = f"{msg} Строка: {info.raw_line}"
+
+        super().__init__(msg)
 
 
 class EmptyReturn(BaseError):
