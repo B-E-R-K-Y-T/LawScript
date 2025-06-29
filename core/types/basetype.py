@@ -1,4 +1,4 @@
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 from core.types.line import Info
 
@@ -19,7 +19,7 @@ class BaseAtomicType(BaseType):
     def __init__(self, value: Any):
         super().__init__(str())
         self.value = value
-        self.fields: dict[str, "ClassField"] = {}
+        self.fields: dict[str, Union["ClassField", "BaseAtomicType"]] = {}
 
     def add(self, other: "BaseAtomicType"):
         return self.value + other.value

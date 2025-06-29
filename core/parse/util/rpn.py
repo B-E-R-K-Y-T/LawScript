@@ -145,6 +145,33 @@ def check_correct_expr(expr: list[str]):
 
 
 def prepare_expr(expr: list[str]) -> list:
+    i = 0
+    while i < len(expr):
+        if expr[i] == Tokens.quotation:
+            # Нашли открывающую кавычку - ищем закрывающую
+            start_idx = i
+            i += 1
+            string_parts = []
+            while i < len(expr) and expr[i] != Tokens.quotation:
+                item = expr[i]
+
+                if isinstance(item, LinkedProcedure):
+                    item = item.func.name
+
+                string_parts.append(item)
+                i += 1
+
+            if i < len(expr) and expr[i] == Tokens.quotation:
+                # Нашли закрывающую кавычку - объединяем в String
+                string_value = ''.join(string_parts)
+                expr[start_idx:i + 1] = [String(string_value)]
+                i = start_idx + 1
+            else:
+                # Нет закрывающей кавычки - оставляем как есть
+                i = start_idx + 1
+        else:
+            i += 1
+
     is_string = False
     i = len(expr) - 1  # Идём с конца списка
 
@@ -588,6 +615,10 @@ def compile_rpn(expr):
             continue
 
         if isinstance(op, Operator):
+            compiled_stack.append(op)
+            continue
+
+        if isinstance(op, BaseAtomicType):
             compiled_stack.append(op)
             continue
 
