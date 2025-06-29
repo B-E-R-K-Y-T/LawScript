@@ -77,6 +77,6 @@ class DefineMethodParser(DefineProcedureParser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=info_line)
+                    raise InvalidSyntaxError(info=info_line)
 
         raise InvalidSyntaxError

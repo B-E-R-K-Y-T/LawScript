@@ -1,4 +1,4 @@
-from typing import Optional, Any, TypeVar, Generic
+from typing import Optional, TypeVar, Generic
 
 from core.types.atomic import Void
 from core.types.basetype import BaseType, BaseAtomicType
@@ -6,16 +6,17 @@ from core.types.procedure import Procedure, Body, Expression
 
 
 class Method(Procedure):
-    __slots__ = ('this',)
-
     def __init__(
             self, name: str, body: Body, arguments_names: list[Optional[str]],
             default_arguments: Optional[dict[str, Expression]] = None, this: Optional[str] = None
     ):
         super().__init__(name, body, arguments_names, default_arguments)
         self.this = this
-        
-        
+
+    def __str__(self):
+        return f"Метод('{self.this}:{self.name}') кол-во аргументов: {len(self.arguments_names)}"
+
+
 class Constructor(Method):
     def __init__(
             self, _, body: Body, arguments_names: list[Optional[str]],
@@ -38,8 +39,6 @@ class ClassField(BaseAtomicType, Generic[_T]):
 
 
 class ClassDefinition(BaseType):
-    __slots__ = ('methods', 'constructor', 'parent')
-
     def __init__(
             self, name, parent: Optional['ClassDefinition'] = None,
             methods: Optional[dict[str, ClassField[Method]]] = None, constructor: Optional[Constructor] = None
@@ -58,8 +57,6 @@ class ClassDefinition(BaseType):
 
 
 class ClassInstance(BaseAtomicType):
-    __slots__ = ('this',)
-
     def __init__(
             self,
             class_name: str,
@@ -69,9 +66,10 @@ class ClassInstance(BaseAtomicType):
         self.metadata = metadata
         self.class_name = class_name
         self.value = self
+        self.parent_attr_name = "__родитель__" if self.metadata.parent is not None else None
 
         if self.metadata.parent is not None:
-            self.fields["__родитель__"] = ClassField(self.metadata.parent.create_instance())
+            self.fields[self.parent_attr_name] = ClassField(self.metadata.parent.create_instance())
 
             for name, method in self.metadata.parent.methods.items():
                 if name not in self.metadata.methods and name != self.metadata.constructor_name:

@@ -82,7 +82,7 @@ class CheckerParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=self.info)
+                    raise InvalidSyntaxError(info=self.info)
 
         printer.logging("Парсинг завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError
