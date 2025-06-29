@@ -145,41 +145,50 @@ def check_correct_expr(expr: list[str]):
 
 
 def prepare_expr(expr: list[str]) -> list:
+    printer.logging(f"Начало подготовки выражения. Исходное выражение: {expr}", level="DEBUG")
+
     i = 0
     while i < len(expr):
         if expr[i] == Tokens.quotation:
-            # Нашли открывающую кавычку - ищем закрывающую
+            printer.logging(f"Обнаружена открывающая кавычка на позиции {i}", level="DEBUG")
             start_idx = i
             i += 1
             string_parts = []
+
             while i < len(expr) and expr[i] != Tokens.quotation:
                 item = expr[i]
+                printer.logging(f"Обработка элемента строки: {item}", level="TRACE")
 
                 if isinstance(item, LinkedProcedure):
                     item = item.func.name
+                    printer.logging(f"Преобразование LinkedProcedure в имя: {item}", level="TRACE")
 
                 string_parts.append(item)
                 i += 1
 
             if i < len(expr) and expr[i] == Tokens.quotation:
-                # Нашли закрывающую кавычку - объединяем в String
                 string_value = ''.join(string_parts)
+                printer.logging(f"Сформирована строка: {string_value}", level="DEBUG")
                 expr[start_idx:i + 1] = [String(string_value)]
                 i = start_idx + 1
             else:
-                # Нет закрывающей кавычки - оставляем как есть
+                printer.logging("Не найдена закрывающая кавычка", level="WARNING")
                 i = start_idx + 1
         else:
             i += 1
 
+    printer.logging(f"Выражение после обработки строк: {expr}", level="DEBUG")
+
     is_string = False
-    i = len(expr) - 1  # Идём с конца списка
+    i = len(expr) - 1
 
     while i >= 0:
         op = expr[i]
+        printer.logging(f"Обработка оператора {op} на позиции {i}", level="TRACE")
 
         if op == Tokens.quotation:
             is_string = not is_string
+            printer.logging(f"Переключение флага строки: {is_string}", level="TRACE")
 
         if is_string:
             i -= 1
@@ -188,45 +197,44 @@ def prepare_expr(expr: list[str]) -> list:
         if i < len(expr) - 1:
             next_op = expr[i + 1]
 
-            # Обработка операторов (not=, in_background)
             if op == Tokens.not_ and next_op == Tokens.bool_equal:
-                expr[i:i+2] = [Tokens.bool_not_equal]
-                printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[i]}'", level="INFO")
-                i -= 1  # Корректируем индекс после замены
-                continue
-
-            if op == Tokens.in_ and next_op == Tokens.background:
-                expr[i:i+2] = [ServiceTokens.in_background]
-                printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[i]}'", level="INFO")
+                printer.logging("Обнаружена комбинация операторов not и =", level="DEBUG")
+                expr[i:i + 2] = [Tokens.bool_not_equal]
                 i -= 1
                 continue
 
-        # Поиск цепочек атрибутов (класс : иной_класс : имя_класса2_a : а)
+            if op == Tokens.in_ and next_op == Tokens.background:
+                printer.logging("Обнаружена комбинация операторов in и background", level="DEBUG")
+                expr[i:i + 2] = [ServiceTokens.in_background]
+                i -= 1
+                continue
+
         if i > 0 and expr[i - 1] == Tokens.attr_access:
-            # Нашли конец цепочки атрибутов (последний элемент перед ':')
+            printer.logging(f"Обнаружена цепочка атрибутов на позиции {i}", level="DEBUG")
             end_idx = i
             start_idx = end_idx - 1
 
-            # Ищем начало цепочки (идём влево, пока не встретим не-атрибут)
             while start_idx >= 0 and expr[start_idx] == Tokens.attr_access:
-                start_idx -= 2  # Перепрыгиваем через идентификатор и ':'
+                start_idx -= 2
 
-            start_idx += 1  # Корректируем индекс
+            start_idx += 1
+            printer.logging(f"Начало цепочки атрибутов: {start_idx}, конец: {end_idx}", level="DEBUG")
 
-            # Если нашли корректную цепочку, заменяем её на AttrAccess
             if start_idx >= 0 and end_idx < len(expr):
                 attr_access_expr = expr[start_idx:end_idx + 1]
+                printer.logging(f"Выделенная цепочка атрибутов: {attr_access_expr}", level="DEBUG")
+
                 if Tokens.left_bracket in attr_access_expr or Tokens.right_bracket in attr_access_expr:
-                    raise InvalidExpression(
-                        f"Ошибка в выражении: '{' '.join(str(item) for item in expr)}' "
-                        f"нельзя разрывать цепочки атрибутов с помощью скобок"
-                    )
+                    printer.logging("Обнаружены скобки в цепочке атрибутов", level="ERROR")
+                    raise InvalidExpression("Нельзя разрывать цепочки атрибутов скобками")
 
                 expr[start_idx:end_idx + 1] = [AttrAccess(_build_rpn(attr_access_expr))]
-                i = start_idx  # Перемещаемся к началу заменённого блока
+                printer.logging(f"Замена цепочки на AttrAccess", level="DEBUG")
+                i = start_idx
 
         i -= 1
 
+    printer.logging(f"Финальное выражение после подготовки: {expr}", level="DEBUG")
     return expr
 
 
@@ -613,10 +621,12 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
     return compile_rpn(result_stack)
 
 def compile_rpn(expr):
+    printer.logging(f"\nКомпиляция RPN-выражения: {expr}", level="INFO")
     compiled_stack = []
     jump = 0
 
     for offset, op in enumerate(expr):
+        printer.logging(f"Компиляция элемента [{offset}]: {op}", level="TRACE")
         if offset < jump:
             continue
 
@@ -652,4 +662,5 @@ def compile_rpn(expr):
 
         compiled_stack.append(Operator(op))
 
+    printer.logging(f"Итоговый скомпилированный стек: {compiled_stack}", level="DEBUG")
     return compiled_stack
