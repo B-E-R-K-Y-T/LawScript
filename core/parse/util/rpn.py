@@ -35,6 +35,11 @@ ALLOW_OPERATORS = {
 }
 
 
+class AttrAccess:
+    def __init__(self, expr: list[Union[Operator, BaseAtomicType]]):
+        self.expr = expr
+
+
 def check_correct_expr(expr: list[str]):
     filtered_expr = []
     filter_on = False
@@ -139,19 +144,38 @@ def check_correct_expr(expr: list[str]):
 
 
 def prepare_expr(expr: list[str]) -> None:
-    for offset, op in enumerate(expr):
-        if len(expr) - 1 > offset >= 0:
-            if op == Tokens.not_:
-                next_op = expr[offset + 1]
+    start_attr_access_idx = 0
+    is_attr_access = False
+    is_string = False
 
+    for offset, op in enumerate(expr):
+        if op == Tokens.quotation:
+            is_string = not is_string
+
+        if is_string:
+            continue
+
+        if len(expr) - 1 > offset >= 0:
+            next_op = expr[offset + 1]
+
+            if next_op == Tokens.attr_access and not is_attr_access:
+                start_attr_access_idx = offset
+                is_attr_access = True
+                continue
+
+            if is_attr_access and is_identifier(op) and next_op != Tokens.attr_access:
+                end_attr_access_idx = offset + 1
+                is_attr_access = False
+                expr[start_attr_access_idx:end_attr_access_idx] = [AttrAccess(_build_rpn(expr[start_attr_access_idx:end_attr_access_idx]))]
+                continue
+
+            if op == Tokens.not_:
                 if next_op == Tokens.bool_equal:
                     expr[offset:offset+2] = [Tokens.bool_not_equal]
                     printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[offset]}'", level="INFO")
                     continue
 
             if op == Tokens.in_:
-                next_op = expr[offset + 1]
-
                 if next_op == Tokens.background:
                     expr[offset:offset+2] = [ServiceTokens.in_background]
                     printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[offset]}'", level="INFO")
@@ -207,13 +231,6 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 next_op = expr[offset + 1]
 
                 if next_op == Tokens.left_bracket:
-                    if stack and stack[-1] == Tokens.attr_access:
-                        previous_res = result_stack.pop(-1)
-
-                        stack.append(op)
-                        stack.append(previous_res)
-                        continue
-
                     stack.append(op)
                     printer.logging(f"Функция '{op}' добавлена в стек, так как за ней следует открывающая скобка",
                                     level="INFO")
@@ -224,8 +241,8 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
             continue
 
         if op == Tokens.left_bracket:
-            if len(expr) > 2 and offset != 0 and is_identifier(expr[offset - 1]) and expr[offset - 1] not in {*ALLOW_OPERATORS, Tokens.true, Tokens.false}:
-                    result_stack.append(ServiceTokens.arg_separator)
+            if len(expr) > 2 and offset != 0 and (is_identifier(expr[offset - 1]) or isinstance(expr[offset - 1], AttrAccess)) and expr[offset - 1] not in {*ALLOW_OPERATORS, Tokens.true, Tokens.false}:
+                result_stack.append(ServiceTokens.arg_separator)
 
             stack.append(op)
             printer.logging(f"Открывающая скобка '{op}' добавлена в стек", level="INFO")
@@ -533,6 +550,17 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
         result_stack.append(op)
         printer.logging(f"Оператор '{op}' добавлен в результирующий стек из оставшегося стека", level="INFO")
 
+    def flatten(lst):
+        flat_list = []
+        for item in lst:
+            if isinstance(item, AttrAccess):
+                flat_list.extend(flatten(item.expr))
+            else:
+                flat_list.append(item)
+        return flat_list
+
+    result_stack = flatten(result_stack)
+
     printer.logging(f"Завершено построение RPN-стека. Результат: {result_stack}", level="INFO")
 
     return compile_rpn(result_stack)
@@ -543,6 +571,10 @@ def compile_rpn(expr):
 
     for offset, op in enumerate(expr):
         if offset < jump:
+            continue
+
+        if isinstance(op, Operator):
+            compiled_stack.append(op)
             continue
 
         if op in ALLOW_OPERATORS:
