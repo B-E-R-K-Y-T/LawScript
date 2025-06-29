@@ -100,7 +100,8 @@ def check_correct_expr(expr: list[str]):
         Tokens.bool_not_equal,
         Tokens.greater,
         Tokens.less,
-        Tokens.wait
+        Tokens.wait,
+        Tokens.attr_access
     )
 
     for op in filtered_expr:
@@ -143,43 +144,57 @@ def check_correct_expr(expr: list[str]):
             count_double_comma = 0
 
 
-def prepare_expr(expr: list[str]) -> None:
-    start_attr_access_idx = 0
-    is_attr_access = False
+def prepare_expr(expr: list[str]) -> list:
     is_string = False
+    i = len(expr) - 1  # Идём с конца списка
 
-    for offset, op in enumerate(expr):
+    while i >= 0:
+        op = expr[i]
+
         if op == Tokens.quotation:
             is_string = not is_string
 
         if is_string:
+            i -= 1
             continue
 
-        if len(expr) - 1 > offset >= 0:
-            next_op = expr[offset + 1]
+        if i < len(expr) - 1:
+            next_op = expr[i + 1]
 
-            if next_op == Tokens.attr_access and not is_attr_access:
-                start_attr_access_idx = offset
-                is_attr_access = True
+            # Обработка операторов (not=, in_background)
+            if op == Tokens.not_ and next_op == Tokens.bool_equal:
+                expr[i:i+2] = [Tokens.bool_not_equal]
+                printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[i]}'", level="INFO")
+                i -= 1  # Корректируем индекс после замены
                 continue
 
-            if is_attr_access and is_identifier(op) and next_op != Tokens.attr_access:
-                end_attr_access_idx = offset + 1
-                is_attr_access = False
-                expr[start_attr_access_idx:end_attr_access_idx] = [AttrAccess(_build_rpn(expr[start_attr_access_idx:end_attr_access_idx]))]
+            if op == Tokens.in_ and next_op == Tokens.background:
+                expr[i:i+2] = [ServiceTokens.in_background]
+                printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[i]}'", level="INFO")
+                i -= 1
                 continue
 
-            if op == Tokens.not_:
-                if next_op == Tokens.bool_equal:
-                    expr[offset:offset+2] = [Tokens.bool_not_equal]
-                    printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[offset]}'", level="INFO")
-                    continue
+        # Поиск цепочек атрибутов (класс : иной_класс : имя_класса2_a : а)
+        if i > 0 and expr[i - 1] == Tokens.attr_access:
+            # Нашли конец цепочки атрибутов (последний элемент перед ':')
+            end_idx = i
+            start_idx = end_idx - 1
 
-            if op == Tokens.in_:
-                if next_op == Tokens.background:
-                    expr[offset:offset+2] = [ServiceTokens.in_background]
-                    printer.logging(f"Операторы '{op}' и '{next_op}' объединены в '{expr[offset]}'", level="INFO")
-                    continue
+            # Ищем начало цепочки (идём влево, пока не встретим не-атрибут)
+            while start_idx >= 0 and expr[start_idx] == Tokens.attr_access:
+                start_idx -= 2  # Перепрыгиваем через идентификатор и ':'
+
+            start_idx += 1  # Корректируем индекс
+
+            # Если нашли корректную цепочку, заменяем её на AttrAccess
+            if start_idx >= 0 and end_idx < len(expr):
+                attr_access_expr = expr[start_idx:end_idx + 1]
+                expr[start_idx:end_idx + 1] = [AttrAccess(_build_rpn(attr_access_expr))]
+                i = start_idx  # Перемещаемся к началу заменённого блока
+
+        i -= 1
+
+    return expr
 
 
 def detect_unary(expr: list[str], offset, op, type_op) -> bool:
@@ -191,7 +206,9 @@ def detect_unary(expr: list[str], offset, op, type_op) -> bool:
 
 def build_rpn_stack(expr: list[str], meta_info: Info) -> list[Union[Operator, BaseAtomicType]]:
     try:
-        return _build_rpn(expr)
+        check_correct_expr(expr)
+        new_expr = prepare_expr(expr)
+        return _build_rpn(new_expr)
     except BaseError as e:
         raise InvalidExpression(str(e), meta_info)
     except IndexError:
@@ -199,9 +216,6 @@ def build_rpn_stack(expr: list[str], meta_info: Info) -> list[Union[Operator, Ba
 
 
 def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
-    check_correct_expr(expr)
-    prepare_expr(expr)
-
     printer.logging(f"Начало построения RPN-стека из выражения: {expr}", level="INFO")
 
     stack = []
