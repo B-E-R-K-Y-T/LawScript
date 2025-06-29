@@ -19,7 +19,7 @@ class BaseAtomicType(BaseType):
     def __init__(self, value: Any):
         super().__init__(str())
         self.value = value
-        self.fields: dict[str, Union["ClassField", "BaseAtomicType"]] = {}
+        self.fields: dict[str, Union["ClassField[BaseAtomicType]", "BaseAtomicType"]] = {}
 
     def add(self, other: "BaseAtomicType"):
         return self.value + other.value

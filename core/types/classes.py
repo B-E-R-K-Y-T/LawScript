@@ -1,5 +1,4 @@
-from importlib.metadata import metadata
-from typing import Optional, Any
+from typing import Optional, Any, TypeVar, Generic
 
 from core.types.atomic import Void
 from core.types.basetype import BaseType, BaseAtomicType
@@ -28,9 +27,12 @@ class Constructor(Method):
         return f"Класс('{self.name}') кол-во аргументов: {len(self.arguments_names)}"
 
 
-class ClassField(BaseAtomicType):
+_T = TypeVar('_T', bound=BaseAtomicType)
+
+
+class ClassField(BaseAtomicType, Generic[_T]):
     def __init__(
-            self, value: Any = Void()
+            self, value: _T = Void()
     ):
         super().__init__(value)
 
@@ -40,12 +42,13 @@ class ClassDefinition(BaseType):
 
     def __init__(
             self, name, parent: Optional['ClassDefinition'] = None,
-            methods: Optional[dict[str, Method]] = None, constructor: Optional[Constructor] = None
+            methods: Optional[dict[str, ClassField[Method]]] = None, constructor: Optional[Constructor] = None
     ):
         super().__init__(name)
         self.parent = parent
-        self.methods = methods
         self.constructor = constructor
+        self.constructor_name = "__конструктор__"
+        self.methods = methods
 
     def create_instance(self) -> 'ClassInstance':
         return ClassInstance(
@@ -67,10 +70,17 @@ class ClassInstance(BaseAtomicType):
         self.class_name = class_name
         self.value = self
 
-        if self.metadata.methods is not None:
-            self.fields.update(self.metadata.methods)
+        if self.metadata.parent is not None:
+            self.fields["__родитель__"] = ClassField(self.metadata.parent.create_instance())
+
+            for name, method in self.metadata.parent.methods.items():
+                if name not in self.metadata.methods and name != self.metadata.constructor_name:
+                    self.metadata.methods[name] = method
 
     def get_attribute(self, name: str) -> ClassField:
+        if name in self.metadata.methods:
+            return self.metadata.methods[name]
+
         return super().get_attribute(name)
 
 

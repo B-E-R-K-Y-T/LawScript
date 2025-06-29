@@ -54,6 +54,17 @@ ALLOW_OPERATORS = {
     ServiceTokens.in_background
 }
 
+VALID_TYPES = (
+    BaseAtomicType,
+    Procedure,
+    PyExtendWrapper,
+    LinkedProcedure,
+    AbstractBackgroundTask,
+    ClassDefinition,
+    ClassInstance,
+    ClassField,
+)
+
 
 class Operands(NamedTuple):
     left: BaseAtomicType
@@ -79,15 +90,6 @@ class ExpressionExecutor(Executor):
         new_expression_stack = []
 
         for offset, operation in enumerate(self.expression.operations):
-            # next_operation = self.expression.operations[offset+1] if offset+1 < len(self.expression.operations) else None
-            #
-            # if next_operation is not None and isinstance(next_operation, Operator):
-            #     if next_operation.operator == Tokens.attr_access:
-            #         field = ClassField()
-            #         field.name = operation.name
-            #         new_expression_stack.append(field)
-            #         continue
-
             if operation.name in scope_vars:
                 if isinstance(operation, LinkedProcedure):
                     new_expression_stack.append(operation)
@@ -99,30 +101,19 @@ class ExpressionExecutor(Executor):
             else:
                 new_expression_stack.append(operation)
 
-        valid_types = (
-            BaseAtomicType,
-            Procedure,
-            PyExtendWrapper,
-            LinkedProcedure,
-            AbstractBackgroundTask,
-            ClassDefinition,
-            ClassInstance,
-            ClassField,
-        )
-
         for offset, operation in enumerate(new_expression_stack):
-            if not isinstance(operation, valid_types) and operation.name not in ALL_TOKENS:
-                for step in range(1, 3):
-                    next_operation = new_expression_stack[offset + step] if offset + step < len(new_expression_stack) else None
+            if not isinstance(operation, VALID_TYPES) and operation.name not in ALL_TOKENS:
+                # for step in range(1, 3):
+                next_operation = new_expression_stack[offset + 1] if offset + 1 < len(new_expression_stack) else None
 
-                    if next_operation is not None and isinstance(next_operation, Operator):
-                        if next_operation.operator == Tokens.attr_access:
-                            field = ClassField()
-                            field.name = operation.name
-                            new_expression_stack[offset] = field
-                            break
-                else:
-                    raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
+                if next_operation is not None and isinstance(next_operation, Operator):
+                    if next_operation.operator == Tokens.attr_access:
+                        field = ClassField()
+                        field.name = operation.name
+                        new_expression_stack[offset] = field
+                        break
+                # else:
+                raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
 
 
         return new_expression_stack

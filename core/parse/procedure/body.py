@@ -191,7 +191,8 @@ class BodyParser(Parser):
 
                     if var_name in NOT_ALLOWED_TOKENS:
                         raise InvalidSyntaxError(
-                            f"Неверный синтаксис. Нельзя использовать зарезервированные слова{var_name}",
+                            f"Неверный синтаксис. "
+                            f"Нельзя использовать зарезервированные слова в качестве имен переменных: '{var_name}'",
                             info=self.info
                         )
 

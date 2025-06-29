@@ -189,8 +189,9 @@ class FieldNotDefine(BaseError):
 
 
 class NameAlreadyExist(BaseError):
-    def __init__(self, name: str, info: Optional[Info] = None):
-        msg = f"Имя: '{name}' уже существует"
+    def __init__(self, name: str, *, msg: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = f"Имя: '{name}' уже существует"
 
         if info is not None:
             if info.file is not None:

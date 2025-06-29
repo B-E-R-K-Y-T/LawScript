@@ -216,6 +216,12 @@ def prepare_expr(expr: list[str]) -> list:
             # Если нашли корректную цепочку, заменяем её на AttrAccess
             if start_idx >= 0 and end_idx < len(expr):
                 attr_access_expr = expr[start_idx:end_idx + 1]
+                if Tokens.left_bracket in attr_access_expr or Tokens.right_bracket in attr_access_expr:
+                    raise InvalidExpression(
+                        f"Ошибка в выражении: '{' '.join(str(item) for item in expr)}' "
+                        f"нельзя разрывать цепочки атрибутов с помощью скобок"
+                    )
+
                 expr[start_idx:end_idx + 1] = [AttrAccess(_build_rpn(attr_access_expr))]
                 i = start_idx  # Перемещаемся к началу заменённого блока
 
@@ -642,30 +648,6 @@ def compile_rpn(expr):
             continue
         elif op == Tokens.false:
             compiled_stack.append(Boolean(False))
-            continue
-
-        if op == Tokens.quotation:
-            step = offset
-            res_op = ""
-
-            while step < len(expr)-1:
-                step += 1
-                next_op = expr[step]
-
-                if next_op == Tokens.quotation:
-                    jump = step + 1
-                    break
-
-                if isinstance(next_op, LinkedProcedure):
-                    next_op = next_op.func.name
-
-                res_op += next_op
-            else:
-                raise InvalidExpression(
-                    f"В выражении: '{' '.join(expr)}' не хватает закрывающей кавычки: '{Tokens.quotation}'"
-                )
-
-            compiled_stack.append(String(res_op))
             continue
 
         compiled_stack.append(Operator(op))

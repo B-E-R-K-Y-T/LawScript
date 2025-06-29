@@ -245,7 +245,24 @@ class Compiler:
 
             for method_name, method in compiled_obj.methods.items():
                 method: Method = self.execute_compile(method)
+                method.name = method_name
                 compiled_obj.methods[method_name] = method
+
+            if compiled_obj.methods is None:
+                compiled_obj.methods = {}
+
+            if compiled_obj.parent is not None:
+                if compiled_obj.parent not in self.compiled:
+                    printer.logging(
+                        f"Класс {compiled_obj.name} ссылается на несуществующий класс {compiled_obj.parent}",
+                        level="ERROR"
+                    )
+                    raise NameNotDefine(
+                        f"Класс '{compiled_obj.name}' ссылается на несуществующий класс '{compiled_obj.parent}'",
+                        info=compiled_obj.meta_info
+                    )
+
+                compiled_obj.parent = self.compiled[compiled_obj.parent]
 
             return compiled_obj
 
@@ -434,6 +451,7 @@ class Compiler:
             printer.logging(f"Statement добавлен в контекст: {statement}", level="DEBUG")
 
         printer.logging(f"Компиляция тела кода завершена (всего statements: {len(statements)})", level="INFO")
+
     def compile(self) -> Compiled:
         compiled_modules = {}
 
@@ -448,7 +466,7 @@ class Compiler:
 
             if compiled.name in self.compiled:
                 printer.logging(f"Ошибка: {compiled.name} уже существует", level="ERROR")
-                raise NameAlreadyExist(compiled.name)
+                raise NameAlreadyExist(compiled.name, info=compiled.meta_info)
 
             self.compiled[compiled.name] = compiled
             printer.logging(f"Скомпилировано: {compiled.name}", level="INFO")
@@ -470,6 +488,11 @@ class Compiler:
 
                 for method in compiled.methods.values():
                     self.body_compile(method.body)
+
+                if compiled.methods is None:
+                    compiled.methods = {}
+
+                compiled.methods[compiled.constructor_name] = compiled.constructor
 
                 for cmd in compiled.constructor.body.commands:
                     if isinstance(cmd, Return):

@@ -70,18 +70,25 @@ class DefineClassParser(Parser):
             match line:
                 case [Tokens.define, Tokens.class_, name, Tokens.left_bracket]:
                     self.name = name
-                case [Tokens.extend, Tokens.class_, name, Tokens.from_, parent, Tokens.left_bracket]:
+                case [Tokens.define, Tokens.class_, name, Tokens.extend, Tokens.from_, parent, Tokens.left_bracket]:
                     self.name = name
                     self.parent = parent
                 case [
                     Tokens.define, Tokens.method, Tokens.left_bracket, _, Tokens.right_bracket, name, *_
                 ]:
                     if name in self.methods.keys():
-                        raise NameAlreadyExist(name, self.info)
+                        raise NameAlreadyExist(name, info=self.info)
 
                     method = self.execute_parse(DefineMethodParser, body, num)
                     self.methods[name] = method
                 case [Tokens.define, Tokens.constructor, Tokens.left_bracket, _, Tokens.right_bracket, *_]:
+                    if self.constructor is not None:
+                        raise NameAlreadyExist(
+                            self.name,
+                            msg=f"Конструктор уже был объявлен в классе '{self.name}'",
+                            info=self.info
+                        )
+
                     self.constructor = self.execute_parse(DefineConstructorParser, body, num)
                 case [Tokens.right_bracket]:
                     return num
