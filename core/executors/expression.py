@@ -16,7 +16,7 @@ from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean, Yield
 from core.types.basetype import BaseAtomicType, BaseType
-from core.types.classes import ClassDefinition, ClassInstance, Method, ClassField
+from core.types.classes import ClassDefinition, ClassInstance, Method, ClassField, Constructor
 from core.types.operation import Operator
 from core.types.procedure import Expression, Procedure, LinkedProcedure
 from core.types.variable import ScopeStack, traverse_scope, Variable
@@ -213,18 +213,18 @@ class ExpressionExecutor(Executor):
         executor = self.procedure_executor(procedure, self.compiled)
         evaluate_stack.append(executor.execute())
 
-    def call_method(self, method: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]], this: Variable):
+    def call_method(self, method: Method, evaluate_stack: list[Union[BaseAtomicType, Procedure]], this: Variable):
         method.tree_variables.set(this)
         self.call_procedure(method, evaluate_stack)
 
     def call_constructor(
-            self, method: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]],
-            this: Variable, instance: ClassInstance
+            self, constructor: Constructor, evaluate_stack: list[Union[BaseAtomicType, Procedure]],
+            instance: ClassInstance
     ):
-        self.call_method(method, evaluate_stack, this)
-        evaluate_stack.pop(-1)
-        instance.this = instance
+        this = Variable(instance.metadata.constructor.this_name, instance)
 
+        self.call_method(constructor, evaluate_stack, this)
+        evaluate_stack.pop(-1)
         evaluate_stack.append(instance)
 
     @staticmethod
@@ -284,6 +284,18 @@ class ExpressionExecutor(Executor):
 
         evaluate_stack.append(result)
 
+    @staticmethod
+    def handle_in_background(operation, prepared_operations, offset, evaluate_stack):
+        if offset + 1 < len(prepared_operations):
+            next_op = prepared_operations[offset + 1]
+
+            if isinstance(next_op, Operator) and next_op.operator == ServiceTokens.in_background:
+                evaluate_stack.append(operation)
+
+                return True
+
+        return False
+
     def evaluate(self) -> BaseAtomicType:
         try:
             prepared_operations: list[Union[BaseAtomicType, Operator]] = self.prepare_operations()
@@ -297,7 +309,10 @@ class ExpressionExecutor(Executor):
                 operands = self.get_operands(evaluate_stack)
                 res = operands.left.get_attribute(operands.right.name)
 
-                if isinstance(res, Method):
+                if isinstance(res, Constructor):
+                    res.this = operands.left.value
+                    operation = res
+                elif isinstance(res, Method):
                     operation = res
                 else:
                     evaluate_stack.append(res)
@@ -309,19 +324,24 @@ class ExpressionExecutor(Executor):
                 continue
 
             if isinstance(operation, Procedure):
-                if offset + 1 < len(prepared_operations):
-                    next_op = prepared_operations[offset + 1]
-
-                    if isinstance(next_op, Operator):
-                        if prepared_operations[offset + 1].operator == ServiceTokens.in_background:
-                            evaluate_stack.append(operation)
-                            continue
+                if self.handle_in_background(operation, prepared_operations, offset, evaluate_stack):
+                    continue
 
                 try:
                     call_metadata = self.init_procedure_context(operation, evaluate_stack)
 
                     if call_metadata.procedure is not None:
                         call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
+
+                        if isinstance(operation, Constructor):
+                            self.call_constructor(
+                                call_metadata.procedure,
+                                evaluate_stack,
+                                operation.this,
+                            )
+                            call_func_stack_builder.pop()
+                            continue
+
                         self.call_procedure(call_metadata.procedure, evaluate_stack)
                         call_func_stack_builder.pop()
                 except RecursionError:
@@ -333,13 +353,8 @@ class ExpressionExecutor(Executor):
                 continue
 
             elif isinstance(operation, PyExtendWrapper):
-                if offset + 1 < len(prepared_operations):
-                    next_op = prepared_operations[offset + 1]
-
-                    if isinstance(next_op, Operator):
-                        if prepared_operations[offset + 1].operator == ServiceTokens.in_background:
-                            evaluate_stack.append(operation)
-                            continue
+                if self.handle_in_background(operation, prepared_operations, offset, evaluate_stack):
+                    continue
 
                 call_metadata = self.init_py_extend_procedure_context(operation, evaluate_stack)
 
@@ -357,10 +372,10 @@ class ExpressionExecutor(Executor):
                     if call_metadata.procedure is not None:
                         call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
                         instance = operation.create_instance()
+
                         self.call_constructor(
                             call_metadata.procedure,
                             evaluate_stack,
-                            Variable(operation.constructor.this, instance),
                             instance
                         )
                         call_func_stack_builder.pop()

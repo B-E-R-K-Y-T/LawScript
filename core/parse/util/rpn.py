@@ -4,7 +4,7 @@ from core.exceptions import InvalidExpression, BaseError
 from core.extend.function_wrap import PyExtendWrapper
 from core.parse.base import is_integer, is_float, is_identifier
 from core.tokens import Tokens, ServiceTokens
-from core.types.atomic import Number, String, Boolean
+from core.types.atomic import Number, String, Boolean, Void
 from core.types.basetype import BaseAtomicType
 from core.types.line import Info
 from core.types.operation import Operator
@@ -629,6 +629,9 @@ def compile_rpn(expr):
         printer.logging(f"Компиляция элемента [{offset}]: {op}", level="TRACE")
         if offset < jump:
             continue
+
+        if op == Tokens.void:
+            op = Void()
 
         if isinstance(op, Operator):
             compiled_stack.append(op)

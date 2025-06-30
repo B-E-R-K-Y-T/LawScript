@@ -8,21 +8,22 @@ from core.types.procedure import Procedure, Body, Expression
 class Method(Procedure):
     def __init__(
             self, name: str, body: Body, arguments_names: list[Optional[str]],
-            default_arguments: Optional[dict[str, Expression]] = None, this: Optional[str] = None
+            default_arguments: Optional[dict[str, Expression]] = None, this_name: Optional[str] = None
     ):
         super().__init__(name, body, arguments_names, default_arguments)
-        self.this = this
+        self.this_name = this_name
 
     def __str__(self):
-        return f"Метод('{self.this}:{self.name}') кол-во аргументов: {len(self.arguments_names)}"
+        return f"Метод('{self.this_name}:{self.name}') кол-во аргументов: {len(self.arguments_names)}"
 
 
 class Constructor(Method):
     def __init__(
             self, _, body: Body, arguments_names: list[Optional[str]],
-            default_arguments: Optional[dict[str, Expression]] = None, this: Optional[str] = None
+            default_arguments: Optional[dict[str, Expression]] = None, this_name: Optional[str] = None
     ):
-        super().__init__("", body, arguments_names, default_arguments, this)
+        super().__init__("", body, arguments_names, default_arguments, this_name)
+        self.this: Optional['ClassInstance'] = None
 
     def __str__(self):
         return f"Класс('{self.name}') кол-во аргументов: {len(self.arguments_names)}"
