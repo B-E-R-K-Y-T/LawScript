@@ -84,4 +84,4 @@ class ClassInstance(BaseAtomicType):
 
 
     def __str__(self):
-        return f"Экземпляр класса '{self.class_name}'"
+        return f"Экземпляр('{self.class_name}')"
