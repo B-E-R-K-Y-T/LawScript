@@ -452,6 +452,10 @@ class Compiler:
 
         printer.logging(f"Компиляция тела кода завершена (всего statements: {len(statements)})", level="INFO")
 
+    def compile_default_args(self, default_arguments: dict[str, Expression]):
+        for expr in default_arguments.values():
+            self.expr_compile(expr)
+
     def compile(self) -> Compiled:
         compiled_modules = {}
 
@@ -479,20 +483,24 @@ class Compiler:
                 self.body_compile(compiled.body)
 
                 if compiled.default_arguments is not None:
-                    for expr in compiled.default_arguments.values():
-                        self.expr_compile(expr)
+                    self.compile_default_args(compiled.default_arguments)
 
             elif isinstance(compiled, ClassDefinition):
                 self.body_compile(compiled.constructor.body)
                 compiled.constructor.name = compiled.name
 
                 for method in compiled.methods.values():
+                    if method.default_arguments is not None:
+                        self.compile_default_args(method.default_arguments)
                     self.body_compile(method.body)
 
                 if compiled.methods is None:
                     compiled.methods = {}
 
                 compiled.methods[compiled.constructor_name] = compiled.constructor
+
+                if compiled.constructor.default_arguments is not None:
+                    self.compile_default_args(compiled.constructor.default_arguments)
 
                 for cmd in compiled.constructor.body.commands:
                     if isinstance(cmd, Return):

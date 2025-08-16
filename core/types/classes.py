@@ -12,6 +12,7 @@ class Method(Procedure):
     ):
         super().__init__(name, body, arguments_names, default_arguments)
         self.this_name = this_name
+        self.this: Optional['ClassInstance'] = None
 
     def __str__(self):
         return f"Метод('{self.this_name}:{self.name}') кол-во аргументов: {len(self.arguments_names)}"
@@ -23,7 +24,6 @@ class Constructor(Method):
             default_arguments: Optional[dict[str, Expression]] = None, this_name: Optional[str] = None
     ):
         super().__init__("", body, arguments_names, default_arguments, this_name)
-        self.this: Optional['ClassInstance'] = None
 
     def __str__(self):
         return f"Класс('{self.name}') кол-во аргументов: {len(self.arguments_names)}"

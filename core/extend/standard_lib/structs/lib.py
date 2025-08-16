@@ -6,7 +6,8 @@ from core.types.atomic import Array
 from core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
-standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/"
+standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/структуры/"
+MOD_NAME = "примитивные_струкруты"
 
 
 @builder.collect(func_name='массив')
@@ -138,6 +139,30 @@ class ArrayLen(PyExtendWrapper):
 
         return Number(len(arr.value))
 
+@builder.collect(func_name='сортировать_массив')
+class ArrayLen(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[Array]] = None):
+        from core.types.atomic import Array
+        from core.exceptions import ErrorValue
+
+        arr = args[0]
+
+        if not isinstance(arr, Array):
+            raise ErrorValue("Аргумент должен быть массивом.")
+
+        for item in arr.value:
+            if isinstance(item, Array):
+                raise ErrorValue("Невозможно отсортировать массив в массиве")
+
+        arr.value = sorted([i.value for i in arr.value])
+
+        return arr
+
 
 @builder.collect(func_name='таблица')
 class TableInit(PyExtendWrapper):
@@ -258,4 +283,4 @@ class TableLen(PyExtendWrapper):
 
 
 if __name__ == '__main__':
-    builder.build_python_extend(f"{standard_lib_path}структуры")
+    builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")

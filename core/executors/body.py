@@ -208,7 +208,7 @@ class BodyExecutor(Executor):
                 target = target_expr_execute()
 
                 if isinstance(target, ClassField):
-                    target.value = override_expr_result.value
+                    target.value = override_expr_result
                     continue
 
                 try:

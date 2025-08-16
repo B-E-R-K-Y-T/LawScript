@@ -121,6 +121,13 @@ class ExpressionExecutor(Executor):
     @staticmethod
     def get_operands(execute_stack: list[BaseAtomicType]) -> Operands:
         l, r = execute_stack.pop(-2), execute_stack.pop(-1)
+
+        if isinstance(l, ClassField):
+            l = l.value
+
+        if isinstance(r, ClassField):
+            r = r.value
+
         atomic_type = type(l)
 
         return Operands(
@@ -213,7 +220,9 @@ class ExpressionExecutor(Executor):
         executor = self.procedure_executor(procedure, self.compiled)
         evaluate_stack.append(executor.execute())
 
-    def call_method(self, method: Method, evaluate_stack: list[Union[BaseAtomicType, Procedure]], this: Variable):
+    def call_method(self, method: Method, evaluate_stack: list[Union[BaseAtomicType, Procedure]], instance: ClassInstance):
+        this = Variable(instance.metadata.constructor.this_name, instance)
+
         method.tree_variables.set(this)
         self.call_procedure(method, evaluate_stack)
 
@@ -221,9 +230,7 @@ class ExpressionExecutor(Executor):
             self, constructor: Constructor, evaluate_stack: list[Union[BaseAtomicType, Procedure]],
             instance: ClassInstance
     ):
-        this = Variable(instance.metadata.constructor.this_name, instance)
-
-        self.call_method(constructor, evaluate_stack, this)
+        self.call_method(constructor, evaluate_stack, instance)
         evaluate_stack.pop(-1)
         evaluate_stack.append(instance)
 
@@ -258,6 +265,9 @@ class ExpressionExecutor(Executor):
             else:
                 if args is None:
                     args = []
+
+                if isinstance(operand, ClassField):
+                    operand = operand.value
 
                 args.append(operand)
 
@@ -306,13 +316,14 @@ class ExpressionExecutor(Executor):
 
         for offset, operation in enumerate(prepared_operations):
             if isinstance(operation, Operator) and operation.operator == Tokens.attr_access:
-                operands = self.get_operands(evaluate_stack)
-                res = operands.left.get_attribute(operands.right.name)
+                left, right = evaluate_stack.pop(-2), evaluate_stack.pop(-1)
+                res = left.get_attribute(right.name)
 
                 if isinstance(res, Constructor):
-                    res.this = operands.left.value
+                    res.this = left.value
                     operation = res
                 elif isinstance(res, Method):
+                    res.this = left.value
                     operation = res
                 else:
                     evaluate_stack.append(res)
@@ -335,6 +346,15 @@ class ExpressionExecutor(Executor):
 
                         if isinstance(operation, Constructor):
                             self.call_constructor(
+                                call_metadata.procedure,
+                                evaluate_stack,
+                                operation.this,
+                            )
+                            call_func_stack_builder.pop()
+                            continue
+
+                        elif isinstance(operation, Method):
+                            self.call_method(
                                 call_metadata.procedure,
                                 evaluate_stack,
                                 operation.this,
