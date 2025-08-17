@@ -159,7 +159,7 @@ class ArrayLen(PyExtendWrapper):
             if isinstance(item, Array):
                 raise ErrorValue("Невозможно отсортировать массив в массиве")
 
-        arr.value = sorted([i.value for i in arr.value])
+        arr.value = sorted(arr.value, key=lambda i: i.value)
 
         return arr
 

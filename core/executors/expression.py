@@ -200,6 +200,7 @@ class ExpressionExecutor(Executor):
                 fact_default_args_count += 1
 
                 value = ExpressionExecutor(expr, self.tree_variable, self.compiled).execute()
+                value.name = name
 
                 procedure.tree_variables.set(Variable(name, value))
 

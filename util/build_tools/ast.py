@@ -12,6 +12,7 @@ from core.parse.define_object import DefineObjectParser
 from core.parse.define_law import DefineLawParser
 from core.parse.define_rule import DefineRuleParser
 from core.parse.define_subject import DefineSubjectParser
+from core.parse.procedure.body import BodyParser
 from core.parse.procedure.define_execute_block import DefineExecuteBlockParser
 from core.parse.procedure.define_procedure import DefineProcedureParser
 from core.parse.type_sanction import TypeSanctionParser

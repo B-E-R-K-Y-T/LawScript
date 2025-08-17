@@ -74,6 +74,24 @@ class BodyParser(Parser):
 
         return loop
 
+    def parse_assign(self, name: str, expr: list, line: list[str]):
+        if not is_identifier(name):
+            raise InvalidSyntaxError(
+                f"Имя переменной должно состоять только из букв и цифр! Переменная: {name}",
+                line=line,
+                info=self.info
+            )
+
+        if name in NOT_ALLOWED_TOKENS:
+            raise InvalidSyntaxError(
+                f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {name}",
+                info=self.info
+            )
+
+        self.commands.append(AssignField(name, Expression(str(), expr, self.info), self.info))
+        printer.logging(f"Добавлена команда AssignField с именем: {name} и выражением: {expr}",
+                        level="INFO")
+
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга тела с jump={self.jump} {Body.__name__}", level="INFO")
@@ -152,22 +170,7 @@ class BodyParser(Parser):
 
                     printer.logging("Добавлена команда Else", level="INFO")
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
-                    if not is_identifier(name):
-                        raise InvalidSyntaxError(
-                            f"Имя переменной должно состоять только из букв и цифр! Переменная: {name}",
-                            line=line,
-                            info=self.info
-                        )
-
-                    if name in NOT_ALLOWED_TOKENS:
-                        raise InvalidSyntaxError(
-                            f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {name}",
-                            info=self.info
-                        )
-
-                    self.commands.append(AssignField(name, Expression(str(), expr, self.info), self.info))
-                    printer.logging(f"Добавлена команда AssignField с именем: {name} и выражением: {expr}",
-                                    level="INFO")
+                    self.parse_assign(name, expr, line)
                 case [Tokens.while_, *expr, Tokens.left_bracket]:
                     self.commands.append(
                         While(
