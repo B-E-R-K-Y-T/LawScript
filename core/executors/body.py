@@ -101,8 +101,6 @@ class BodyExecutor(Executor):
                 result = executor.execute()
 
                 with VariableContextCreator(self.tree_variables):
-                    executed = Void()
-
                     if result.value:
                         body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
                         executed = body_executor.execute()
