@@ -30,6 +30,10 @@ if TYPE_CHECKING:
     from util.build_tools.compile import Compiled
 
 
+class Stop:
+    pass
+
+
 class BodyExecutor(Executor):
     def __init__(self, body: Body, tree_variables: ScopeStack, compiled: "Compiled"):
         self.body = body
@@ -102,6 +106,9 @@ class BodyExecutor(Executor):
                     if result.value:
                         body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
                         executed = body_executor.execute()
+
+                        if not isinstance(executed, Stop):
+                            return executed
                     else:
                         for else_when in command.else_whens:
                             when_executor = ExpressionExecutor(else_when.expression, self.tree_variables, self.compiled)
@@ -110,6 +117,10 @@ class BodyExecutor(Executor):
                             if result.value:
                                 body_executor = BodyExecutor(else_when.body, self.tree_variables, self.compiled)
                                 executed = body_executor.execute()
+
+                                if not isinstance(executed, Stop):
+                                    return executed
+
                                 break
 
                         else:
@@ -117,8 +128,8 @@ class BodyExecutor(Executor):
                                 body_executor = BodyExecutor(command.else_.body, self.tree_variables, self.compiled)
                                 executed = body_executor.execute()
 
-                    if not isinstance(executed, Void):
-                        return executed
+                                if not isinstance(executed, Stop):
+                                    return executed
 
             elif isinstance(command, While):
                 body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
@@ -137,7 +148,7 @@ class BodyExecutor(Executor):
                         elif isinstance(executed, Break):
                             break
 
-                        elif not isinstance(executed, Void):
+                        elif not isinstance(executed, Stop):
                             return executed
 
                         if self.async_mode:
@@ -174,7 +185,7 @@ class BodyExecutor(Executor):
                         elif isinstance(executed, Break):
                             break
 
-                        elif not isinstance(executed, Void):
+                        elif not isinstance(executed, Stop):
                             return executed
 
                         if self.async_mode:
@@ -233,4 +244,4 @@ class BodyExecutor(Executor):
             if self.async_mode:
                 yield Yield()
 
-        return Void()
+        return Stop()

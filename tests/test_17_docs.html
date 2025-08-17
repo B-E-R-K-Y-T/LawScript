@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Документация модуля - test_17</title>
+    <script>
+        // Проверка загрузки шрифта
+        document.fonts.ready.then(function() {
+            if (!document.fonts.check('1em Crimson Text')) {
+                console.log('Шрифт не загружен, используем резервный');
+                var style = document.createElement('style');
+                style.textContent = `
+                    body {
+                        font-family: 'Times New Roman', serif;
+                    }
+                    .document-title {
+                        font-family: 'Times New Roman', serif;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        });
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet"
+          onerror="this.remove(); document.fonts.load('1em Crimson Text').catch(() => {
+              var style = document.createElement('style');
+              style.textContent = `
+                  body { font-family: 'Times New Roman', serif; }
+                  .document-title { font-family: 'Times New Roman', serif; }
+              `;
+              document.head.appendChild(style);
+          });">
+<style>
+        :root {
+            --primary: #2a4365;
+            --secondary: #4a5568;
+            --accent: #9c4221;
+            --light: #f7fafc;
+            --parchment: #f8f3e6;
+        }
+
+        body {
+            font-family: 'Crimson Text', 'Times New Roman', serif;
+            line-height: 1.7;
+            color: #222;
+            background-color: var(--parchment);
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 40px;
+            background-image:
+                linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+    h1 {
+        color: var(--primary);
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: 10px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+
+    h2 {
+        color: var(--secondary);
+        margin-top: 40px;
+        font-style: italic;
+    }
+
+    .function {
+        background: white;
+        border-radius: 3px;
+        padding: 30px;
+        margin-bottom: 40px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--accent);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .function::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--accent), #d69e2e);
+    }
+
+    h3 {
+        color: var(--primary);
+        margin-top: 0;
+        font-size: 1.5em;
+        display: flex;
+        align-items: center;
+    }
+
+    h3::before {
+        content: "§";
+        color: var(--accent);
+        margin-right: 10px;
+        font-weight: bold;
+    }
+
+    .docs {
+        background: var(--light);
+        padding: 20px;
+        margin: 15px 0;
+        border-radius: 2px;
+        border-left: 3px solid var(--secondary);
+        font-size: 1.05em;
+        line-height: 1.8;
+        white-space: pre-wrap;  /* Главное изменение - сохраняем пробелы и переносы */
+        font-family: inherit;
+    }
+
+    .block {
+        margin-left: 20px;
+        padding-left: 25px;
+        border-left: 2px dashed rgba(154, 106, 71, 0.3);
+        position: relative;
+    }
+
+    .block::before {
+        content: "⋮";
+        position: absolute;
+        left: -15px;
+        top: 0;
+        color: var(--accent);
+        font-weight: bold;
+    }
+
+    ul {
+        padding-left: 20px;
+    }
+
+    li {
+        margin-bottom: 8px;
+        position: relative;
+    }
+
+    li::before {
+        content: "•";
+        color: var(--accent);
+        position: absolute;
+        left: -15px;
+    }
+
+    strong {
+        color: var(--secondary);
+    }
+
+    @media print {
+        body {
+            background: none;
+            padding: 0;
+        }
+        .function {
+            page-break-inside: avoid;
+            box-shadow: none;
+        }
+    }
+
+    .entity {
+        background: white;
+        border-radius: 3px;
+        padding: 30px;
+        margin-bottom: 40px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--accent);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .entity::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--accent), #d69e2e);
+    }
+
+    .criteria {
+        margin-top: 15px;
+        padding-left: 20px;
+    }
+</style>
+</head>
+<body>
+    <div style="text-align: center; margin-bottom: 40px;">
+        <div style="font-size: 2em; color: var(--accent); margin-bottom: 10px;">⋮⋮⋮</div>
+        <div class="document-title" style="font-size: 0.9em; letter-spacing: 3px; color: var(--secondary);">
+            ДОКУМЕНТАЦИЯ К ПРОЕКТУ
+        </div>
+        <div style="font-size: 2em; color: var(--accent); margin-top: 10px;">⋮⋮⋮</div>
+    </div>
+
+    <h1>Документация модуля</h1>
+    <h2>Модуль: test_17</h2>
+
+    <!-- Санкции -->
+
+    <!-- Права -->
+
+    <!-- Обязанности -->
+
+    <!-- Правила -->
+
+    <!-- Субъекты -->
+
+    <!-- Объекты -->
+
+    <!-- Документы -->
+
+    <!-- Фактические ситуации -->
+
+    <!-- Проверки -->
+
+    <!-- Условия -->
+
+    <!-- Процедуры -->
+    <h2 style="margin-top: 50px;">Процедуры</h2>
+    <div class="entity" id="отображатель">
+        <h3>Процедура: отображатель</h3>
+        <h4>Аргументы:</h4>
+        <ul><li><strong>мас</strong>: Обязательный</li><li><strong>отображаемая_функция</strong>: Обязательный</li><li><strong>старт</strong>: Необязательный</li></ul>
+    </div>
+    <div class="entity" id="сумматор">
+        <h3>Процедура: сумматор</h3>
+        <h4>Аргументы:</h4>
+        <ul><li><strong>а</strong>: Обязательный</li><li><strong>б</strong>: Обязательный</li></ul>
+    </div>
+    <div class="entity" id="умножение">
+        <h3>Процедура: умножение</h3>
+        <h4>Аргументы:</h4>
+        <ul><li><strong>а</strong>: Обязательный</li><li><strong>б</strong>: Обязательный</li></ul>
+    </div>
+    <div class="entity" id="вход_в_программу">
+        <h3>Процедура: вход_в_программу</h3>
+        <h4>Аргументы отсутствуют.</h4>
+    </div>
+
+</body>
+</html>

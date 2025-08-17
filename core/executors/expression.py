@@ -172,7 +172,10 @@ class ExpressionExecutor(Executor):
             if not isinstance(operand, Operator):
                 if rev_arguments_names and arg_position < len(rev_arguments_names):
                     argument = rev_arguments_names[arg_position]
-                    operand.name = argument
+
+                    if not operand.name:
+                        operand.name = argument
+
                     procedure.tree_variables.set(Variable(argument, operand))
                     arg_position += 1
 
@@ -220,8 +223,16 @@ class ExpressionExecutor(Executor):
         )
 
     def call_procedure(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
+        from core.executors.body import Stop
+
         executor = self.procedure_executor(procedure, self.compiled)
-        evaluate_stack.append(executor.execute())
+
+        result = executor.execute()
+
+        if isinstance(result, Stop):
+            result = Void()
+
+        evaluate_stack.append(result)
 
     def call_method(self, method: Method, evaluate_stack: list[Union[BaseAtomicType, Procedure]], instance: ClassInstance):
         this = Variable(instance.metadata.constructor.this_name, instance)
@@ -289,7 +300,7 @@ class ExpressionExecutor(Executor):
         except BaseError as e:
             raise InvalidExpression(str(e), info=self.expression.meta_info)
 
-        if not isinstance(result, (BaseAtomicType, BaseDeclarativeType)):
+        if not isinstance(result, (BaseAtomicType, BaseDeclarativeType, Procedure, PyExtendWrapper)):
             raise ErrorType(
                 f"Вызов процедуры '{py_extend_procedure.name}' завершился с ошибкой. Не верный возвращаемый тип.",
                 info=self.expression.meta_info
