@@ -1,16 +1,19 @@
-from typing import Type, Union, Optional
+from typing import Type, Union
 
 from core.exceptions import (
     NameNotDefine,
     InvalidType,
     UnknownType,
     NameAlreadyExist,
-    FieldNotDefine, InvalidSyntaxError,
+    FieldNotDefine,
+    InvalidSyntaxError,
+    ErrorType,
 )
 from core.extend.function_wrap import PyExtendWrapper
 from core.parse.base import MetaObject
 from core.parse.util.rpn import build_rpn_stack
 from core.tokens import Tokens, NOT_ALLOWED_TOKENS
+from core.types.atomic import Array, String
 from core.types.basetype import BaseType
 from core.types.checkers import CheckerSituation
 from core.types.classes import Method, Constructor, ClassDefinition
@@ -214,25 +217,47 @@ class Compiler:
             compiled_obj.document = self.process_literal_field(
                 compiled_obj.document, Tokens.document, Tokens.check, Document
             )
+            compiled_obj.fields["__документ__"] = compiled_obj.document # noqa
             compiled_obj.fact_situation = self.process_literal_field(
                 compiled_obj.fact_situation,
                 f"{Tokens.actual} {Tokens.situation}", Tokens.check, FactSituation
             )
+            compiled_obj.fields["__фактическая_ситуация__"] = compiled_obj.fact_situation # noqa
 
         elif isinstance(compiled_obj, Sanction):
-            compiled_obj.type = self.execute_compile(compiled_obj.type)
+            sanctions = []
+
+            for sanction_type in compiled_obj.type:
+                if sanction_type not in self.compiled:
+                    raise NameNotDefine(
+                        name=sanction_type,
+                        info=compiled_obj.meta_info
+                    )
+
+                sanction = self.compiled[sanction_type]
+
+                if not isinstance(sanction, SanctionType):
+                    raise ErrorType(f"Поле '{sanction_type}' должно иметь тип: {SanctionType}")
+
+                sanctions.append(sanction)
+
+            compiled_obj.type = self.execute_compile(sanctions)
+            compiled_obj.fields["__типы__"] = Array(compiled_obj.type)
             compiled_obj.severity = self.execute_compile(compiled_obj.severity)
 
         elif isinstance(compiled_obj, Disposition):
             compiled_obj.law = self.process_literal_field(
                 compiled_obj.law, Tokens.law, Tokens.disposition, Law
             )
+            compiled_obj.fields["__право__"] = compiled_obj.law
             compiled_obj.obligation = self.process_literal_field(
                 compiled_obj.obligation, Tokens.duty, Tokens.disposition, Obligation
             )
+            compiled_obj.fields["__обязанность__"] = compiled_obj.obligation
             compiled_obj.rule = self.process_literal_field(
                 compiled_obj.rule, Tokens.rule, Tokens.disposition, Rule
             )
+            compiled_obj.fields["__правило__"] = compiled_obj.rule
 
         elif isinstance(compiled_obj, Subject):
             return compiled_obj
@@ -264,6 +289,12 @@ class Compiler:
 
                 compiled_obj.parent = self.compiled[compiled_obj.parent]
 
+            if compiled_obj.constructor is None:
+                raise InvalidSyntaxError(
+                    f"У класса '{compiled_obj.name}' не определен конструктор!",
+                    info=compiled_obj.meta_info
+                )
+
             return compiled_obj
 
         elif isinstance(compiled_obj, Constructor):
@@ -286,12 +317,15 @@ class Compiler:
             compiled_obj.subject = self.process_literal_field(
                 compiled_obj.subject, Tokens.subject, Tokens.hypothesis, Subject
             )
+            compiled_obj.fields["__субъект__"] = compiled_obj.subject
             compiled_obj.object = self.process_literal_field(
                 compiled_obj.object, Tokens.object, Tokens.hypothesis, Object
             )
+            compiled_obj.fields["__объект__"] = compiled_obj.object
             compiled_obj.condition = self.process_literal_field(
                 compiled_obj.condition, Tokens.condition, Tokens.hypothesis, Condition
             )
+            compiled_obj.fields["__условие__"] = compiled_obj.condition
 
         elif isinstance(compiled_obj, Condition):
             compiled_obj.criteria = self.process_object_field(
@@ -300,14 +334,17 @@ class Compiler:
                 Tokens.condition,
                 Criteria
             )
+            compiled_obj.fields["__критерии__"] = Array([String(k) for k in compiled_obj.criteria.modify.keys()])
 
         elif isinstance(compiled_obj, FactSituation):
             compiled_obj.object_ = self.process_literal_field(
                 compiled_obj.object_, Tokens.object, f"{Tokens.actual} {Tokens.situation}", Object
             )
+            compiled_obj.fields["__объект__"] = compiled_obj.object_ # noqa
             compiled_obj.subject = self.process_literal_field(
                 compiled_obj.subject, Tokens.subject, f"{Tokens.actual} {Tokens.situation}", Subject
             )
+            compiled_obj.fields["__субъект__"] = compiled_obj.subject # noqa
 
         elif isinstance(compiled_obj, Document):
             compiled_obj.sanction = self.process_object_field(
@@ -316,18 +353,21 @@ class Compiler:
                 Tokens.document,
                 Sanction
             )
+            compiled_obj.fields["__санкция__"] = compiled_obj.sanction # noqa
             compiled_obj.disposition = self.process_object_field(
                 compiled_obj.disposition,
                 Tokens.disposition,
                 Tokens.document,
                 Disposition
             )
+            compiled_obj.fields["__диспозиция__"] = compiled_obj.disposition # noqa
             compiled_obj.hypothesis = self.process_object_field(
                 compiled_obj.hypothesis,
                 Tokens.hypothesis,
                 Tokens.document,
                 Hypothesis
             )
+            compiled_obj.fields["__гипотеза__"] = compiled_obj.hypothesis # noqa
 
         else:
             printer.logging(f"Невозможно скомпилировать: {compiled_obj}", level="ERROR")

@@ -7,7 +7,7 @@ from core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
 standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/структуры/"
-MOD_NAME = "примитивные_струкруты"
+MOD_NAME = "примитивные_структуры"
 
 
 @builder.collect(func_name='массив')
@@ -147,7 +147,7 @@ class ArrayLen(PyExtendWrapper):
         self.count_args = 1
 
     def call(self, args: Optional[list[Array]] = None):
-        from core.types.atomic import Array
+        from core.types.atomic import Array, BaseAtomicType
         from core.exceptions import ErrorValue
 
         arr = args[0]
@@ -157,7 +157,10 @@ class ArrayLen(PyExtendWrapper):
 
         for item in arr.value:
             if isinstance(item, Array):
-                raise ErrorValue("Невозможно отсортировать массив в массиве")
+                raise ErrorValue("Невозможно отсортировать массив в массиве.")
+
+            if not isinstance(item, BaseAtomicType):
+                raise ErrorValue("Аргументы массива должны быть атомарными типами.")
 
         arr.value = sorted(arr.value, key=lambda i: i.value)
 

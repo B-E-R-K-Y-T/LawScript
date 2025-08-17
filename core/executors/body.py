@@ -4,6 +4,7 @@ from core.exceptions import ErrorType, NameNotDefine
 from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
 from core.types.atomic import Void, Number, Yield
+from core.types.base_declarative_type import BaseDeclarativeType
 from core.types.basetype import BaseAtomicType
 from core.types.classes import ClassDefinition, ClassField
 from core.types.procedure import (
@@ -49,6 +50,8 @@ class BodyExecutor(Executor):
             elif isinstance(var, PyExtendWrapper):
                 self.tree_variables.set(Variable(var.name, var))
             elif isinstance(var, ClassDefinition):
+                self.tree_variables.set(Variable(var.name, var))
+            elif isinstance(var, BaseDeclarativeType):
                 self.tree_variables.set(Variable(var.name, var))
 
     def execute(self) -> Union[Generator, Union[BaseAtomicType, Continue, Break]]:

@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from core.types.base_declarative_type import BaseDeclarativeType
 from core.types.basetype import BaseType
 from core.types.conditions import ResultCondition
 from core.types.documents import Document, FactSituation
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
     from util.build_tools.compile import Compiled
 
 
-class CheckerSituation(BaseType):
+class CheckerSituation(BaseDeclarativeType):
     def __init__(self, name: str, document: Document, fact_situation: FactSituation):
         super().__init__(name)
         self.document = document
@@ -23,3 +24,7 @@ class CheckerSituation(BaseType):
             fact_data=self.fact_situation.data,
             compiled=compiled
         )
+
+
+    def __repr__(self) -> str:
+        return f"{CheckerSituation.__name__}(__документ__={self.document}, __фактическая_ситуация__={self.fact_situation})"

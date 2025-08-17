@@ -15,6 +15,7 @@ from core.exceptions import (
 from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
 from core.types.atomic import Void, Boolean, Yield
+from core.types.base_declarative_type import BaseDeclarativeType
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.classes import ClassDefinition, ClassInstance, Method, ClassField, Constructor
 from core.types.operation import Operator
@@ -63,6 +64,7 @@ VALID_TYPES = (
     ClassDefinition,
     ClassInstance,
     ClassField,
+    BaseDeclarativeType,
 )
 
 
@@ -287,7 +289,7 @@ class ExpressionExecutor(Executor):
         except BaseError as e:
             raise InvalidExpression(str(e), info=self.expression.meta_info)
 
-        if not isinstance(result, BaseAtomicType):
+        if not isinstance(result, (BaseAtomicType, BaseDeclarativeType)):
             raise ErrorType(
                 f"Вызов процедуры '{py_extend_procedure.name}' завершился с ошибкой. Не верный возвращаемый тип.",
                 info=self.expression.meta_info

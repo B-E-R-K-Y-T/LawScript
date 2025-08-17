@@ -4,7 +4,8 @@ from typing import Any, TYPE_CHECKING
 from core.call_func_stack import call_func_stack_builder
 from core.exceptions import NameNotDefine
 from core.executors.procedure import ProcedureExecutor
-from core.types.atomic import Yield
+from core.types.atomic import Yield, String, Array
+from core.types.base_declarative_type import BaseDeclarativeType
 from core.types.basetype import BaseType, BaseAtomicType
 from core.types.criteria import Criteria
 from core.types.procedure import Procedure
@@ -89,14 +90,16 @@ class ResultCondition:
         self.modify = modify
 
 
-class Condition(BaseType):
+class Condition(BaseDeclarativeType):
     def __init__(self, name: str, description: str, criteria: Criteria):
         super().__init__(name)
-        self.description = description
+        self.description = String(description)
         self.criteria = criteria
 
+        self.fields["__описание__"] = self.description
+
     def __repr__(self) -> str:
-        return f"Condition(description='{self.description}')"
+        return f"Condition(__описание__='{self.description}')"
 
     def execute(self, fact_data: dict[str, Any], compiled: "Compiled") -> dict[str, ResultCondition]:
         result = {}

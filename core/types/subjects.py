@@ -1,18 +1,13 @@
-"""
-    Individual: Для физических лиц.
-    LegalEntity: Для юридических лиц.
-    StateAuthority: Для государственных органов.
-    PublicOrganization: Для общественных организаций.
-    Municipality: Для муниципальных образований.
-    ForeignEntity: Для иностранных субъектов.
-"""
-from core.types.basetype import BaseType
+from core.types.atomic import String
+from core.types.base_declarative_type import BaseDeclarativeType
 
 
-class Subject(BaseType):
+class Subject(BaseDeclarativeType):
     def __init__(self, name: str, subject_name: str):
         super().__init__(name)
-        self.subject_name = subject_name  # Имя субъекта
+        self.subject_name = String(subject_name)
+
+        self.fields["__имя_субъекта__"] = self.subject_name
 
     def __repr__(self) -> str:
         return f"Subject(name='{self.name}')"
