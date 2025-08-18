@@ -52,8 +52,26 @@ def preprocess(raw_code, path: str) -> list:
     imports = set()
 
     code = []
+    concatenated_line = ""
+    is_concatenate = False
+    new_prepared_code = []
 
-    for offset, line in enumerate(prepared_code):
+    for line in prepared_code:
+        if is_concatenate:
+            concatenated_line += line
+
+        if line.endswith(Tokens.left_bracket) and not is_concatenate:
+            is_concatenate = True
+            concatenated_line = line
+
+        elif line[-2] == Tokens.right_bracket and line[-1] == Tokens.left_bracket and is_concatenate:
+            is_concatenate = False
+            new_prepared_code.append(concatenated_line)
+
+        elif not is_concatenate:
+            new_prepared_code.append(line)
+
+    for offset, line in enumerate(new_prepared_code):
         code.append(Line(line.strip(), num=offset+1, file=path))
 
     preprocessed = []
