@@ -56,6 +56,9 @@ class ClassDefinition(BaseType):
             metadata=self
         )
 
+    def __repr__(self):
+        return f"Класс('{self.name}')"
+
 
 class ClassInstance(BaseAtomicType):
     def __init__(
@@ -81,7 +84,6 @@ class ClassInstance(BaseAtomicType):
             return self.metadata.methods[name]
 
         return super().get_attribute(name)
-
 
     def __str__(self):
         return f"Экземпляр('{self.class_name}')"

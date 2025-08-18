@@ -19,7 +19,7 @@ from core.types.base_declarative_type import BaseDeclarativeType
 from core.types.basetype import BaseAtomicType, BaseType
 from core.types.classes import ClassDefinition, ClassInstance, Method, ClassField, Constructor
 from core.types.operation import Operator
-from core.types.procedure import Expression, Procedure, LinkedProcedure
+from core.types.procedure import Expression, Procedure, LinkedProcedure, ProcedureContextName
 from core.types.variable import ScopeStack, traverse_scope, Variable
 from core.extend.function_wrap import PyExtendWrapper
 
@@ -65,6 +65,7 @@ VALID_TYPES = (
     ClassInstance,
     ClassField,
     BaseDeclarativeType,
+    ProcedureContextName
 )
 
 
@@ -98,6 +99,16 @@ class ExpressionExecutor(Executor):
                 elif isinstance(scope_vars[operation.name], AbstractBackgroundTask):
                     scope_vars[operation.name].name = operation.name
                     new_expression_stack.append(scope_vars[operation.name])
+                elif isinstance(operation, ProcedureContextName):
+                    var = scope_vars[operation.name]
+
+                    if isinstance(var, LinkedProcedure):
+                        var = var.func
+                    elif not isinstance(var, (Procedure, PyExtendWrapper, ClassDefinition)):
+                        raise ErrorType(f"Ошибка '{operation.name}' не является процедурой!", self.expression.meta_info)
+
+                    operation.func = var
+                    new_expression_stack.append(operation)
                 else:
                     new_expression_stack.append(scope_vars[operation.name])
             else:
@@ -105,7 +116,6 @@ class ExpressionExecutor(Executor):
 
         for offset, operation in enumerate(new_expression_stack):
             if not isinstance(operation, VALID_TYPES) and operation.name not in ALL_TOKENS:
-                # for step in range(1, 3):
                 next_operation = new_expression_stack[offset + 1] if offset + 1 < len(new_expression_stack) else None
 
                 if next_operation is not None and isinstance(next_operation, Operator):
@@ -114,7 +124,6 @@ class ExpressionExecutor(Executor):
                         field.name = operation.name
                         new_expression_stack[offset] = field
                         break
-                # else:
                 raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
 
 
@@ -300,7 +309,7 @@ class ExpressionExecutor(Executor):
         except BaseError as e:
             raise InvalidExpression(str(e), info=self.expression.meta_info)
 
-        if not isinstance(result, (BaseAtomicType, BaseDeclarativeType, Procedure, PyExtendWrapper)):
+        if not isinstance(result, (BaseAtomicType, BaseDeclarativeType, Procedure, PyExtendWrapper, LinkedProcedure)):
             raise ErrorType(
                 f"Вызов процедуры '{py_extend_procedure.name}' завершился с ошибкой. Не верный возвращаемый тип.",
                 info=self.expression.meta_info
@@ -335,90 +344,98 @@ class ExpressionExecutor(Executor):
 
                 if isinstance(res, Constructor):
                     res.this = left.value
-                    operation = res
+                    operation = ProcedureContextName(Operator(res.name))
+                    operation.func = res
                 elif isinstance(res, Method):
                     res.this = left.value
-                    operation = res
+                    operation = ProcedureContextName(Operator(res.name))
+                    operation.func = res
                 else:
                     evaluate_stack.append(res)
                     continue
 
-            if isinstance(operation, LinkedProcedure):
-                operation.func.name = operation.name
-                evaluate_stack.append(operation.func)
+            if isinstance(operation, Procedure):
+                evaluate_stack.append(operation)
                 continue
 
-            if isinstance(operation, Procedure):
-                if self.handle_in_background(operation, prepared_operations, offset, evaluate_stack):
+            if isinstance(operation, ProcedureContextName):
+                name = operation.name
+                operation = operation.func
+
+                if operation is None:
+                    raise NameNotDefine(name=name, info=self.expression.meta_info)
+
+                if isinstance(operation, Procedure):
+                    if self.handle_in_background(operation, prepared_operations, offset, evaluate_stack):
+                        continue
+
+                    try:
+                        call_metadata = self.init_procedure_context(operation, evaluate_stack)
+
+                        if call_metadata.procedure is not None:
+                            call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
+
+                            if isinstance(operation, Constructor):
+                                self.call_constructor(
+                                    call_metadata.procedure,
+                                    evaluate_stack,
+                                    operation.this,
+                                )
+                                call_func_stack_builder.pop()
+                                continue
+
+                            elif isinstance(operation, Method):
+                                self.call_method(
+                                    call_metadata.procedure,
+                                    evaluate_stack,
+                                    operation.this,
+                                )
+                                call_func_stack_builder.pop()
+                                continue
+
+                            self.call_procedure(call_metadata.procedure, evaluate_stack)
+                            call_func_stack_builder.pop()
+                    except RecursionError:
+                        raise MaxRecursionError(
+                            f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
+                            info=self.expression.meta_info
+                        )
+
                     continue
 
-                try:
-                    call_metadata = self.init_procedure_context(operation, evaluate_stack)
+                elif isinstance(operation, PyExtendWrapper):
+                    if self.handle_in_background(operation, prepared_operations, offset, evaluate_stack):
+                        continue
+
+                    call_metadata = self.init_py_extend_procedure_context(operation, evaluate_stack)
 
                     if call_metadata.procedure is not None:
                         call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
+                        self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
+                        call_func_stack_builder.pop()
 
-                        if isinstance(operation, Constructor):
+                    continue
+
+                elif isinstance(operation, ClassDefinition):
+                    try:
+                        call_metadata = self.init_procedure_context(operation.constructor, evaluate_stack)
+
+                        if call_metadata.procedure is not None:
+                            call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
+                            instance = operation.create_instance()
+
                             self.call_constructor(
                                 call_metadata.procedure,
                                 evaluate_stack,
-                                operation.this,
+                                instance
                             )
                             call_func_stack_builder.pop()
-                            continue
-
-                        elif isinstance(operation, Method):
-                            self.call_method(
-                                call_metadata.procedure,
-                                evaluate_stack,
-                                operation.this,
-                            )
-                            call_func_stack_builder.pop()
-                            continue
-
-                        self.call_procedure(call_metadata.procedure, evaluate_stack)
-                        call_func_stack_builder.pop()
-                except RecursionError:
-                    raise MaxRecursionError(
-                        f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
-                        info=self.expression.meta_info
-                    )
-
-                continue
-
-            elif isinstance(operation, PyExtendWrapper):
-                if self.handle_in_background(operation, prepared_operations, offset, evaluate_stack):
-                    continue
-
-                call_metadata = self.init_py_extend_procedure_context(operation, evaluate_stack)
-
-                if call_metadata.procedure is not None:
-                    call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
-                    self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
-                    call_func_stack_builder.pop()
-
-                continue
-
-            elif isinstance(operation, ClassDefinition):
-                try:
-                    call_metadata = self.init_procedure_context(operation.constructor, evaluate_stack)
-
-                    if call_metadata.procedure is not None:
-                        call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
-                        instance = operation.create_instance()
-
-                        self.call_constructor(
-                            call_metadata.procedure,
-                            evaluate_stack,
-                            instance
+                    except RecursionError:
+                        raise MaxRecursionError(
+                            f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
+                            info=self.expression.meta_info
                         )
-                        call_func_stack_builder.pop()
-                except RecursionError:
-                    raise MaxRecursionError(
-                        f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
-                        info=self.expression.meta_info
-                    )
-                continue
+                    continue
 
             if operation.name not in ALLOW_OPERATORS:
                 evaluate_stack.append(operation)

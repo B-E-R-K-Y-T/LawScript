@@ -14,6 +14,9 @@ class BaseType:
     def set_info(self, meta_info: Info):
         self.meta_info = meta_info
 
+    def __repr__(self):
+        return f"Служебное имя: <{self.name if self.name else 'ОТСУТСТВУЕТ'}>"
+
 
 class BaseAtomicType(BaseType):
     def __init__(self, value: Any):

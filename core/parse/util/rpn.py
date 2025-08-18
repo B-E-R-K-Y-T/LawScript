@@ -8,7 +8,7 @@ from core.types.atomic import Number, String, Boolean, Void
 from core.types.basetype import BaseAtomicType
 from core.types.line import Info
 from core.types.operation import Operator
-from core.types.procedure import LinkedProcedure, Procedure
+from core.types.procedure import LinkedProcedure, Procedure, ProcedureContextName
 from util.console_worker import printer
 
 ALLOW_OPERATORS = {
@@ -253,7 +253,15 @@ def build_rpn_stack(expr: list[str], meta_info: Info) -> list[Union[Operator, Ba
     except BaseError as e:
         raise InvalidExpression(str(e), meta_info)
     except IndexError:
-        raise InvalidExpression(f"Выражение: '{' '.join(expr)}' не может быть преобразовано в RPN-стек")
+        prepared_expr = []
+
+        for item in expr:
+            if isinstance(item, String):
+                prepared_expr.append(f"\"{item}\"")
+            else:
+                prepared_expr.append(str(item))
+
+        raise InvalidExpression(f"Выражение: '{' '.join(prepared_expr)}' не может быть преобразовано в RPN-стек", meta_info)
 
 
 def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
@@ -286,7 +294,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 next_op = expr[offset + 1]
 
                 if next_op == Tokens.left_bracket:
-                    stack.append(op)
+                    stack.append(ProcedureContextName(Operator(op)))
                     printer.logging(f"Функция '{op}' добавлена в стек, так как за ней следует открывающая скобка",
                                     level="INFO")
                     continue
@@ -608,6 +616,10 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
     def flatten(lst):
         flat_list = []
         for item in lst:
+            if isinstance(item, ProcedureContextName) and isinstance(item.operator.operator, AttrAccess):
+                flat_list.extend(flatten(item.operator.operator.expr))
+                continue
+
             if isinstance(item, AttrAccess):
                 flat_list.extend(flatten(item.expr))
             else:
@@ -638,6 +650,10 @@ def compile_rpn(expr):
             continue
 
         if isinstance(op, BaseAtomicType):
+            compiled_stack.append(op)
+            continue
+
+        if isinstance(op, ProcedureContextName):
             compiled_stack.append(op)
             continue
 

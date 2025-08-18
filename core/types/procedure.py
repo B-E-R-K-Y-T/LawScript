@@ -35,8 +35,18 @@ class LinkedProcedure(BaseType):
         super().__init__(name)
         self.func = func
 
+    def __str__(self):
+        return str(self.func)
+
     def __repr__(self):
-        return self.name
+        return repr(self.func)
+
+
+class ProcedureContextName(BaseType):
+    def __init__(self, operator: Operator):
+        super().__init__(operator.name)
+        self.operator = operator
+        self.func: Optional[Procedure] = None
 
 
 class Expression(BaseType):

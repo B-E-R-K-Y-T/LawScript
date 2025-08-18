@@ -424,7 +424,6 @@ class Compiler:
                         if op == command.name and isinstance(command.expression.operations[0], LinkedProcedure):
                             func: Procedure = command.expression.operations[0].func
                             printer.logging(f"Связывание переменной '{op}' с процедурой '{func.name}'", level="DEBUG")
-                            raw[offset] = func
                             continue
 
         # Построение RPN стека
