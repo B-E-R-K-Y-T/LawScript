@@ -311,7 +311,7 @@
 
 
 ОПРЕДЕЛИТЬ ПРОЦЕДУРУ recursive(arg)(
-    !НАПЕЧАТАТЬ "ПРИВЕТ ИЗ recursive";
+    НАПЕЧАТАТЬ "ПРИВЕТ ИЗ recursive";
 
     !test_func(arg);
 
