@@ -48,30 +48,49 @@ def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled,
 def preprocess(raw_code, path: str) -> list:
     folder = os.path.dirname(path)
 
+    new_raw_code = ""
+    is_string = False
+
+    for symbol in raw_code:
+        if symbol == Tokens.quotation:
+            is_string = not is_string
+
+        if not is_string and symbol == Tokens.end_expr:
+            new_raw_code += symbol + "\n"
+        else:
+            new_raw_code += symbol
+
+
+
     prepared_code = [line.strip() for line in raw_code.split("\n")]
+    # prepared_code = []
+
     imports = set()
 
     code = []
     concatenated_line = ""
     is_concatenate = False
+    # new_prepared_code = []
     new_prepared_code = []
 
-    for line in prepared_code:
-        if is_concatenate:
-            concatenated_line += line
 
-        if line.endswith(Tokens.left_bracket) and not is_concatenate:
-            is_concatenate = True
-            concatenated_line = line
+    #
+    # for line in prepared_code:
+    #     if is_concatenate:
+    #         if len(line) == 2 and line[-2] == Tokens.right_bracket and line[-1] == Tokens.end_expr:
+    #             is_concatenate = False
+    #             new_prepared_code.append(concatenated_line)
+    #             continue
+    #
+    #         concatenated_line += line
+    #
+    #     elif not is_concatenate:
+    #         if line.endswith(Tokens.left_bracket) and not is_concatenate:
+    #         is_concatenate = True
+    #         concatenated_line = line
+    #         new_prepared_code.append(line)
 
-        elif line[-2] == Tokens.right_bracket and line[-1] == Tokens.left_bracket and is_concatenate:
-            is_concatenate = False
-            new_prepared_code.append(concatenated_line)
-
-        elif not is_concatenate:
-            new_prepared_code.append(line)
-
-    for offset, line in enumerate(new_prepared_code):
+    for offset, line in enumerate(prepared_code):
         code.append(Line(line.strip(), num=offset+1, file=path))
 
     preprocessed = []
