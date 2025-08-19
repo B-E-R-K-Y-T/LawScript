@@ -45,6 +45,10 @@ def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled,
         raise e
 
 
+def collect_expressions(expressions: list[Line]):
+    return expressions
+
+
 def preprocess(raw_code, path: str) -> list:
     folder = os.path.dirname(path)
 
@@ -60,42 +64,18 @@ def preprocess(raw_code, path: str) -> list:
         else:
             new_raw_code += symbol
 
-
-
-    prepared_code = [line.strip() for line in raw_code.split("\n")]
-    # prepared_code = []
+    prepared_code = [line.strip() for line in new_raw_code.split("\n")]
 
     imports = set()
 
     code = []
-    concatenated_line = ""
-    is_concatenate = False
-    # new_prepared_code = []
-    new_prepared_code = []
-
-
-    #
-    # for line in prepared_code:
-    #     if is_concatenate:
-    #         if len(line) == 2 and line[-2] == Tokens.right_bracket and line[-1] == Tokens.end_expr:
-    #             is_concatenate = False
-    #             new_prepared_code.append(concatenated_line)
-    #             continue
-    #
-    #         concatenated_line += line
-    #
-    #     elif not is_concatenate:
-    #         if line.endswith(Tokens.left_bracket) and not is_concatenate:
-    #         is_concatenate = True
-    #         concatenated_line = line
-    #         new_prepared_code.append(line)
 
     for offset, line in enumerate(prepared_code):
         code.append(Line(line.strip(), num=offset+1, file=path))
 
     preprocessed = []
 
-    for offset, line in enumerate(code):
+    for offset, line in enumerate(collect_expressions(code)):
         match line.split(" "):
             case [Tokens.include, package] if package.endswith(Tokens.star):
                 is_std_path = _is_std(package)
