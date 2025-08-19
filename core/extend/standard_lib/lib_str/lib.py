@@ -48,7 +48,7 @@ class StringLength(PyExtendWrapper):
         from core.exceptions import ErrorValue
 
         if not isinstance(args[0], String):
-            raise ErrorValue("Первый аргумент должен быть строкой.")
+            raise ErrorValue("Аргумент должен быть строкой.")
 
         return Number(len(args[0].value))
 
@@ -61,23 +61,31 @@ class StringFormat(PyExtendWrapper):
         self.offset_required_args = 2
         self.count_args = -1
 
+    def convert_wrap_args(self, tail_args):
+        from core.tokens import Tokens
+
+        for idx, tail_arg in enumerate(tail_args):
+            if isinstance(tail_arg, list):
+                self.convert_wrap_args(tail_arg)
+                continue
+
+            if isinstance(tail_arg, bool):
+                tail_arg = Tokens.true.value if tail_arg else Tokens.false.value
+                tail_args[idx] = tail_arg
+
+            elif tail_arg is None:
+                tail_args[idx] = Tokens.void.value
+
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         from core.types.atomic import String
         from core.exceptions import ErrorValue
-        from core.tokens import Tokens
 
         if not isinstance(args[0], String):
             raise ErrorValue("Первый аргумент должен быть строкой.")
 
         line, *tail_args = self.parse_args(args)
 
-        for idx, tail_arg in enumerate(tail_args):
-            if isinstance(tail_arg, bool):
-                tail_arg = Tokens.true if tail_arg else Tokens.false
-                tail_args[idx] = tail_arg
-
-            elif tail_arg is None:
-                tail_args[idx] = Tokens.void
+        self.convert_wrap_args(tail_args)
 
         return String(line.format(*tail_args))
 
@@ -279,6 +287,7 @@ class RegexMatch(PyExtendWrapper):
             raise ErrorValue("Ожидались две строки")
 
         text, pattern = self.parse_args(args)
+
         try:
             return Boolean(bool(re.match(pattern, text)))
         except re.error:

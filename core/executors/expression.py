@@ -154,7 +154,7 @@ class ExpressionExecutor(Executor):
 
         procedure.tree_variables = ScopeStack()
 
-        rev_arguments_names = list(reversed(procedure.arguments_names))
+        rev_arguments_names = procedure.arguments_names[::-1]
         arg_position = 0
         count_args = 0
 
@@ -222,7 +222,7 @@ class ExpressionExecutor(Executor):
 
         if count_args != len(procedure.arguments_names):
             raise InvalidExpression(
-                f"Функция {procedure.name} принимает '{len(procedure.arguments_names)}' "
+                f"Функция '{procedure.name}' принимает '{len(procedure.arguments_names)}' "
                 f"аргумента(ов), но передано: '{count_args}'",
                 info=self.expression.meta_info
             )
@@ -251,9 +251,17 @@ class ExpressionExecutor(Executor):
 
     def call_constructor(
             self, constructor: Constructor, evaluate_stack: list[Union[BaseAtomicType, Procedure]],
-            instance: ClassInstance
+            instance: ClassInstance, children: Optional[ClassInstance] = None
     ):
         self.call_method(constructor, evaluate_stack, instance)
+
+        if children is not None:
+            children.fields.update(
+                (name, field)
+                for name, field in instance.fields.items()
+                if name != children.parent_attr_name
+            )
+
         evaluate_stack.pop(-1)
         evaluate_stack.append(instance)
 
@@ -380,6 +388,7 @@ class ExpressionExecutor(Executor):
                                     call_metadata.procedure,
                                     evaluate_stack,
                                     operation.this,
+                                    operation.this.children,
                                 )
                                 call_func_stack_builder.pop()
                                 continue

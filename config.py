@@ -11,7 +11,7 @@ from rich.text import Text
 
 class Settings(BaseSettings):
     debug: bool = Field(default=False)
-    max_recursion_depth: int = Field(default=4000)
+    max_recursion_depth: int = Field(default=10_000)
     raw_postfix: str = Field(default="raw")
     compiled_postfix: str = Field(default="law")
     py_extend_postfix: str = Field(default="pyl")

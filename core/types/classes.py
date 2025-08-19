@@ -50,10 +50,11 @@ class ClassDefinition(BaseType):
         self.constructor_name = "__конструктор__"
         self.methods = methods
 
-    def create_instance(self) -> 'ClassInstance':
+    def create_instance(self, children: Optional['ClassInstance'] = None) -> 'ClassInstance':
         return ClassInstance(
             class_name=self.name,
-            metadata=self
+            metadata=self,
+            children=children
         )
 
     def __repr__(self):
@@ -65,15 +66,17 @@ class ClassInstance(BaseAtomicType):
             self,
             class_name: str,
             metadata: ClassDefinition,
+            children: Optional['ClassInstance'] = None
     ):
         super().__init__("")
         self.metadata = metadata
         self.class_name = class_name
         self.value = self
+        self.children = children
         self.parent_attr_name = "__родитель__" if self.metadata.parent is not None else None
 
         if self.metadata.parent is not None:
-            self.fields[self.parent_attr_name] = ClassField(self.metadata.parent.create_instance())
+            self.fields[self.parent_attr_name] = ClassField(self.metadata.parent.create_instance(self))
 
             for name, method in self.metadata.parent.methods.items():
                 if name not in self.metadata.methods and name != self.metadata.constructor_name:
