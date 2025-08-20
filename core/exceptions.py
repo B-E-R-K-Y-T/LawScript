@@ -234,7 +234,7 @@ class ErrorOverflow(BaseError):
         if msg is None:
             msg = "Переполнение стека!"
 
-        msg = f"{msg} 'Переполнение стека."
+        msg = f"{msg} Переполнение стека."
 
         super().__init__(
             msg=msg,
