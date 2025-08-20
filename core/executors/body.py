@@ -134,10 +134,7 @@ class BodyExecutor(Executor):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
 
                 with VariableContextCreator(self.tree_variables):
-                    while True:
-                        if not executor.execute().value:
-                            break
-
+                    while executor.execute().value:
                         executed = body_executor.execute()
 
                         if isinstance(executed, Continue):

@@ -1,4 +1,4 @@
-from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable
+from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable, Generator, Iterable
 
 from core.background_task.schedule import get_task_scheduler
 from core.background_task.task import ProcedureBackgroundTask, AbstractBackgroundTask
@@ -337,7 +337,7 @@ class ExpressionExecutor(Executor):
 
         return False
 
-    def evaluate(self) -> BaseAtomicType:
+    def evaluate(self) -> Union[BaseAtomicType, Generator[BaseAtomicType, None, None]]:
         try:
             prepared_operations: list[Union[BaseAtomicType, Operator]] = self.prepare_operations()
         except BaseError as e:
@@ -579,6 +579,10 @@ class ExpressionExecutor(Executor):
 
             elif operation.operator == Tokens.not_:
                 operand: BaseAtomicType = evaluate_stack.pop(-1)
+
+                if isinstance(operand, ClassField):
+                    operand = operand.value
+
                 evaluate_stack.append(Boolean(operand.not_()))
 
             elif operation.operator == Tokens.bool_equal:
@@ -614,13 +618,13 @@ class ExpressionExecutor(Executor):
 
         return Void()
 
-    def execute(self, async_execute=False) -> BaseAtomicType:
+    def execute(self, async_execute=False) -> Union[BaseAtomicType, Iterable]:
         if async_execute:
             return self.async_execute()
 
         return self.sync_execute()
 
-    def async_execute(self):
+    def async_execute(self) -> Iterable:
         gen = self.evaluate()
 
         while True:
