@@ -190,7 +190,7 @@ class ExpressionExecutor(Executor):
 
                 if not procedure.arguments_names:
                     raise InvalidExpression(
-                        f"Функция {procedure.name} не принимает аргументов.",
+                        f"Процедура {procedure.name} не принимает аргументов.",
                         info=self.expression.meta_info
                     )
 
@@ -515,6 +515,7 @@ class ExpressionExecutor(Executor):
                         if not isinstance(background_task, AbstractBackgroundTask):
                             raise ErrorType(
                                 f"Возвращаемое значение процедуры '{func.name}' должно быть задачей!",
+                                self.expression.meta_info
                             )
 
                         self.task_scheduler.schedule_task(background_task)

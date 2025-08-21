@@ -8,10 +8,20 @@ if TYPE_CHECKING:
     from core.executors.procedure import ProcedureExecutor
 
 
+def _next_id():
+    if not hasattr(_next_id, "current_id"):
+        _next_id.current_id = -1
+
+    _next_id.current_id += 1
+
+    return _next_id.current_id
+
+
 class AbstractBackgroundTask(BaseAtomicType, ABC):
     def __init__(self, name: str, value: Any):
         super().__init__(value)
         self.name = name
+        self.id = _next_id()
 
     @abstractmethod
     def next_command(self): ...

@@ -1,5 +1,6 @@
 import sys
 import time
+from pathlib import Path
 
 from config import settings
 from core.background_task.schedule import get_task_scheduler
@@ -11,6 +12,12 @@ from util.console_worker import printer
 from util.build_tools.starter import run_file
 
 printer.debug = settings.debug
+SELF_DIR = Path(__file__).parent.resolve()
+
+
+def create_absolute_path_to_file(filename: str) -> Path:
+    """Создает абсолютный путь к файлу относительно директории скрипта."""
+    return (SELF_DIR / filename).resolve()
 
 
 class Law:
@@ -24,6 +31,7 @@ class Law:
 
             command = sys.argv[1]
             filename = sys.argv[2]
+            absolute_file_path = create_absolute_path_to_file(filename)
 
             if command == '--build':
                 printer.debug = True
@@ -31,9 +39,9 @@ class Law:
                 if not filename.endswith(f'.{settings.raw_postfix}'):
                     kill_process(f"Файл для сборки должен иметь расширение '.{settings.raw_postfix}'.")
 
-                build(filename)
+                build(str(absolute_file_path))
             elif command == '--run':
-                run_file(filename)
+                run_file(str(absolute_file_path))
             else:
                 kill_process("Неизвестная команда. Используйте --build или --run.")
 
@@ -64,6 +72,7 @@ class Law:
         else:
             success_process(f"Операция {command} завершена успешно.")
         finally:
+            get_task_scheduler().shutdown()
             working_time = time.perf_counter() - start
             yellow_print(f"Затрачено времени: {working_time:.5f}ms")
 

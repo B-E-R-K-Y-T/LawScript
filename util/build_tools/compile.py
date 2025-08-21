@@ -27,6 +27,7 @@ from core.types.hypothesis import Hypothesis
 from core.types.objects import Object
 from core.types.obligations import Obligation
 from core.types.laws import Law
+from core.types.operation import Operator
 from core.types.procedure import (
     Procedure,
     CodeBlock,
@@ -210,6 +211,14 @@ class Compiler:
         if isinstance(compiled_obj, ExecuteBlock):
             for expression in compiled_obj.expressions:
                 self.expr_compile(expression, [])
+
+                for op in expression.operations:
+                    if isinstance(op, Operator) and op.operator == Tokens.wait:
+                        raise InvalidSyntaxError(
+                            f"Оператор '{Tokens.wait}' не разрешен в блоке '{Tokens.execute}'",
+                            info=expression.meta_info
+                        )
+
 
             return compiled_obj
 

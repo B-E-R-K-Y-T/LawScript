@@ -77,14 +77,23 @@ class BodyExecutor(Executor):
             if isinstance(command, Return):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
 
-                return executor.execute()
+                if self.async_mode:
+                    executed = yield from executor.async_execute()
+                else:
+                    executed = executor.execute()
+
+                return executed
 
             elif isinstance(command, AssignField):
                 if command.name in self.tree_variables.scopes[-1].variables:
                     raise ErrorType(f"Переменная '{command.name}' уже определена!", info=command.meta_info)
 
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
-                executed = executor.execute()
+
+                if self.async_mode:
+                    executed = yield from executor.async_execute()
+                else:
+                    executed = executor.execute()
 
                 var = Variable(command.name, executed)
 
@@ -92,29 +101,45 @@ class BodyExecutor(Executor):
 
             elif isinstance(command, Print):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
-                executed = executor.execute()
+                if self.async_mode:
+                    executed = yield from executor.async_execute()
+                else:
+                    executed = executor.execute()
 
                 printer.raw_print(executed)
 
             elif isinstance(command, When):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
-                result = executor.execute()
+                if self.async_mode:
+                    result = yield from executor.async_execute()
+                else:
+                    result = executor.execute()
 
                 with VariableContextCreator(self.tree_variables):
                     if result.value:
                         body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
-                        executed = body_executor.execute()
+                        if self.async_mode:
+                            executed = yield from body_executor.async_execute()
+                        else:
+                            executed = body_executor.execute()
 
                         if not isinstance(executed, Stop):
                             return executed
                     else:
                         for else_when in command.else_whens:
                             when_executor = ExpressionExecutor(else_when.expression, self.tree_variables, self.compiled)
-                            result = when_executor.execute()
+                            if self.async_mode:
+                                result = yield from when_executor.async_execute()
+                            else:
+                                result = when_executor.execute()
 
                             if result.value:
                                 body_executor = BodyExecutor(else_when.body, self.tree_variables, self.compiled)
-                                executed = body_executor.execute()
+
+                                if self.async_mode:
+                                    executed = yield from body_executor.async_execute()
+                                else:
+                                    executed = body_executor.execute()
 
                                 if not isinstance(executed, Stop):
                                     return executed
@@ -124,7 +149,10 @@ class BodyExecutor(Executor):
                         else:
                             if command.else_ is not None:
                                 body_executor = BodyExecutor(command.else_.body, self.tree_variables, self.compiled)
-                                executed = body_executor.execute()
+                                if self.async_mode:
+                                    executed = yield from body_executor.async_execute()
+                                else:
+                                    executed = body_executor.execute()
 
                                 if not isinstance(executed, Stop):
                                     return executed
@@ -134,8 +162,23 @@ class BodyExecutor(Executor):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
 
                 with VariableContextCreator(self.tree_variables):
-                    while executor.execute().value:
-                        executed = body_executor.execute()
+                    while True:
+                        if self.async_mode:
+                            result = yield from executor.async_execute()
+
+                            if not result.value:
+                                break
+
+                        elif not executor.execute().value:
+                            break
+
+                        if self.async_mode:
+                            yield Yield()
+
+                        if self.async_mode:
+                            executed = yield from body_executor.async_execute()
+                        else:
+                            executed = body_executor.execute()
 
                         if isinstance(executed, Continue):
                             continue
@@ -146,15 +189,19 @@ class BodyExecutor(Executor):
                         elif not isinstance(executed, Stop):
                             return executed
 
-                        if self.async_mode:
-                            yield Yield()
-
             elif isinstance(command, Loop):
                 executor_from = ExpressionExecutor(command.expression_from, self.tree_variables, self.compiled)
                 executor_to = ExpressionExecutor(command.expression_to, self.tree_variables, self.compiled)
 
-                result_from = executor_from.execute()
-                result_to = executor_to.execute()
+                if self.async_mode:
+                    result_from = yield from executor_from.async_execute()
+                else:
+                    result_from = executor_from.execute()
+
+                if self.async_mode:
+                    result_to = yield from executor_to.async_execute()
+                else:
+                    result_to = executor_to.execute()
 
                 if not isinstance(result_from, Number) or not isinstance(result_to, Number):
                     raise ErrorType(
@@ -163,16 +210,19 @@ class BodyExecutor(Executor):
                     )
 
                 with VariableContextCreator(self.tree_variables):
-                    if not command.body.commands:
-                        continue
-
                     body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
 
                     for var in range(result_from.value, result_to.value + 1):
+                        if self.async_mode:
+                            yield Yield()
+
                         if command.name_loop_var is not None:
                             self.tree_variables.set(Variable(command.name_loop_var, Number(var)))
 
-                        executed = body_executor.execute()
+                        if self.async_mode:
+                            executed = yield from body_executor.async_execute()
+                        else:
+                            executed = body_executor.execute()
 
                         if isinstance(executed, Continue):
                             continue
@@ -182,9 +232,6 @@ class BodyExecutor(Executor):
 
                         elif not isinstance(executed, Stop):
                             return executed
-
-                        if self.async_mode:
-                            yield Yield()
 
             elif isinstance(command, Expression):
                 executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
@@ -198,8 +245,10 @@ class BodyExecutor(Executor):
                 target_expr_executor = ExpressionExecutor(command.target_expr, self.tree_variables, self.compiled)
                 override_expr_executor = ExpressionExecutor(command.override_expr, self.tree_variables, self.compiled)
 
-                target_expr_execute = target_expr_executor.execute
-                override_expr_result = override_expr_executor.execute()
+                if self.async_mode:
+                    override_expr_result = yield from override_expr_executor.execute(self.async_mode)
+                else:
+                    override_expr_result = override_expr_executor.execute()
 
                 if len(command.target_expr.operations) == 1:
                     target_name = command.target_expr.operations[0].name
@@ -214,7 +263,10 @@ class BodyExecutor(Executor):
 
                     continue
 
-                target = target_expr_execute()
+                if self.async_mode:
+                    target = yield from target_expr_executor.execute(self.async_mode)
+                else:
+                    target = target_expr_executor.execute()
 
                 if isinstance(target, ClassField):
                     target.value = override_expr_result

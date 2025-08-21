@@ -6,6 +6,7 @@ from typing import Optional
 
 from config import settings
 from core.background_task.task import AbstractBackgroundTask
+from core.types.atomic import Void
 from util.console_worker import printer
 
 
@@ -31,6 +32,14 @@ class ThreadWorker:
     def stop(self):
         self._stop_event.set()
         self._task_added_event.set()
+
+        warn = ""
+
+        for offset, task in enumerate(self.tasks):
+            warn += f"Задача [{task.id}] '{task.name}' не была завершена корректно!\n"
+
+        if warn:
+            printer.print_warning(warn.rstrip(), self.thread.name)
 
         if self.thread:
             self.thread.join(timeout=1.0)
@@ -68,11 +77,17 @@ class ThreadWorker:
                 try:
                     next(task.next_command())
                 except StopIteration:
+                    from core.executors.body import Stop
+
+                    if isinstance(task.result, Stop):
+                        task.result = Void()
+
                     self.done_task(task, idx)
                 except Exception as e:
+                    task.result = Void()
                     self.done_task(task, idx)
 
-                    err_message = f"Ошибка при выполнении задачи: '{task}'.\n\nДетали: {e}"
+                    err_message = f"{self.thread.name}: Ошибка при выполнении задачи: [{idx}] '{task.name}'.\n\nДетали: {e}"
 
                     printer.print_error(err_message)
 

@@ -57,9 +57,9 @@ class Printer:
             while not progress.finished:
                 progress.update(task, advance=1)
 
-    def print_warning(self, text: str):
+    def print_warning(self, text: str, title="Предупреждение"):
         warning_text = Text(text, style="bold magenta")
-        self.console.print(Panel(warning_text, title="Предупреждение", title_align="left"))
+        self.console.print(Panel(warning_text, title=title, title_align="left"))
 
     def print_info(self, text: str, style: str = "bold white"):
         info_text = Text(text, style=style)
