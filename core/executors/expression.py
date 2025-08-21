@@ -10,7 +10,7 @@ from core.exceptions import (
     NameNotDefine,
     MaxRecursionError,
     DivisionByZeroError,
-    ErrorOverflow
+    ErrorOverflow, OverWaitTaskError
 )
 from core.executors.base import Executor
 from core.tokens import Tokens, ServiceTokens, ALL_TOKENS
@@ -494,8 +494,15 @@ class ExpressionExecutor(Executor):
                         info=self.expression.meta_info
                     )
 
+                if task.is_waited():
+                    raise OverWaitTaskError(task.name, info=self.expression.meta_info)
+
                 while not task.done:
                     yield Yield()
+
+                task.set_waited()
+                if task.is_error_result:
+                    raise task.error
 
                 evaluate_stack.append(task.result)
 

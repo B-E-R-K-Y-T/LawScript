@@ -91,6 +91,9 @@ class Tokens(StrEnum):
     extend = "НАСЛЕДОВАТЬ"
     constructor = "КОНСТРУКТОР"
     method = "МЕТОД"
+    context = "КОНТЕКСТ"
+    handler = "ОБРАБОТЧИК"
+    as_ = "КАК"
 
 
 class ServiceTokens(StrEnum):

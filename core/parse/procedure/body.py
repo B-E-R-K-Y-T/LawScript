@@ -8,7 +8,7 @@ from core.types.basetype import BaseType
 from core.types.docs import Docs
 from core.types.line import Line, Info
 from core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
-    AssignOverrideVariable, While, ElseWhen
+    AssignOverrideVariable, While, ElseWhen, Context, ExceptionHandler
 from core.util import is_ignore_line
 from util.console_worker import printer
 
@@ -214,6 +214,32 @@ class BodyParser(Parser):
                 case [Tokens.break_, Tokens.end_expr]:
                     self.commands.append(Break(str(), self.info))
                     printer.logging(f"Добавлена команда Break", level="INFO")
+                case [Tokens.context, Tokens.left_bracket]:
+                    ctx = Context(str(), self.execute_parse(BodyParser, body, self.next_num_line(num)))
+
+                    ctx.handlers = []
+                    ctx.set_info(self.info)
+
+                    self.commands.append(ctx)
+                    printer.logging(f"Добавлена команда Context", level="INFO")
+                case [Tokens.handler, str(ex_class_name), Tokens.as_, str(ex_inst_var_name), Tokens.left_bracket]:
+                    err_msg = f"Перед '{Tokens.handler}' всегда должен быть блок '{Tokens.context}'"
+
+                    if not self.commands:
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    previous_command = self.commands[len(self.commands) - 1]
+
+                    if not isinstance(previous_command, Context):
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+
+                    handler = ExceptionHandler(str(), self.execute_parse(BodyParser, body, self.next_num_line(num)))
+
+                    handler.exception_class_name = ex_class_name
+                    handler.exception_inst_name = ex_inst_var_name
+
+                    previous_command.handlers.append(handler)
+                    printer.logging(f"Добавлена команда Handler в Context", level="INFO")
                 case [*expr, Tokens.end_expr]:
                     if Tokens.equal in expr:
                         if expr.count(Tokens.equal) > 1:

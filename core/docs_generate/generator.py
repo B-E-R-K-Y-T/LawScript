@@ -30,6 +30,7 @@ class SanctionDoc:
     name: str
     article : str
 
+
 @dataclass
 class LawDoc:
     name: str

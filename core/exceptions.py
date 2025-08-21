@@ -1,13 +1,41 @@
 from collections.abc import Iterable
 from difflib import SequenceMatcher
-from typing import Optional, Any, TYPE_CHECKING
+from typing import Optional, Any, TYPE_CHECKING, Final
 
 from core.tokens import Tokens
+from core.types.basetype import BaseAtomicType
 from core.types.line import Info
 from core.types.severitys import Levels
 
 if TYPE_CHECKING:
     from core.types.variable import Scope
+    from core.types.classes import ClassInstance
+
+
+EXCEPTIONS: Final[dict[str, 'BaseError']] = {}
+
+
+def _add_ex(ex_cls: 'BaseError'):
+    if ex_cls.exc_name in EXCEPTIONS.keys():
+        raise NameError
+
+    EXCEPTIONS[ex_cls.exc_name] = ex_cls
+    return ex_cls
+
+
+def create_exception_law_script_class_instance(class_name: str, exception_instance: 'BaseError') -> 'ClassInstance':
+    from core.types.atomic import String
+    from core.types.classes import ClassDefinition, ClassField
+
+    ex = EXCEPTIONS.get(class_name)
+
+    ex_inst = ClassDefinition(ex.exc_name).create_instance()
+    ex_inst.fields = {
+        "информация": ClassField(String(str(exception_instance))),
+        "__ошибка__": ClassField(BaseAtomicType(exception_instance)),
+    }
+
+    return ex_inst
 
 
 def get_probable_tokens(word: str, sequence: Optional[Iterable[str]] = Tokens, threshold=0.6):
@@ -34,7 +62,10 @@ def get_probable_tokens(word: str, sequence: Optional[Iterable[str]] = Tokens, t
     return sorted(suggestions, key=lambda x: x[1], reverse=True)
 
 
+@_add_ex
 class BaseError(Exception):
+    exc_name = "БазоваяОшибка"
+
     def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Ошибка."
@@ -45,10 +76,15 @@ class BaseError(Exception):
         if info is not None:
             msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
+        msg = f"{self.exc_name}: {msg}"
+
         super().__init__(msg)
 
 
+@_add_ex
 class MaxRecursionError(BaseError):
+    exc_name = "ОшибкаРекурсии"
+
     def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
         if msg is None:
             msg = f"Превышена максимальная глубина рекурсии!"
@@ -62,7 +98,10 @@ class MaxRecursionError(BaseError):
         )
 
 
+@_add_ex
 class InvalidSyntaxError(BaseError):
+    exc_name = "ОшибкаСинтаксиса"
+
     def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Некорректный синтаксис"
@@ -88,7 +127,10 @@ class InvalidSyntaxError(BaseError):
         super().__init__(msg, info=info)
 
 
+@_add_ex
 class InvalidLevelDegree(BaseError):
+    exc_name = "ОшибкаЗначенияТипа"
+
     def __init__(self, degree: str):
         super().__init__(
             f"Значение: '{degree}' запрещено для типа '{Tokens.degree} {Tokens.of_rigor}'. "
@@ -96,7 +138,10 @@ class InvalidLevelDegree(BaseError):
         )
 
 
+@_add_ex
 class InvalidType(BaseError):
+    exc_name = "НекорректныйТип"
+
     def __init__(self, value: Any, type_: str, line: Optional[list[str]] = None):
         msg = f"Значение: '{value}' должно иметь тип: '{type_}'!"
 
@@ -106,7 +151,10 @@ class InvalidType(BaseError):
         super().__init__(msg)
 
 
+@_add_ex
 class UnknownType(BaseError):
+    exc_name = "НеизвестныйТип"
+
     def __init__(self, msg: Optional[str] = None):
         if msg is None:
             msg = "Неизвестный тип!"
@@ -114,7 +162,10 @@ class UnknownType(BaseError):
         super().__init__(msg)
 
 
+@_add_ex
 class ErrorType(BaseError):
+    exc_name = "ОшибкаТипа"
+
     def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Ошибка типа!"
@@ -125,7 +176,10 @@ class ErrorType(BaseError):
         super().__init__(msg)
 
 
+@_add_ex
 class ErrorValue(BaseError):
+    exc_name = "ОшибкаЗначения"
+
     def __init__(self, msg: Optional[str] = None, value: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Некорректное значение!"
@@ -139,7 +193,10 @@ class ErrorValue(BaseError):
         super().__init__(msg)
 
 
+@_add_ex
 class NameNotDefine(BaseError):
+    exc_name = "ОшибкаНеопределенногоИмени"
+
     def __init__(
             self, msg: Optional[str] = None, name: Optional[str] = None,
             info: Optional[Info] = None, scopes: Optional[list['Scope']] = None
@@ -181,14 +238,20 @@ class NameNotDefine(BaseError):
         super().__init__(f"{msg}")
 
 
+@_add_ex
 class FieldNotDefine(BaseError):
+    exc_name = "ОшибкаПолеНеОпределено"
+
     def __init__(self, field: str, define: str):
         super().__init__(
             f"Поле: '{field}' не определено в '{define}'"
         )
 
 
+@_add_ex
 class NameAlreadyExist(BaseError):
+    exc_name = "ОшибкаИмяУжеСуществует"
+
     def __init__(self, name: str, *, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
             msg = f"Имя: '{name}' уже существует"
@@ -202,7 +265,10 @@ class NameAlreadyExist(BaseError):
         super().__init__(msg)
 
 
+@_add_ex
 class EmptyReturn(BaseError):
+    exc_name = "ОшибкаПустойВозврат"
+
     def __init__(self, msg: Optional[str] = None):
         if msg is None:
            msg = "Возвращаемое значение пусто"
@@ -210,7 +276,10 @@ class EmptyReturn(BaseError):
         super().__init__(msg)
 
 
+@_add_ex
 class InvalidExpression(BaseError):
+    exc_name = "ОшибкаНеорректноеВыражение"
+
     def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
            msg = "Некорректное выражение"
@@ -221,7 +290,10 @@ class InvalidExpression(BaseError):
         super().__init__(f"{msg}")
 
 
+@_add_ex
 class DivisionByZeroError(BaseError):
+    exc_name = "ОшибкаДелениеНаНоль"
+
     def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Деление на ноль"
@@ -229,7 +301,10 @@ class DivisionByZeroError(BaseError):
         super().__init__(msg, info=info)
 
 
+@_add_ex
 class ErrorOverflow(BaseError):
+    exc_name = "ОшибкаПереполнениеСтека"
+
     def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Переполнение стека!"
@@ -242,7 +317,10 @@ class ErrorOverflow(BaseError):
         )
 
 
+@_add_ex
 class ArgumentError(BaseError):
+    exc_name = "ОшибкаАргумента"
+
     def __init__(self, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Ошибка аргумента"
@@ -250,7 +328,10 @@ class ArgumentError(BaseError):
         super().__init__(msg, info=info)
 
 
+@_add_ex
 class ErrorIndex(BaseError):
+    exc_name = "ОшибкаИндекса"
+
     def __init__(self, msg: Optional[str] = None, index: Optional[int] = None, info: Optional[Info] = None):
         if msg is None:
             msg = "Некорректный индекс"
@@ -262,3 +343,14 @@ class ErrorIndex(BaseError):
             msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         super().__init__(msg)
+
+
+@_add_ex
+class OverWaitTaskError(BaseError):
+    exc_name = "ОшибкаПовторноеОжидание"
+
+    def __init__(self, task_name: str, msg: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = f"Невозможно ожидать задачу '{task_name}' более одного раза!"
+        
+        super().__init__(msg, info=info)

@@ -7,7 +7,7 @@ from core.exceptions import (
     NameAlreadyExist,
     FieldNotDefine,
     InvalidSyntaxError,
-    ErrorType,
+    ErrorType, EXCEPTIONS,
 )
 from core.extend.function_wrap import PyExtendWrapper
 from core.parse.base import MetaObject
@@ -42,7 +42,8 @@ from core.types.procedure import (
     LinkedProcedure,
     AssignOverrideVariable,
     When,
-    While
+    While,
+    Context
 )
 from core.types.rules import Rule
 from core.types.sanction_types import SanctionType
@@ -218,7 +219,6 @@ class Compiler:
                             f"Оператор '{Tokens.wait}' не разрешен в блоке '{Tokens.execute}'",
                             info=expression.meta_info
                         )
-
 
             return compiled_obj
 
@@ -459,6 +459,24 @@ class Compiler:
                 printer.logging("Компиляция Loop выражений (from/to)", level="DEBUG")
                 self.expr_compile(statement.expression_from, statements)
                 self.expr_compile(statement.expression_to, statements)
+
+            elif isinstance(statement, Context):
+                printer.logging("Компиляция Context", level="DEBUG")
+                if not statement.handlers:
+                    raise InvalidSyntaxError(
+                        f"У блока '{Tokens.context}' должен быть хотя бы 1 '{Tokens.handler}'",
+                        info=statement.meta_info
+                    )
+
+                for handler in statement.handlers:
+                    printer.logging(f"Компиляция Handler '{handler}'", level="DEBUG")
+                    if handler.exception_class_name not in EXCEPTIONS.keys():
+                        raise ErrorType(
+                            f"Ошибки '{handler.exception_class_name}' не существует!",
+                            info=handler.meta_info
+                        )
+
+                    self.body_compile(handler.body)
 
             elif isinstance(statement, AssignOverrideVariable):
                 printer.logging("Компиляция AssignOverrideVariable выражений", level="DEBUG")

@@ -45,6 +45,10 @@ class ClassDefinition(BaseType):
             methods: Optional[dict[str, ClassField[Method]]] = None, constructor: Optional[Constructor] = None
     ):
         super().__init__(name)
+
+        if methods is None:
+            methods = {}
+
         self.parent = parent
         self.constructor = constructor
         self.constructor_name = "__конструктор__"

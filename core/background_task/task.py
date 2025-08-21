@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from threading import Lock
-from typing import TYPE_CHECKING, Generator, Any
+from typing import TYPE_CHECKING, Generator, Any, Optional
 
 from core.types.basetype import BaseAtomicType
 
 if TYPE_CHECKING:
     from core.executors.procedure import ProcedureExecutor
+    from core.exceptions import BaseError
 
 
 def _next_id():
@@ -22,6 +23,17 @@ class AbstractBackgroundTask(BaseAtomicType, ABC):
         super().__init__(value)
         self.name = name
         self.id = _next_id()
+        self.is_error_result = False
+        self.error: Optional['BaseError'] = None
+        self._waited_lock = Lock()
+        self._waited = False
+
+    def is_waited(self):
+        return self._waited
+
+    def set_waited(self):
+        with self._waited_lock:
+            self._waited = True
 
     @abstractmethod
     def next_command(self): ...

@@ -160,3 +160,16 @@ class While(CodeBlock):
     def __init__(self, name: str, expression: Expression, body: Body):
         super().__init__(name, body)
         self.expression = expression
+
+
+class Context(CodeBlock):
+    def __init__(self, name: str, body: Body):
+        super().__init__(name, body)
+        self.handlers: list[ExceptionHandler] = []
+
+
+class ExceptionHandler(CodeBlock):
+    def __init__(self, name: str, body: Body):
+        super().__init__(name, body)
+        self.exception_inst_name: str = ""
+        self.exception_class_name: str = ""

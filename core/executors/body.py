@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Union, Generator
 
-from core.exceptions import ErrorType, NameNotDefine
+from core.exceptions import ErrorType, NameNotDefine, BaseError, EXCEPTIONS, create_exception_law_script_class_instance
 from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
-from core.types.atomic import Void, Number, Yield
+from core.types.atomic import Void, Number, Yield, String
 from core.types.base_declarative_type import BaseDeclarativeType
 from core.types.basetype import BaseAtomicType
 from core.types.classes import ClassDefinition, ClassField
@@ -19,7 +19,8 @@ from core.types.procedure import (
     Continue,
     Break,
     AssignOverrideVariable,
-    While
+    While,
+    Context
 )
 from core.executors.base import Executor
 from core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
@@ -284,6 +285,42 @@ class BodyExecutor(Executor):
 
             elif isinstance(command, Break):
                 return command
+
+            elif isinstance(command, Context):
+                with VariableContextCreator(self.tree_variables):
+                    body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
+                    try:
+                        if self.async_mode:
+                            executed = yield from body_executor.async_execute()
+                        else:
+                            executed = body_executor.execute()
+
+                        if not isinstance(executed, Stop):
+                            return executed
+                    except BaseError as e:
+                        for handler in command.handlers:
+                            if handler.exception_class_name != e.exc_name:
+                                continue
+
+                            ex_inst = create_exception_law_script_class_instance(handler.exception_class_name, e)
+
+                            self.tree_variables.set(Variable(handler.exception_inst_name, ex_inst))
+
+                            body_executor = BodyExecutor(handler.body, self.tree_variables, self.compiled)
+                            if self.async_mode:
+                                executed = yield from body_executor.async_execute()
+
+                                if not isinstance(executed, Stop):
+                                    return executed
+                            else:
+                                executed = body_executor.execute()
+
+                                if not isinstance(executed, Stop):
+                                    return executed
+
+                            break
+                        else:
+                            raise
 
             else:
                 raise ErrorType(f"Неизвестная команда '{command.name}'!", info=command.meta_info)
