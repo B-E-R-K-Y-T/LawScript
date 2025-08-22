@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Документация модуля - test_4</title>
+    <script>
+        // Проверка загрузки шрифта
+        document.fonts.ready.then(function() {
+            if (!document.fonts.check('1em Crimson Text')) {
+                console.log('Шрифт не загружен, используем резервный');
+                var style = document.createElement('style');
+                style.textContent = `
+                    body {
+                        font-family: 'Times New Roman', serif;
+                    }
+                    .document-title {
+                        font-family: 'Times New Roman', serif;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        });
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet"
+          onerror="this.remove(); document.fonts.load('1em Crimson Text').catch(() => {
+              var style = document.createElement('style');
+              style.textContent = `
+                  body { font-family: 'Times New Roman', serif; }
+                  .document-title { font-family: 'Times New Roman', serif; }
+              `;
+              document.head.appendChild(style);
+          });">
+<style>
+        :root {
+            --primary: #2a4365;
+            --secondary: #4a5568;
+            --accent: #9c4221;
+            --light: #f7fafc;
+            --parchment: #f8f3e6;
+        }
+
+        body {
+            font-family: 'Crimson Text', 'Times New Roman', serif;
+            line-height: 1.7;
+            color: #222;
+            background-color: var(--parchment);
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 40px;
+            background-image:
+                linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+    h1 {
+        color: var(--primary);
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: 10px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+
+    h2 {
+        color: var(--secondary);
+        margin-top: 40px;
+        font-style: italic;
+    }
+
+    .function {
+        background: white;
+        border-radius: 3px;
+        padding: 30px;
+        margin-bottom: 40px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--accent);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .function::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--accent), #d69e2e);
+    }
+
+    h3 {
+        color: var(--primary);
+        margin-top: 0;
+        font-size: 1.5em;
+        display: flex;
+        align-items: center;
+    }
+
+    h3::before {
+        content: "§";
+        color: var(--accent);
+        margin-right: 10px;
+        font-weight: bold;
+    }
+
+    .docs {
+        background: var(--light);
+        padding: 20px;
+        margin: 15px 0;
+        border-radius: 2px;
+        border-left: 3px solid var(--secondary);
+        font-size: 1.05em;
+        line-height: 1.8;
+        white-space: pre-wrap;  /* Главное изменение - сохраняем пробелы и переносы */
+        font-family: inherit;
+    }
+
+    .block {
+        margin-left: 20px;
+        padding-left: 25px;
+        border-left: 2px dashed rgba(154, 106, 71, 0.3);
+        position: relative;
+    }
+
+    .block::before {
+        content: "⋮";
+        position: absolute;
+        left: -15px;
+        top: 0;
+        color: var(--accent);
+        font-weight: bold;
+    }
+
+    ul {
+        padding-left: 20px;
+    }
+
+    li {
+        margin-bottom: 8px;
+        position: relative;
+    }
+
+    li::before {
+        content: "•";
+        color: var(--accent);
+        position: absolute;
+        left: -15px;
+    }
+
+    strong {
+        color: var(--secondary);
+    }
+
+    @media print {
+        body {
+            background: none;
+            padding: 0;
+        }
+        .function {
+            page-break-inside: avoid;
+            box-shadow: none;
+        }
+    }
+
+    .entity {
+        background: white;
+        border-radius: 3px;
+        padding: 30px;
+        margin-bottom: 40px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--accent);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .entity::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(to bottom, var(--accent), #d69e2e);
+    }
+
+    .criteria {
+        margin-top: 15px;
+        padding-left: 20px;
+    }
+</style>
+</head>
+<body>
+    <div style="text-align: center; margin-bottom: 40px;">
+        <div style="font-size: 2em; color: var(--accent); margin-bottom: 10px;">⋮⋮⋮</div>
+        <div class="document-title" style="font-size: 0.9em; letter-spacing: 3px; color: var(--secondary);">
+            ДОКУМЕНТАЦИЯ К ПРОЕКТУ
+        </div>
+        <div style="font-size: 2em; color: var(--accent); margin-top: 10px;">⋮⋮⋮</div>
+    </div>
+
+    <h1>Документация модуля</h1>
+    <h2>Модуль: test_4</h2>
+
+    <!-- Санкции -->
+    <h2 style="margin-top: 50px;">Санкции</h2>
+    <div class="entity" id="название_типа_санкции">
+        <h3>Санкция: название_типа_санкции</h3>
+        <div class="docs"><strong>Статья:</strong> Статья 8.3 КоАП</div>
+    </div>
+    <div class="entity" id="название_типа_санкции2">
+        <h3>Санкция: название_типа_санкции2</h3>
+        <div class="docs"><strong>Статья:</strong> Статья 8.4 КоАП</div>
+    </div>
+
+    <!-- Права -->
+    <h2 style="margin-top: 50px;">Права</h2>
+    <div class="entity" id="Право_на_чистую_окружающую_среду">
+        <h3>Право: Право_на_чистую_окружающую_среду</h3>
+        <div class="docs">Описание права</div>
+    </div>
+
+    <!-- Обязанности -->
+    <h2 style="margin-top: 50px;">Обязанности</h2>
+    <div class="entity" id="Обязанность_соблюдать_экологические_нормы">
+        <h3>Обязанность: Обязанность_соблюдать_экологические_нормы</h3>
+        <div class="docs">Описание обязанности</div>
+    </div>
+
+    <!-- Правила -->
+    <h2 style="margin-top: 50px;">Правила</h2>
+    <div class="entity" id="Нарушение_экологического_законодательства">
+        <h3>Правило: Нарушение_экологического_законодательства</h3>
+        <div class="docs">Описание правила</div>
+    </div>
+
+    <!-- Субъекты -->
+    <h2 style="margin-top: 50px;">Субъекты</h2>
+    <div class="entity" id="Компания_Зелёный_мир">
+        <h3>Субъект: Компания_Зелёный_мир</h3>
+        <div class="docs"><strong>Имя:</strong> Добрый Добряк Добрякович</div>
+    </div>
+
+    <!-- Объекты -->
+    <h2 style="margin-top: 50px;">Объекты</h2>
+    <div class="entity" id="Загрязнённый_водоём">
+        <h3>Объект: Загрязнённый_водоём</h3>
+        <div class="docs"><strong>Имя:</strong> Загрязнённый водоём</div>
+    </div>
+
+    <!-- Документы -->
+    <h2 style="margin-top: 50px;">Документы</h2>
+    <div class="entity" id="название_документа">
+        <h3>Документ: название_документа</h3>
+        <h4>Гипотеза:</h4>
+        <div class="docs">СУБЪЕКТ: Компания_Зелёный_мир
+УСЛОВИЕ: При_проведении_экологической_экспертизы
+ОБЪЕКТ: Загрязнённый_водоём
+</div>
+        <h4>Диспозиция:</h4>
+        <div class="docs">ПРАВО: Право_на_чистую_окружающую_среду
+ОБЯЗАННОСТЬ: Обязанность_соблюдать_экологические_нормы
+ПРАВИЛО: Нарушение_экологического_законодательства
+</div>
+        <h4>Санкция:</h4>
+        <div class="docs">ТИП САНКЦИИ: [SanctionType(type_name=&#39;название_типа_санкции&#39;), SanctionType(type_name=&#39;название_типа_санкции2&#39;)]
+СТЕПЕНЬ СТРОГОСТИ: ОЧЕНЬ_ВЫСОКАЯ
+ПРОЦЕССУАЛЬНЫЙ АСПЕКТ: Экологическая_экспертиза
+</div>
+    </div>
+
+    <!-- Фактические ситуации -->
+    <h2 style="margin-top: 50px;">Фактические ситуации</h2>
+    <div class="entity" id="название_фактической_ситуации2">
+        <h3>Фактическая ситуация: название_фактической_ситуации2</h3>
+        <div class="docs"><strong>Объект:</strong> Загрязнённый_водоём</div>
+        <div class="docs"><strong>Субъект:</strong> Компания_Зелёный_мир</div>
+        <h4>Фактические данные:</h4>
+        <div class="docs">ДОПУСТИМОЕ_ЗНАЧЕНИЕ: 100
+</div>
+    </div>
+
+    <!-- Проверки -->
+    <h2 style="margin-top: 50px;">Проверки</h2>
+    <div class="entity" id="проверка_соблюдения_контракта_по_экологии">
+        <h3>Проверка: проверка_соблюдения_контракта_по_экологии</h3>
+        <div class="docs"><strong>Документ:</strong> название_документа</div>
+        <div class="docs"><strong>Фактическая ситуация:</strong> название_фактической_ситуации2</div>
+    </div>
+
+    <!-- Условия -->
+    <h2 style="margin-top: 50px;">Условия</h2>
+    <div class="entity" id="При_проведении_экологической_экспертизы">
+        <h3>Условие: При_проведении_экологической_экспертизы</h3>
+        <div class="docs">Условие , при котором предприятие должно соблюдать экологические нормы , включая запрет на сбросы загрязняющих веществ в водоёмы.</div>
+        <h4>Критерии:</h4>
+        <div class="criteria">
+            <div class="docs">Модификатор: Равно мг / л  Имя критерия: ЕДИНИЦА</div>
+            <div class="docs">Модификатор: Меньше чем 0.5  Имя критерия: ДОПУСТИМОЕ_ЗНАЧЕНИЕ</div>
+            <div class="docs">Модификатор: Равно Сброс через трубопровод  Имя критерия: ТИП</div>
+            <div class="docs">Модификатор: Больше чем 0.3  Имя критерия: МИНИМАЛЬНОЕ_ЗНАЧЕНИЕ</div>
+            <div class="docs">Модификатор: 1.0 Между 2.0  Имя критерия: СРЕДНЕЕ_ЗНАЧЕНИЕ</div>
+        </div>
+    </div>
+
+    <!-- Процедуры -->
+    <h2 style="margin-top: 50px;">Процедуры</h2>
+    <div class="entity" id="ждать_всех">
+        <h3>Процедура: ждать_всех</h3>
+<div class="docs">Передайте сюда массив запущенных в фоне процедур.
+
+Данная процедура будет ждать все фоновые задачи
+и вернет их результаты массивом, в том же порядке,
+что и во входном массиве.
+</div>        <h4>Аргументы:</h4>
+        <ul><li><strong>задачи</strong>: Обязательный</li></ul>
+    </div>
+    <div class="entity" id="нарисовать_таблицу">
+        <h3>Процедура: нарисовать_таблицу</h3>
+<div class="docs">Красиво отображает таблицу в консоли с форматированием.
+</div>        <h4>Аргументы:</h4>
+        <ul><li><strong>т</strong>: Обязательный</li></ul>
+    </div>
+    <div class="entity" id="копировать">
+        <h3>Процедура: копировать</h3>
+<div class="docs">Данная функция рекурсивно копирует любой объект, который ей передают.
+
+Будьте осторожны, это дорого!
+</div>        <h4>Аргументы:</h4>
+        <ul><li><strong>объект</strong>: Обязательный</li></ul>
+    </div>
+    <div class="entity" id="отобразить_на_массив">
+        <h3>Процедура: отобразить_на_массив</h3>
+<div class="docs">Вызывает процедуру &#34;отображаемая_процедура&#34;, на каждый элемент коллекции.
+</div>        <h4>Аргументы:</h4>
+        <ul><li><strong>отображаемая_процедура</strong>: Обязательный</li><li><strong>коллекция</strong>: Обязательный</li></ul>
+    </div>
+    <div class="entity" id="_отобразить">
+        <h3>Процедура: _отобразить</h3>
+        <h4>Аргументы:</h4>
+        <ul><li><strong>отображаемая_функция</strong>: Обязательный</li><li><strong>коллекция</strong>: Обязательный</li><li><strong>длина</strong>: Обязательный</li><li><strong>достать</strong>: Обязательный</li><li><strong>фабрика_коллекции</strong>: Обязательный</li></ul>
+    </div>
+    <div class="entity" id="вход">
+        <h3>Процедура: вход</h3>
+        <h4>Аргументы отсутствуют.</h4>
+    </div>
+    <div class="entity" id="печать">
+        <h3>Процедура: печать</h3>
+        <h4>Аргументы:</h4>
+        <ul><li><strong>а</strong>: Обязательный</li></ul>
+    </div>
+
+</body>
+</html>

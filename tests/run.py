@@ -2,7 +2,7 @@ import re
 import time
 import os
 
-from util.build_tools.starter import run_file
+from src.util.build_tools.starter import run_file
 
 def extract_number(filename):
     match = re.search(r'test_(\d+)\.raw', filename)

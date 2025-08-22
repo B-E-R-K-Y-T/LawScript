@@ -2,8 +2,8 @@ import time
 from random import randint
 from statistics import mean
 
-from util.build_tools.compile import Compiled
-from util.build_tools.starter import compile_string, run_compiled_code
+from src.util.build_tools.compile import Compiled
+from src.util.build_tools.starter import compile_string, run_compiled_code
 
 PATH_TO_LIB = "стандартная_библиотека.*"
 

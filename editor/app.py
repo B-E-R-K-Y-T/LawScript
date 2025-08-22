@@ -1,12 +1,16 @@
+import queue
 import tkinter as tk
+from multiprocessing import Queue, Process
 from tkinter import scrolledtext, messagebox
 import re
-import threading
 import sys
-from io import StringIO
 
-from core.tokens import Tokens
-from util.build_tools.starter import run_file, run_string
+from config import settings
+from src.core.call_func_stack import get_stack_pretty_str
+from src.core.tokens import Tokens
+from src.util.build_tools.build import build
+from src.util.build_tools.starter import run_file, run_string
+from src.util.console_worker import printer
 
 
 class OutputRedirector:
@@ -174,6 +178,8 @@ class SyntaxHighlighter:
 
 class TextEditor:
     def __init__(self, root):
+        self.execution_process = None
+        self.output_queue = None
         self.root = root
         self.root.title("Текстовый редактор с подсветкой синтаксиса")
         self.root.geometry("1000x700")
@@ -257,6 +263,11 @@ class TextEditor:
                              bg="#f44336", fg="white", font=("Arial", 10))
         stop_btn.pack(side=tk.LEFT, padx=2, pady=2)
 
+        # Кнопка сборки
+        build_btn = tk.Button(toolbar, text="⚡ Собрать", command=self.build_code,
+                              bg="#FF9800", fg="white", font=("Arial", 10, "bold"))
+        build_btn.pack(side=tk.LEFT, padx=2, pady=2)
+
         # Разделитель
         separator = tk.Frame(toolbar, width=2, bg="gray", height=20)
         separator.pack(side=tk.LEFT, padx=5, pady=2)
@@ -315,6 +326,35 @@ class TextEditor:
         self.output_area.delete(1.0, tk.END)
         self.output_area.config(state=tk.DISABLED)
 
+    def build_code(self):
+        """Собирает код из файла"""
+        from tkinter import filedialog
+        file_path = filedialog.askopenfilename(
+            title="Выберите файл для запуска",
+            filetypes=[
+                ("Контракты", "*.raw"),
+                ("Скомпилированные проекты", "*.law"),
+                ("Python расширения", "*.pyl"),
+                ("Все файлы", "*.*"),
+            ]
+        )
+
+        if file_path:
+            self.clear_output()
+            self.status_bar.config(text="Выполнение...")
+
+            try:
+                printer.debug = True
+                build(file_path)
+            except Exception as e:
+                msg = f"Ошибка: {e}"
+            else:
+                msg = "Успех!"
+
+            printer.debug = settings.debug
+            self.clear_output()
+            self.status_bar.config(text=msg)
+
     def run_code(self):
         """Запускает код из редактора"""
         code = self.text_area.get(1.0, tk.END).strip()
@@ -325,45 +365,109 @@ class TextEditor:
         self.clear_output()
         self.status_bar.config(text="Выполнение...")
 
-        # Запускаем в отдельном потоке чтобы не блокировать GUI
-        thread = threading.Thread(target=self._execute_code, args=(code,))
-        thread.daemon = True
-        thread.start()
+        # Создаем очередь для обмена данными между процессами
+        self.output_queue = Queue()
 
-    def _execute_code(self, code):
-        """Выполняет код с перенаправлением вывода"""
+        # Запускаем в отдельном процессе чтобы не блокировать GUI
+        self.execution_process = Process(
+            target=self._execute_code_in_process,
+            args=(code, self.output_queue)
+        )
+        self.execution_process.daemon = True
+        self.execution_process.start()
+
+        # Запускаем мониторинг вывода
+        self.monitor_output()
+
+    def monitor_output(self):
+        """Мониторит вывод из дочернего процесса"""
         try:
-            # Сохраняем оригинальные stdout/stderr
-            old_stdout = sys.stdout
-            old_stderr = sys.stderr
+            # Пытаемся получить данные из очереди
+            while True:
+                try:
+                    msg_type, content = self.output_queue.get_nowait()
 
-            # Перенаправляем вывод
-            sys.stdout = self.output_redirector
-            sys.stderr = self.output_redirector
+                    if msg_type == "output":
+                        self.output_area.config(state=tk.NORMAL)
+                        self.output_area.insert(tk.END, content)
+                        self.output_area.config(state=tk.DISABLED)
 
-            # Выполняем код
-            self.output_area.config(state=tk.NORMAL)
-            self.output_area.insert(tk.END, "=== Запуск кода ===\n")
+                    elif msg_type == "error":
+                        self.output_area.config(state=tk.NORMAL)
+                        self.output_area.insert(tk.END, f"\n{content}\n")
+                        self.output_area.config(state=tk.DISABLED)
 
-            run_string(code)  # Ваша функция выполнения
+                    elif msg_type == "status":
+                        if content == "completed":
+                            self.output_area.config(state=tk.NORMAL)
+                            self.output_area.insert(tk.END, "\n=== Выполнение завершено ===\n")
+                            self.output_area.config(state=tk.DISABLED)
+                            self.status_bar.config(text="Готов")
+                        elif content == "error":
+                            self.status_bar.config(text="Ошибка выполнения")
+                        break
 
-            self.output_area.insert(tk.END, "\n=== Выполнение завершено ===\n")
-            self.output_area.config(state=tk.DISABLED)
+                except queue.Empty:
+                    break
 
         except Exception as e:
             self.output_area.config(state=tk.NORMAL)
-            self.output_area.insert(tk.END, f"\nОшибка: {str(e)}\n")
+            self.output_area.insert(tk.END, f"Ошибка мониторинга: {e}\n")
             self.output_area.config(state=tk.DISABLED)
+            self.status_bar.config(text="Ошибка мониторинга")
+
+        # Продолжаем мониторинг, если процесс еще работает
+        if self.execution_process.is_alive():
+            self.root.after(100, self.monitor_output)
+
+    @staticmethod
+    def _execute_code_in_process(code, output_queue):
+        """Выполняет код в отдельном процессе"""
+        try:
+            # Перенаправляем вывод в очередь
+            import sys
+            from io import StringIO
+
+            # Захватываем вывод
+            old_stdout = sys.stdout
+            old_stderr = sys.stderr
+
+            # Создаем буфер для вывода
+            output_buffer = StringIO()
+            sys.stdout = output_buffer
+            sys.stderr = output_buffer
+
+            try:
+                run_string(code)
+            except Exception as e:
+                stack_trace = get_stack_pretty_str()
+
+                if stack_trace:
+                    stack_trace += "\n"
+
+                printer.print_error(f"{stack_trace}{str(e)}")
+            # Отправляем вывод в очередь
+            output = output_buffer.getvalue()
+            output_queue.put(("output", output))
+            output_queue.put(("status", "completed"))
+
+        except Exception as e:
+            import traceback
+            error_msg = f"Ошибка: {str(e)}\n{traceback.format_exc()}"
+            output_queue.put(("error", error_msg))
+            output_queue.put(("status", "error"))
 
         finally:
-            # Восстанавливаем оригинальные stdout/stderr
+            # Восстанавливаем stdout/stderr
             sys.stdout = old_stdout
             sys.stderr = old_stderr
-            self.status_bar.config(text="Готов")
 
     def stop_execution(self):
         """Останавливает выполнение"""
-        # Здесь можно добавить логику остановки выполнения
+        if hasattr(self, 'execution_process') and self.execution_process.is_alive():
+            self.execution_process.terminate()  # Более надежное завершение
+            self.execution_process.join(timeout=1.0)
+
         self.output_area.config(state=tk.NORMAL)
         self.output_area.insert(tk.END, "\n=== Выполнение прервано пользователем ===\n")
         self.output_area.config(state=tk.DISABLED)
@@ -375,11 +479,10 @@ class TextEditor:
         file_path = filedialog.askopenfilename(
             title="Выберите файл для запуска",
             filetypes=[
-                ("Все поддерживаемые", "*.txt *.py *.compiled"),
-                ("Текстовые файлы", "*.txt"),
-                ("Python файлы", "*.py"),
-                ("Скомпилированные", "*.compiled"),
-                ("Все файлы", "*.*")
+                ("Контракты", "*.raw"),
+                ("Скомпилированные проекты", "*.law"),
+                ("Python расширения", "*.pyl"),
+                ("Все файлы", "*.*"),
             ]
         )
 
@@ -421,11 +524,12 @@ class TextEditor:
         """Сохранить как"""
         from tkinter import filedialog
         file_path = filedialog.asksaveasfilename(
-            defaultextension=".txt",
+            defaultextension=".raw",
             filetypes=[
-                ("Текстовые файлы", "*.txt"),
-                ("Python файлы", "*.py"),
-                ("Все файлы", "*.*")
+                ("Контракты", "*.raw"),
+                ("Скомпилированные проекты", "*.law"),
+                ("Python расширения", "*.pyl"),
+                ("Все файлы", "*.*"),
             ]
         )
 
@@ -530,7 +634,12 @@ class TextEditor:
     def open_file(self):
         from tkinter import filedialog
         file_path = filedialog.askopenfilename(
-            filetypes=[("Текстовые файлы", "*.txt"), ("Все файлы", "*.*")]
+            filetypes=[
+                ("Контракты", "*.raw"),
+                ("Скомпилированные проекты", "*.law"),
+                ("Python расширения", "*.pyl"),
+                ("Все файлы", "*.*"),
+            ]
         )
 
         if file_path:
@@ -548,7 +657,12 @@ class TextEditor:
         from tkinter import filedialog
         file_path = filedialog.asksaveasfilename(
             defaultextension=".txt",
-            filetypes=[("Текстовые файлы", "*.txt"), ("Все файлы", "*.*")]
+            filetypes=[
+                ("Контракты", "*.raw"),
+                ("Скомпилированные проекты", "*.law"),
+                ("Python расширения", "*.pyl"),
+                ("Все файлы", "*.*"),
+            ]
         )
 
         if file_path:
