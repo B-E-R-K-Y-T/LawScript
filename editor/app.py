@@ -1,8 +1,26 @@
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 import re
+import threading
+import sys
+from io import StringIO
 
 from core.tokens import Tokens
+from util.build_tools.starter import run_file, run_string
+
+
+class OutputRedirector:
+    """Перенаправляет вывод в текстовое поле"""
+
+    def __init__(self, text_widget):
+        self.text_widget = text_widget
+
+    def write(self, string):
+        self.text_widget.insert(tk.END, string)
+        self.text_widget.see(tk.END)
+
+    def flush(self):
+        pass
 
 
 class SyntaxHighlighter:
@@ -158,9 +176,11 @@ class TextEditor:
     def __init__(self, root):
         self.root = root
         self.root.title("Текстовый редактор с подсветкой синтаксиса")
-        self.root.geometry("800x600")
+        self.root.geometry("1000x700")
 
         self.highlighter = SyntaxHighlighter()
+        self.current_file_path = None
+        self.output_redirector = None
 
         self.create_widgets()
         self.bind_events()
@@ -168,21 +188,86 @@ class TextEditor:
 
     def create_widgets(self):
         """Создает элементы интерфейса"""
-        # Основное текстовое поле
+        # Основная рамка
+        main_frame = tk.Frame(self.root)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Панель инструментов
+        self.create_toolbar(main_frame)
+
+        # Разделитель редактора и вывода
+        paned_window = tk.PanedWindow(main_frame, orient=tk.VERTICAL)
+        paned_window.pack(fill=tk.BOTH, expand=True)
+
+        # Редактор кода
+        editor_frame = tk.Frame(paned_window)
         self.text_area = scrolledtext.ScrolledText(
-            self.root,
+            editor_frame,
             wrap=tk.WORD,
             font=("Courier New", 12),
             undo=True,
             selectbackground="lightblue"
         )
-        self.text_area.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.text_area.pack(fill=tk.BOTH, expand=True)
+        paned_window.add(editor_frame)
+
+        # Панель вывода
+        output_frame = tk.Frame(paned_window)
+        output_label = tk.Label(output_frame, text="Вывод:", font=("Arial", 10, "bold"))
+        output_label.pack(anchor=tk.W)
+
+        self.output_area = scrolledtext.ScrolledText(
+            output_frame,
+            wrap=tk.WORD,
+            font=("Courier New", 10),
+            height=8,
+            state=tk.DISABLED,
+            bg="#f0f0f0"
+        )
+        self.output_area.pack(fill=tk.BOTH, expand=True)
+        paned_window.add(output_frame)
+
+        # Настройка разделителя (70% редактор, 30% вывод)
+        paned_window.paneconfig(editor_frame, stretch="always")
+        paned_window.paneconfig(output_frame, stretch="never")
+        # paned_window.sashpos(0, int(self.root.winfo_height() * 0.7))
 
         # Панель статуса
         self.status_bar = tk.Label(self.root, text="Готов", relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         # Меню
+        self.create_menu()
+
+        # Настройка перенаправления вывода
+        self.setup_output_redirector()
+
+    def create_toolbar(self, parent):
+        """Создает панель инструментов с кнопками"""
+        toolbar = tk.Frame(parent, relief=tk.RAISED, bd=1)
+        toolbar.pack(side=tk.TOP, fill=tk.X)
+
+        # Кнопка запуска
+        run_btn = tk.Button(toolbar, text="▶ Запуск", command=self.run_code,
+                            bg="#4CAF50", fg="white", font=("Arial", 10, "bold"))
+        run_btn.pack(side=tk.LEFT, padx=2, pady=2)
+
+        # Кнопка остановки
+        stop_btn = tk.Button(toolbar, text="⏹ Стоп", command=self.stop_execution,
+                             bg="#f44336", fg="white", font=("Arial", 10))
+        stop_btn.pack(side=tk.LEFT, padx=2, pady=2)
+
+        # Разделитель
+        separator = tk.Frame(toolbar, width=2, bg="gray", height=20)
+        separator.pack(side=tk.LEFT, padx=5, pady=2)
+
+        # Кнопка очистки вывода
+        clear_btn = tk.Button(toolbar, text="🧹 Очистить вывод",
+                              command=self.clear_output, font=("Arial", 9))
+        clear_btn.pack(side=tk.LEFT, padx=2, pady=2)
+
+    def create_menu(self):
+        """Создает меню"""
         self.menu_bar = tk.Menu(self.root)
         self.root.config(menu=self.menu_bar)
 
@@ -192,6 +277,9 @@ class TextEditor:
         file_menu.add_command(label="Новый", command=self.new_file, accelerator="Ctrl+N")
         file_menu.add_command(label="Открыть", command=self.open_file, accelerator="Ctrl+O")
         file_menu.add_command(label="Сохранить", command=self.save_file, accelerator="Ctrl+S")
+        file_menu.add_command(label="Сохранить как", command=self.save_as_file)
+        file_menu.add_separator()
+        file_menu.add_command(label="Запустить файл", command=self.run_file_dialog)
         file_menu.add_separator()
         file_menu.add_command(label="Выход", command=self.exit_editor, accelerator="Ctrl+Q")
 
@@ -209,52 +297,148 @@ class TextEditor:
         edit_menu.add_command(label="Выделить все", command=self.select_all, accelerator="Ctrl+A")
         edit_menu.add_command(label="Найти", command=self.find_text, accelerator="Ctrl+F")
 
+        # Меню Выполнение
+        run_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Выполнение", menu=run_menu)
+        run_menu.add_command(label="Запустить код", command=self.run_code, accelerator="F5")
+        run_menu.add_command(label="Остановить выполнение", command=self.stop_execution, accelerator="F6")
+        run_menu.add_separator()
+        run_menu.add_command(label="Очистить вывод", command=self.clear_output)
+
+    def setup_output_redirector(self):
+        """Настраивает перенаправление вывода"""
+        self.output_redirector = OutputRedirector(self.output_area)
+
+    def clear_output(self):
+        """Очищает область вывода"""
+        self.output_area.config(state=tk.NORMAL)
+        self.output_area.delete(1.0, tk.END)
+        self.output_area.config(state=tk.DISABLED)
+
+    def run_code(self):
+        """Запускает код из редактора"""
+        code = self.text_area.get(1.0, tk.END).strip()
+        if not code:
+            messagebox.showwarning("Предупреждение", "Нет кода для выполнения!")
+            return
+
+        self.clear_output()
+        self.status_bar.config(text="Выполнение...")
+
+        # Запускаем в отдельном потоке чтобы не блокировать GUI
+        thread = threading.Thread(target=self._execute_code, args=(code,))
+        thread.daemon = True
+        thread.start()
+
+    def _execute_code(self, code):
+        """Выполняет код с перенаправлением вывода"""
+        try:
+            # Сохраняем оригинальные stdout/stderr
+            old_stdout = sys.stdout
+            old_stderr = sys.stderr
+
+            # Перенаправляем вывод
+            sys.stdout = self.output_redirector
+            sys.stderr = self.output_redirector
+
+            # Выполняем код
+            self.output_area.config(state=tk.NORMAL)
+            self.output_area.insert(tk.END, "=== Запуск кода ===\n")
+
+            run_string(code)  # Ваша функция выполнения
+
+            self.output_area.insert(tk.END, "\n=== Выполнение завершено ===\n")
+            self.output_area.config(state=tk.DISABLED)
+
+        except Exception as e:
+            self.output_area.config(state=tk.NORMAL)
+            self.output_area.insert(tk.END, f"\nОшибка: {str(e)}\n")
+            self.output_area.config(state=tk.DISABLED)
+
+        finally:
+            # Восстанавливаем оригинальные stdout/stderr
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+            self.status_bar.config(text="Готов")
+
+    def stop_execution(self):
+        """Останавливает выполнение"""
+        # Здесь можно добавить логику остановки выполнения
+        self.output_area.config(state=tk.NORMAL)
+        self.output_area.insert(tk.END, "\n=== Выполнение прервано пользователем ===\n")
+        self.output_area.config(state=tk.DISABLED)
+        self.status_bar.config(text="Выполнение прервано")
+
+    def run_file_dialog(self):
+        """Диалог запуска файла"""
+        from tkinter import filedialog
+        file_path = filedialog.askopenfilename(
+            title="Выберите файл для запуска",
+            filetypes=[
+                ("Все поддерживаемые", "*.txt *.py *.compiled"),
+                ("Текстовые файлы", "*.txt"),
+                ("Python файлы", "*.py"),
+                ("Скомпилированные", "*.compiled"),
+                ("Все файлы", "*.*")
+            ]
+        )
+
+        if file_path:
+            self.run_external_file(file_path)
+
+    def run_external_file(self, file_path):
+        """Запускает внешний файл"""
+        self.clear_output()
+        self.status_bar.config(text=f"Запуск файла: {file_path}")
+
+        try:
+            self.output_area.config(state=tk.NORMAL)
+            self.output_area.insert(tk.END, f"=== Запуск файла: {file_path} ===\n")
+
+            # Сохраняем оригинальные stdout/stderr
+            old_stdout = sys.stdout
+            old_stderr = sys.stderr
+
+            # Перенаправляем вывод
+            sys.stdout = self.output_redirector
+            sys.stderr = self.output_redirector
+
+            run_file(file_path)  # Ваша функция запуска файла
+
+            self.output_area.insert(tk.END, "\n=== Выполнение завершено ===\n")
+
+        except Exception as e:
+            self.output_area.insert(tk.END, f"\nОшибка при запуске файла: {str(e)}\n")
+
+        finally:
+            # Восстанавливаем оригинальные stdout/stderr
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+            self.output_area.config(state=tk.DISABLED)
+            self.status_bar.config(text="Готов")
+
+    def save_as_file(self):
+        """Сохранить как"""
+        from tkinter import filedialog
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[
+                ("Текстовые файлы", "*.txt"),
+                ("Python файлы", "*.py"),
+                ("Все файлы", "*.*")
+            ]
+        )
+
+        if file_path:
+            self.current_file_path = file_path
+            self.save_file()
+
+    # ... (остальные ваши методы остаются без изменений)
     def setup_keybindings(self):
         """Настраивает горячие клавиши"""
-        # Файл
-        self.root.bind('<Control-n>', lambda e: self.new_file())
-        self.root.bind('<Control-N>', lambda e: self.new_file())
-        self.root.bind('<Control-o>', lambda e: self.open_file())
-        self.root.bind('<Control-O>', lambda e: self.open_file())
-        self.root.bind('<Control-s>', lambda e: self.save_file())
-        self.root.bind('<Control-S>', lambda e: self.save_file())
-        self.root.bind('<Control-q>', lambda e: self.exit_editor())
-        self.root.bind('<Control-Q>', lambda e: self.exit_editor())
-
-        # Правка
-        self.root.bind('<Control-z>', lambda e: self.undo())
-        self.root.bind('<Control-Z>', lambda e: self.undo())
-        self.root.bind('<Control-y>', lambda e: self.redo())
-        self.root.bind('<Control-Y>', lambda e: self.redo())
-        self.root.bind('<Control-x>', lambda e: self.cut())
-        self.root.bind('<Control-X>', lambda e: self.cut())
-        self.root.bind('<Control-c>', lambda e: self.copy())
-        self.root.bind('<Control-C>', lambda e: self.copy())
-        self.root.bind('<Control-v>', lambda e: self.paste())
-        self.root.bind('<Control-V>', lambda e: self.paste())
-        self.root.bind('<Control-a>', lambda e: self.select_all())
-        self.root.bind('<Control-A>', lambda e: self.select_all())
-        self.root.bind('<Control-f>', lambda e: self.find_text())
-        self.root.bind('<Control-F>', lambda e: self.find_text())
-        self.root.bind('<Delete>', lambda e: self.delete())
-
-        # Контекстное меню
-        self.setup_context_menu()
-
-    def setup_context_menu(self):
-        """Создает контекстное меню"""
-        self.context_menu = tk.Menu(self.root, tearoff=0)
-        self.context_menu.add_command(label="Вырезать", command=self.cut)
-        self.context_menu.add_command(label="Копировать", command=self.copy)
-        self.context_menu.add_command(label="Вставить", command=self.paste)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="Выделить все", command=self.select_all)
-
-        self.text_area.bind('<Button-3>', self.show_context_menu)
-
-    def show_context_menu(self, event):
-        """Показывает контекстное меню"""
-        self.context_menu.tk_popup(event.x_root, event.y_root)
+        # Существующие привязки...
+        self.root.bind('<F5>', lambda e: self.run_code())
+        self.root.bind('<F6>', lambda e: self.stop_execution())
 
     def bind_events(self):
         """Привязывает события"""

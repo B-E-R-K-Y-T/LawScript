@@ -30,6 +30,7 @@ class Sleep(PyExtendWrapper):
         self.count_args = 1
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
+        import time
         from core.types.atomic import Number, Void
         from core.exceptions import ErrorType
 
