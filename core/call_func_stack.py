@@ -29,6 +29,9 @@ call_func_stack_builder = CallFuncStackBuilder()
 
 
 def get_stack_pretty_str() -> str:
+    if not call_func_stack_builder:
+        return ""
+
     call_stack_str = "Стек вызова процедур:\n"
 
     for call_func in call_func_stack_builder:
@@ -36,8 +39,5 @@ def get_stack_pretty_str() -> str:
             f"\t\nФайл: '{call_func.meta_info.file}'\n\tПроцедура: '{call_func.func_name}'\n\t"
             f"Номер строки: {call_func.meta_info.num}\n\tСтрока: '{call_func.meta_info.raw_line}'\n"
         )
-
-    if not call_func_stack_builder:
-        return ""
 
     return call_stack_str

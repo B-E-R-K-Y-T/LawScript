@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Union, Generator
 
-from core.exceptions import ErrorType, NameNotDefine, BaseError, EXCEPTIONS, create_exception_law_script_class_instance
+from core.exceptions import ErrorType, NameNotDefine, BaseError, EXCEPTIONS, create_law_script_exception_class_instance
 from core.executors.expression import ExpressionExecutor
 from core.tokens import Tokens
 from core.types.atomic import Void, Number, Yield, String
@@ -31,8 +31,7 @@ if TYPE_CHECKING:
     from util.build_tools.compile import Compiled
 
 
-class Stop:
-    pass
+class Stop: ...
 
 
 class BodyExecutor(Executor):
@@ -302,7 +301,7 @@ class BodyExecutor(Executor):
                             if handler.exception_class_name != e.exc_name:
                                 continue
 
-                            ex_inst = create_exception_law_script_class_instance(handler.exception_class_name, e)
+                            ex_inst = create_law_script_exception_class_instance(handler.exception_class_name, e)
 
                             self.tree_variables.set(Variable(handler.exception_inst_name, ex_inst))
 

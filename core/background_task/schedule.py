@@ -6,7 +6,7 @@ from typing import Optional
 
 from config import settings
 from core.background_task.task import AbstractBackgroundTask
-from core.exceptions import BaseError, create_exception_law_script_class_instance
+from core.exceptions import BaseError, create_law_script_exception_class_instance
 from core.types.atomic import Void
 from util.console_worker import printer
 
@@ -85,7 +85,7 @@ class ThreadWorker:
 
                     self.done_task(task, idx)
                 except BaseError as e:
-                    task.result = create_exception_law_script_class_instance(e.exc_name, e)
+                    task.result = create_law_script_exception_class_instance(e.exc_name, e)
                     task.is_error_result = True
                     task.error = e
                     self.done_task(task, idx)

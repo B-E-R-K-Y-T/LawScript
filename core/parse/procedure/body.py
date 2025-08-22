@@ -242,12 +242,26 @@ class BodyParser(Parser):
                     printer.logging(f"Добавлена команда Handler в Context", level="INFO")
                 case [*expr, Tokens.end_expr]:
                     if Tokens.equal in expr:
-                        if expr.count(Tokens.equal) > 1:
-                            raise InvalidSyntaxError(
-                                f"Оператор '{Tokens.equal}' должен встречаться в определении выражения только 1 раз!",
-                                line=line,
-                                info=self.info
-                            )
+                        is_string = False
+                        eq_count = 0
+
+                        for symbol in expr:
+                            if symbol == Tokens.quotation:
+                                eq_count = 0
+                                is_string = not is_string
+
+                            if is_string:
+                                continue
+
+                            if symbol == Tokens.equal:
+                                eq_count += 1
+
+                            if eq_count > 1:
+                                raise InvalidSyntaxError(
+                                    f"Оператор '{Tokens.equal}' должен встречаться в определении выражения только 1 раз!",
+                                    line=line,
+                                    info=self.info
+                                )
 
                         equal_idx = expr.index(Tokens.equal)
                         target, override = expr[:equal_idx], expr[equal_idx + 1:]

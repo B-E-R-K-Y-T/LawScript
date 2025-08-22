@@ -23,7 +23,7 @@ def _add_ex(ex_cls: 'BaseError'):
     return ex_cls
 
 
-def create_exception_law_script_class_instance(class_name: str, exception_instance: 'BaseError') -> 'ClassInstance':
+def create_law_script_exception_class_instance(class_name: str, exception_instance: 'BaseError') -> 'ClassInstance':
     from core.types.atomic import String
     from core.types.classes import ClassDefinition, ClassField
 
@@ -67,6 +67,8 @@ class BaseError(Exception):
     exc_name = "БазоваяОшибка"
 
     def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
+        self.sub_ex: Optional[BaseError] = None
+
         if msg is None:
             msg = "Ошибка."
 
@@ -76,9 +78,9 @@ class BaseError(Exception):
         if info is not None:
             msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
-        msg = f"{self.exc_name}: {msg}"
+        self.result_msg = f"{self.exc_name}: {msg}"
 
-        super().__init__(msg)
+        super().__init__(self.result_msg)
 
 
 @_add_ex

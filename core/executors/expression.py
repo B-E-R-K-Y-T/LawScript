@@ -89,13 +89,18 @@ class ExpressionExecutor(Executor):
         self.task_scheduler = get_task_scheduler()
 
     def prepare_operations(self) -> list[Union[BaseAtomicType, Operator]]:
-        scope_vars = {var.name: var.value for var in traverse_scope(self.tree_variable.scopes[-1])}
+        scope_vars = {}
+
+        for var in traverse_scope(self.tree_variable.scopes[-1]):
+            if var.name not in scope_vars:
+                scope_vars[var.name] = var.value
+
         new_expression_stack = []
 
         for offset, operation in enumerate(self.expression.operations):
             if operation.name in scope_vars:
                 if isinstance(operation, LinkedProcedure):
-                    new_expression_stack.append(operation)
+                    new_expression_stack.append(scope_vars[operation.name])
                 elif isinstance(scope_vars[operation.name], AbstractBackgroundTask):
                     scope_vars[operation.name].name = operation.name
                     new_expression_stack.append(scope_vars[operation.name])
@@ -124,8 +129,8 @@ class ExpressionExecutor(Executor):
                         field.name = operation.name
                         new_expression_stack[offset] = field
                         break
-                raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
 
+                raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
 
         return new_expression_stack
 
@@ -461,6 +466,50 @@ class ExpressionExecutor(Executor):
                 operands = self.get_operands(evaluate_stack)
                 evaluate_stack.append(operands.atomic_type(operands.left.sub(operands.right)))
 
+            elif operation.operator == Tokens.star:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.mul(operands.right)))
+
+            elif operation.operator == Tokens.div:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.div(operands.right)))
+
+            elif operation.operator == Tokens.exponentiation:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.pow(operands.right)))
+
+            elif operation.operator == Tokens.and_:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.and_(operands.right)))
+
+            elif operation.operator == Tokens.or_:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.or_(operands.right)))
+
+            elif operation.operator == Tokens.not_:
+                operand: BaseAtomicType = evaluate_stack.pop(-1)
+
+                if isinstance(operand, ClassField):
+                    operand = operand.value
+
+                evaluate_stack.append(Boolean(operand.not_()))
+
+            elif operation.operator == Tokens.bool_equal:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.eq(operands.right)))
+
+            elif operation.operator == Tokens.bool_not_equal:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.ne(operands.right)))
+
+            elif operation.operator == Tokens.greater:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.gt(operands.right)))
+
+            elif operation.operator == Tokens.less:
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(Boolean(operands.left.lt(operands.right)))
+
             elif operation.operator == Tokens.plus:
                 if len(evaluate_stack) == 1:
                     operand = evaluate_stack.pop(-1)
@@ -564,50 +613,6 @@ class ExpressionExecutor(Executor):
                     )
 
                 continue
-
-            elif operation.operator == Tokens.star:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(operands.atomic_type(operands.left.mul(operands.right)))
-
-            elif operation.operator == Tokens.div:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(operands.atomic_type(operands.left.div(operands.right)))
-
-            elif operation.operator == Tokens.exponentiation:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(operands.atomic_type(operands.left.pow(operands.right)))
-
-            elif operation.operator == Tokens.and_:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(Boolean(operands.left.and_(operands.right)))
-
-            elif operation.operator == Tokens.or_:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(Boolean(operands.left.or_(operands.right)))
-
-            elif operation.operator == Tokens.not_:
-                operand: BaseAtomicType = evaluate_stack.pop(-1)
-
-                if isinstance(operand, ClassField):
-                    operand = operand.value
-
-                evaluate_stack.append(Boolean(operand.not_()))
-
-            elif operation.operator == Tokens.bool_equal:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(Boolean(operands.left.eq(operands.right)))
-
-            elif operation.operator == Tokens.bool_not_equal:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(Boolean(operands.left.ne(operands.right)))
-
-            elif operation.operator == Tokens.greater:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(Boolean(operands.left.gt(operands.right)))
-
-            elif operation.operator == Tokens.less:
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(Boolean(operands.left.lt(operands.right)))
 
             else:
                 raise ErrorType(

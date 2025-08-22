@@ -104,7 +104,7 @@ class ServiceTokens(StrEnum):
     in_background = Tokens.in_ + Tokens.background
 
 
-ALL_TOKENS = list(ServiceTokens) + list(Tokens)
+ALL_TOKENS = set(list(ServiceTokens) + list(Tokens))
 NOT_ALLOWED_TOKENS = set(Tokens) - {
     Tokens.comment, Tokens.star, Tokens.left_bracket, Tokens.right_bracket,
     Tokens.left_square_bracket, Tokens.right_square_bracket, Tokens.comma, Tokens.dot,

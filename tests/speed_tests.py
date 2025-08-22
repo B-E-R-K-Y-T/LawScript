@@ -347,6 +347,7 @@ for name, code in cases.items():
 results: dict[str, list[float]] = {name: [] for name in cases.keys()}
 
 print(f"\nЗапуск тестов (каждый тест будет выполнен {TEST_RUNS} раз)...")
+start_all_time = time.perf_counter()
 
 for run in range(1, TEST_RUNS + 1):
     print(f"\nЗапуск #{run}")
@@ -358,6 +359,8 @@ for run in range(1, TEST_RUNS + 1):
         execution_time = st1 - st0
         results[name].append(execution_time)
         print(f"  Тест-кейс завершен: {name} - {execution_time:.6f} сек")
+
+end_all_time = time.perf_counter() - start_all_time
 
 # Вывод результатов
 print("\nРезультаты тестирования:")
@@ -375,3 +378,5 @@ for name, times in results.items():
     print(f"\n{name}:")
     for i, t in enumerate(times, 1):
         print(f"  Запуск #{i}: {t:.6f} сек")
+
+print(f"Общее время: {end_all_time}")
