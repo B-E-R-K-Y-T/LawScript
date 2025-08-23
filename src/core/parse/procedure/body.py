@@ -8,7 +8,7 @@ from src.core.types.basetype import BaseType
 from src.core.types.docs import Docs
 from src.core.types.line import Line, Info
 from src.core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
-    AssignOverrideVariable, While, ElseWhen, Context, ExceptionHandler
+    AssignOverrideVariable, While, ElseWhen, Context, ExceptionHandler, BlockSync
 from src.core.util import is_ignore_line
 from src.util.console_worker import printer
 
@@ -235,6 +235,7 @@ class BodyParser(Parser):
 
                     handler = ExceptionHandler(str(), self.execute_parse(BodyParser, body, self.next_num_line(num)))
 
+                    handler.set_info(self.info)
                     handler.exception_class_name = ex_class_name
                     handler.exception_inst_name = ex_inst_var_name
 
@@ -278,6 +279,13 @@ class BodyParser(Parser):
 
                     self.commands.append(Expression(str(), expr, self.info))
                     printer.logging(f"Добавлена команда Expression с выражением: {expr}", level="INFO")
+                case [Tokens.blocking, Tokens.left_bracket]:
+                    block = BlockSync(str(), self.execute_parse(BodyParser, body, self.next_num_line(num)))
+
+                    block.set_info(self.info)
+
+                    self.commands.append(block)
+                    printer.logging(f"Добавлена команда BlockSync", level="INFO")
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг тела завершен: 'right_bracket' найден", level="INFO")
                     return num

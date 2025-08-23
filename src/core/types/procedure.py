@@ -1,3 +1,4 @@
+from threading import Lock
 from typing import Optional, Union
 
 from src.core.extend.function_wrap import PyExtendWrapper
@@ -173,3 +174,10 @@ class ExceptionHandler(CodeBlock):
         super().__init__(name, body)
         self.exception_inst_name: str = ""
         self.exception_class_name: str = ""
+
+
+class BlockSync(CodeBlock):
+    def __init__(self, name: str, body: Body):
+        super().__init__(name, body)
+        self.lock = Lock()
+        self.is_blocked = False

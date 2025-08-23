@@ -637,7 +637,15 @@ class ExpressionExecutor(Executor):
 
         return self.sync_execute()
 
-    def async_execute(self) -> Iterable:
+    def execute_with_atomic_type(self) -> BaseAtomicType:
+        result = self.execute()
+
+        if isinstance(result, ClassField):
+            return result.value
+
+        return result
+
+    def async_execute(self, as_atomic=False) -> Iterable:
         gen = self.evaluate()
 
         while True:
@@ -645,8 +653,14 @@ class ExpressionExecutor(Executor):
                 res = yield from gen
 
                 if not isinstance(res, Yield):
+                    if isinstance(res, ClassField) and as_atomic:
+                        return res.value
+
                     return res
             except StopIteration as exc:
+                if isinstance(exc, ClassField) and as_atomic:
+                    return exc.value
+
                 return exc
             except BaseError as e:
                 raise e

@@ -23,6 +23,59 @@ class DeepCopy(PyExtendWrapper):
         return deepcopy(args[0])
 
 
+@builder.collect(func_name='_поверхностное_копирование')
+class Copy(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from copy import copy
+
+        return copy(args[0])
+
+
+@builder.collect(func_name='__lock')
+class Lock(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = True
+        self.count_args = 0
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from threading import Lock
+        from src.core.types.basetype import BaseAtomicType
+
+        return BaseAtomicType(Lock())
+
+
+@builder.collect(func_name='__block')
+class OnLock(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from src.core.types.basetype import BaseAtomicType
+        lock = args[0]
+
+        return BaseAtomicType(lock.value.acquire())
+
+@builder.collect(func_name='__un_block')
+class UnLock(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from src.core.types.basetype import BaseAtomicType
+        lock = args[0]
+
+        return BaseAtomicType(lock.value.release())
+
 @builder.collect(func_name='_словарь_в_таблицу')
 class PrintPrettyTable(PyExtendWrapper):
     def __init__(self, func_name: str):

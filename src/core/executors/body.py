@@ -20,7 +20,7 @@ from src.core.types.procedure import (
     Break,
     AssignOverrideVariable,
     While,
-    Context
+    Context, BlockSync
 )
 from src.core.executors.base import Executor
 from src.core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
@@ -78,9 +78,9 @@ class BodyExecutor(Executor):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
 
                 if self.async_mode:
-                    executed = yield from executor.async_execute()
+                    executed = yield from executor.async_execute(as_atomic=True)
                 else:
-                    executed = executor.execute()
+                    executed = executor.execute_with_atomic_type()
 
                 return executed
 
@@ -91,9 +91,9 @@ class BodyExecutor(Executor):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
 
                 if self.async_mode:
-                    executed = yield from executor.async_execute()
+                    executed = yield from executor.async_execute(as_atomic=True)
                 else:
-                    executed = executor.execute()
+                    executed = executor.execute_with_atomic_type()
 
                 var = Variable(command.name, executed)
 
@@ -102,18 +102,38 @@ class BodyExecutor(Executor):
             elif isinstance(command, Print):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
                 if self.async_mode:
-                    executed = yield from executor.async_execute()
+                    executed = yield from executor.async_execute(as_atomic=True)
                 else:
-                    executed = executor.execute()
+                    executed = executor.execute_with_atomic_type()
 
                 printer.raw_print(executed)
+
+            elif isinstance(command, BlockSync):
+                body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
+
+                while command.is_blocked:
+                    yield Yield()
+
+                with command.lock:
+                    command.is_blocked = True
+
+                if self.async_mode:
+                    executed = yield from body_executor.async_execute()
+                else:
+                    executed = body_executor.execute()
+
+                with command.lock:
+                    command.is_blocked = False
+
+                if not isinstance(executed, Stop):
+                    return executed
 
             elif isinstance(command, When):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
                 if self.async_mode:
-                    result = yield from executor.async_execute()
+                    result = yield from executor.async_execute(as_atomic=True)
                 else:
-                    result = executor.execute()
+                    result = executor.execute_with_atomic_type()
 
                 with VariableContextCreator(self.tree_variables):
                     if result.value:
@@ -129,9 +149,9 @@ class BodyExecutor(Executor):
                         for else_when in command.else_whens:
                             when_executor = ExpressionExecutor(else_when.expression, self.tree_variables, self.compiled)
                             if self.async_mode:
-                                result = yield from when_executor.async_execute()
+                                result = yield from when_executor.async_execute(as_atomic=True)
                             else:
-                                result = when_executor.execute()
+                                result = when_executor.execute_with_atomic_type()
 
                             if result.value:
                                 body_executor = BodyExecutor(else_when.body, self.tree_variables, self.compiled)
@@ -164,16 +184,15 @@ class BodyExecutor(Executor):
                 with VariableContextCreator(self.tree_variables):
                     while True:
                         if self.async_mode:
-                            result = yield from executor.async_execute()
-
-                            if not result.value:
-                                break
-
-                        elif not executor.execute().value:
-                            break
+                            result = yield from executor.async_execute(as_atomic=True)
+                        else:
+                            result = executor.execute_with_atomic_type()
 
                         if self.async_mode:
                             yield Yield()
+
+                        if not result.value:
+                            break
 
                         if self.async_mode:
                             executed = yield from body_executor.async_execute()
@@ -194,14 +213,14 @@ class BodyExecutor(Executor):
                 executor_to = ExpressionExecutor(command.expression_to, self.tree_variables, self.compiled)
 
                 if self.async_mode:
-                    result_from = yield from executor_from.async_execute()
+                    result_from = yield from executor_from.async_execute(as_atomic=True)
                 else:
-                    result_from = executor_from.execute()
+                    result_from = executor_from.execute_with_atomic_type()
 
                 if self.async_mode:
-                    result_to = yield from executor_to.async_execute()
+                    result_to = yield from executor_to.async_execute(as_atomic=True)
                 else:
-                    result_to = executor_to.execute()
+                    result_to = executor_to.execute_with_atomic_type()
 
                 if not isinstance(result_from, Number) or not isinstance(result_to, Number):
                     raise ErrorType(
@@ -239,7 +258,7 @@ class BodyExecutor(Executor):
                 if self.async_mode:
                     yield from executor.execute(self.async_mode)
                 else:
-                    executor.execute()
+                    executor.execute_with_atomic_type()
 
             elif isinstance(command, AssignOverrideVariable):
                 target_expr_executor = ExpressionExecutor(command.target_expr, self.tree_variables, self.compiled)
@@ -248,7 +267,7 @@ class BodyExecutor(Executor):
                 if self.async_mode:
                     override_expr_result = yield from override_expr_executor.execute(self.async_mode)
                 else:
-                    override_expr_result = override_expr_executor.execute()
+                    override_expr_result = override_expr_executor.execute_with_atomic_type()
 
                 if len(command.target_expr.operations) == 1:
                     target_name = command.target_expr.operations[0].name
@@ -280,9 +299,15 @@ class BodyExecutor(Executor):
                 var.set_value(override_expr_result)
 
             elif isinstance(command, Continue):
+                if self.async_mode:
+                    yield Yield()
+
                 return command
 
             elif isinstance(command, Break):
+                if self.async_mode:
+                    yield Yield()
+
                 return command
 
             elif isinstance(command, Context):
