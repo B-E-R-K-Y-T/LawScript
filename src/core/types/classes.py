@@ -1,6 +1,6 @@
-from typing import Optional, TypeVar, Generic, TYPE_CHECKING, Type, Union
+from typing import Optional, TypeVar, Generic, Type, Union
 
-from src.core.types.atomic import Void
+from src.core.types.atomic import VOID
 from src.core.types.basetype import BaseType, BaseAtomicType
 from src.core.types.procedure import Procedure, Body, Expression
 from src.core.exceptions import BaseError, create_define_class_wrap, EXCEPTIONS
@@ -35,7 +35,7 @@ _T = TypeVar('_T', bound=BaseAtomicType)
 
 class ClassField(BaseAtomicType, Generic[_T]):
     def __init__(
-            self, value: _T = Void()
+            self, value: _T = VOID
     ):
         super().__init__(value)
 
@@ -79,12 +79,12 @@ class ClassExceptionDefinition(ClassDefinition):
     def create_instance(
             self, exception_instance: Optional[BaseError] = None, children: Optional['ClassInstance'] = None
     ) -> 'ClassInstance':
-        from src.core.types.atomic import String, Void
+        from src.core.types.atomic import String, VOID
 
         parent = None
 
         if exception_instance is None:
-            exception_instance = Void()
+            exception_instance = VOID
             ex_cls = EXCEPTIONS.get(self.name)
 
             if ex_cls is not None:

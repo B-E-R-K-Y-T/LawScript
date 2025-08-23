@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING, Union, Generator
+from typing import TYPE_CHECKING, Union, Generator, Final
 
 from src.core.exceptions import ErrorType, NameNotDefine, BaseError, create_law_script_exception_class_instance, \
     InvalidExceptionType, is_def_err
 from src.core.executors.expression import ExpressionExecutor
 from src.core.tokens import Tokens
-from src.core.types.atomic import Number, Yield, String, Void
+from src.core.types.atomic import Number, YIELD
 from src.core.types.base_declarative_type import BaseDeclarativeType
 from src.core.types.basetype import BaseAtomicType
 from src.core.types.classes import ClassDefinition, ClassField, ClassExceptionDefinition, ClassInstance
@@ -33,6 +33,9 @@ if TYPE_CHECKING:
 
 
 class Stop: ...
+
+
+STOP: Final[Stop] = Stop()
 
 
 class BodyExecutor(Executor):
@@ -206,7 +209,7 @@ class BodyExecutor(Executor):
                             result = executor.execute_with_atomic_type()
 
                         if self.async_mode:
-                            yield Yield()
+                            yield YIELD
 
                         if not result.value:
                             break
@@ -250,7 +253,7 @@ class BodyExecutor(Executor):
 
                     for var in range(result_from.value, result_to.value + 1):
                         if self.async_mode:
-                            yield Yield()
+                            yield YIELD
 
                         if command.name_loop_var is not None:
                             self.tree_variables.set(Variable(command.name_loop_var, Number(var)))
@@ -271,13 +274,13 @@ class BodyExecutor(Executor):
 
             elif isinstance(command, Continue):
                 if self.async_mode:
-                    yield Yield()
+                    yield YIELD
 
                 return command
 
             elif isinstance(command, Break):
                 if self.async_mode:
-                    yield Yield()
+                    yield YIELD
 
                 return command
 
@@ -365,7 +368,7 @@ class BodyExecutor(Executor):
 
                 while command.is_blocked:
                     if self.async_mode:
-                        yield Yield()
+                        yield YIELD
 
                 with command.lock:
                     command.is_blocked = True
@@ -386,6 +389,6 @@ class BodyExecutor(Executor):
                 raise ErrorType(f"Неизвестная команда '{command.name}'!", info=command.meta_info)
 
             if self.async_mode:
-                yield Yield()
+                yield YIELD
 
-        return Stop()
+        return STOP

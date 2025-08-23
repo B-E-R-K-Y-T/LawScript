@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from src.core.extend.function_wrap import PyExtendWrapper, PyExtendBuilder
-from src.core.types.atomic import Array
+from src.core.types.atomic import Array, VOID
 from src.core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
@@ -32,12 +32,12 @@ class ArrayAppend(PyExtendWrapper):
 
     def call(self, args: Optional[list[Array]] = None):
         from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_two
-        from src.core.types.atomic import Void
+        from src.core.types.atomic import VOID
 
         array, item = parse_arr_args_two(args)
         array.append(item)
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='удалить_из_массива')
@@ -62,7 +62,7 @@ class ArrayRemove(PyExtendWrapper):
         except IndexError:
             raise ErrorIndex("Выход за границы массива.")
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='достать_из_массива')
@@ -102,7 +102,7 @@ class ArraySetItem(PyExtendWrapper):
         from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_inf
         from src.core.types.atomic import Number, BaseAtomicType
         from src.core.exceptions import ErrorType, ErrorIndex
-        from src.core.types.atomic import Void
+        from src.core.types.atomic import VOID
 
         array, arr_args = parse_arr_args_inf(args)
         index, value = arr_args
@@ -118,7 +118,7 @@ class ArraySetItem(PyExtendWrapper):
         except IndexError:
             raise ErrorIndex("Выход за границы массива.")
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='длина_массива')
@@ -175,7 +175,7 @@ class ArrayClear(PyExtendWrapper):
         self.count_args = 1
 
     def call(self, args: Optional[list[Array]] = None):
-        from src.core.types.atomic import Array, Void
+        from src.core.types.atomic import Array, VOID
         from src.core.exceptions import ErrorValue
 
         arr = args[0]
@@ -186,7 +186,7 @@ class ArrayClear(PyExtendWrapper):
         arr = arr.value
         arr.clear()
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='таблица')
@@ -222,7 +222,7 @@ class TableAppend(PyExtendWrapper):
         self.count_args = 3
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from src.core.types.atomic import Table, Void, String
+        from src.core.types.atomic import Table, VOID, String
         from src.core.exceptions import ErrorValue
 
         table, key, value = args
@@ -235,7 +235,7 @@ class TableAppend(PyExtendWrapper):
 
         table[key] = value
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='извлечь_из_таблицы')
@@ -271,7 +271,7 @@ class TableRemove(PyExtendWrapper):
         self.count_args = 2
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from src.core.types.atomic import Table, String, Void
+        from src.core.types.atomic import Table, String, VOID
         from src.core.exceptions import ErrorValue
 
         table, key = args
@@ -285,7 +285,7 @@ class TableRemove(PyExtendWrapper):
         if key in table:
             table.del_(key)
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='длина_таблицы')

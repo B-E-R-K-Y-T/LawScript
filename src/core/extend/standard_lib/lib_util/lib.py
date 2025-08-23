@@ -48,7 +48,7 @@ class PrintPrettyTable(PyExtendWrapper):
         from rich import print as rich_print
         from rich.box import SQUARE
 
-        from src.core.types.atomic import Table, Void
+        from src.core.types.atomic import Table, VOID
         from src.core.exceptions import ErrorValue
 
         if not isinstance(args[0], Table):
@@ -77,7 +77,7 @@ class PrintPrettyTable(PyExtendWrapper):
         # Выводим таблицу
         rich_print(rich_table)
 
-        return Void()
+        return VOID
 
 
 def build_module():

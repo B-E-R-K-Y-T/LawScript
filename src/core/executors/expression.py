@@ -14,7 +14,7 @@ from src.core.exceptions import (
 )
 from src.core.executors.base import Executor
 from src.core.tokens import Tokens, ServiceTokens, ALL_TOKENS
-from src.core.types.atomic import Void, Boolean, Yield
+from src.core.types.atomic import Boolean, Yield, VOID, YIELD
 from src.core.types.base_declarative_type import BaseDeclarativeType
 from src.core.types.basetype import BaseAtomicType, BaseType
 from src.core.types.classes import ClassDefinition, ClassInstance, Method, ClassField, Constructor
@@ -244,7 +244,7 @@ class ExpressionExecutor(Executor):
         result = executor.execute()
 
         if isinstance(result, Stop):
-            result = Void()
+            result = VOID
 
         evaluate_stack.append(result)
 
@@ -559,7 +559,7 @@ class ExpressionExecutor(Executor):
                     raise OverWaitTaskError(task.name, info=self.expression.meta_info)
 
                 while not task.done:
-                    yield Yield()
+                    yield YIELD
 
                 task.set_waited()
                 if task.is_error_result:
@@ -641,7 +641,7 @@ class ExpressionExecutor(Executor):
         if evaluate_stack:
             return evaluate_stack[0]
 
-        return Void()
+        return VOID
 
     def execute(self, async_execute=False) -> Union[BaseAtomicType, Iterable]:
         if async_execute:

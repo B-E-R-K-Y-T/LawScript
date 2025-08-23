@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Final
 
 from src.core.tokens import Tokens
 from src.core.types.basetype import BaseAtomicType
@@ -146,3 +146,7 @@ class Void(BaseAtomicType):
 class Yield(BaseAtomicType):
     def __init__(self):
         super().__init__(None)
+
+
+YIELD: Final[Yield] = Yield()
+VOID: Final[Void] = Void()

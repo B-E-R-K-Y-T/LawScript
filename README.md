@@ -1,5 +1,7 @@
 # Язык написания контрактов: LawScript!
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/B-E-R-K-Y-T/LawScript)
+
 Запуск:
 
 ```

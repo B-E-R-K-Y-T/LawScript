@@ -7,7 +7,7 @@ from typing import Optional
 from config import settings
 from src.core.background_task.task import AbstractBackgroundTask
 from src.core.exceptions import BaseError, create_law_script_exception_class_instance
-from src.core.types.atomic import Void
+from src.core.types.atomic import VOID
 from src.util.console_worker import printer
 
 
@@ -81,7 +81,7 @@ class ThreadWorker:
                     from src.core.executors.body import Stop
 
                     if isinstance(task.result, Stop):
-                        task.result = Void()
+                        task.result = VOID
 
                     self.done_task(task, idx)
                 except BaseError as e:
@@ -90,7 +90,7 @@ class ThreadWorker:
                     task.error = e
                     self.done_task(task, idx)
                 except Exception as e:
-                    task.result = Void()
+                    task.result = VOID
                     self.done_task(task, idx)
 
                     err_message = f"{self.thread.name}: Ошибка при выполнении задачи: [{idx}] '{task.name}'.\n\nДетали: {e}"

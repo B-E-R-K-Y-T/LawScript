@@ -4,7 +4,7 @@ from src.core.exceptions import InvalidExpression, BaseError
 from src.core.extend.function_wrap import PyExtendWrapper
 from src.core.parse.base import is_integer, is_float, is_identifier
 from src.core.tokens import Tokens, ServiceTokens
-from src.core.types.atomic import Number, String, Boolean, Void
+from src.core.types.atomic import Number, String, Boolean, Void, VOID
 from src.core.types.basetype import BaseAtomicType
 from src.core.types.line import Info
 from src.core.types.operation import Operator
@@ -643,7 +643,7 @@ def compile_rpn(expr):
             continue
 
         if op == Tokens.void:
-            op = Void()
+            op = VOID
 
         if isinstance(op, Operator):
             compiled_stack.append(op)
