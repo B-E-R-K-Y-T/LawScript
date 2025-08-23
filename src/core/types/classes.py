@@ -1,8 +1,11 @@
-from typing import Optional, TypeVar, Generic
+from typing import Optional, TypeVar, Generic, TYPE_CHECKING
 
 from src.core.types.atomic import Void
 from src.core.types.basetype import BaseType, BaseAtomicType
 from src.core.types.procedure import Procedure, Body, Expression
+
+if TYPE_CHECKING:
+    from src.core.exceptions import BaseError
 
 
 class Method(Procedure):
@@ -63,6 +66,27 @@ class ClassDefinition(BaseType):
 
     def __repr__(self):
         return f"Класс('{self.name}')"
+
+
+class ClassExceptionDefinition(ClassDefinition):
+    def __init__(
+            self, name, *, base_ex, parent: Optional['ClassDefinition'] = None,
+            methods: Optional[dict[str, ClassField[Method]]] = None, constructor: Optional[Constructor] = None
+    ):
+        super().__init__(name, parent, methods, constructor)
+        self.base_ex = base_ex
+
+    def create_instance(
+            self, exception_instance: Optional['BaseError'] = None, children: Optional['ClassInstance'] = None
+    ) -> 'ClassInstance':
+        from src.core.types.atomic import String
+
+        ex_inst = super().create_instance(children)
+        ex_inst.fields = {
+            "информация": ClassField(String(str(exception_instance))),
+            "__ошибка__": ClassField(BaseAtomicType(exception_instance)),
+        }
+        return ex_inst
 
 
 class ClassInstance(BaseAtomicType):

@@ -1,21 +1,21 @@
 from collections.abc import Iterable
 from difflib import SequenceMatcher
-from typing import Optional, Any, TYPE_CHECKING, Final
+from typing import Optional, Any, TYPE_CHECKING, Final, Type
 
 from src.core.tokens import Tokens
-from src.core.types.basetype import BaseAtomicType
+from src.core.types.basetype import BaseType
 from src.core.types.line import Info
 from src.core.types.severitys import Levels
 
 if TYPE_CHECKING:
     from src.core.types.variable import Scope
-    from src.core.types.classes import ClassInstance
+    from src.core.types.classes import ClassInstance, ClassDefinition, ClassExceptionDefinition
 
 
-EXCEPTIONS: Final[dict[str, 'BaseError']] = {}
+EXCEPTIONS: Final[dict[str, Type['BaseError']]] = {}
 
 
-def _add_ex(ex_cls: 'BaseError'):
+def _add_ex(ex_cls: Type['BaseError']):
     if ex_cls.exc_name in EXCEPTIONS.keys():
         raise NameError
 
@@ -24,18 +24,65 @@ def _add_ex(ex_cls: 'BaseError'):
 
 
 def create_law_script_exception_class_instance(class_name: str, exception_instance: 'BaseError') -> 'ClassInstance':
-    from src.core.types.atomic import String
-    from src.core.types.classes import ClassDefinition, ClassField
-
     ex = EXCEPTIONS.get(class_name)
 
-    ex_inst = ClassDefinition(ex.exc_name).create_instance()
-    ex_inst.fields = {
-        "информация": ClassField(String(str(exception_instance))),
-        "__ошибка__": ClassField(BaseAtomicType(exception_instance)),
-    }
+    ex_inst = create_define_class_wrap(ex).create_instance(exception_instance=exception_instance)
 
     return ex_inst
+
+
+def is_def_err(ex: BaseType):
+    from src.core.types.classes import ClassExceptionDefinition, ClassDefinition
+
+    if isinstance(ex, ClassExceptionDefinition):
+        return True
+
+    if not isinstance(ex, ClassDefinition):
+        return False
+
+    if ex.parent is not None:
+        return is_def_err(ex.parent)
+
+    return False
+
+
+
+def create_define_class_wrap(exception: Type['BaseError']) -> 'ClassExceptionDefinition':
+    from src.core.types.classes import ClassExceptionDefinition, Constructor
+    from src.core.types.code_block import Body
+
+    exception_inst = exception.get_inst()
+    parent = exception_inst.__class__.__bases__[0]
+    base_ex = exception
+
+    if isinstance(parent, BaseError):
+        parent = create_define_class_wrap(parent)
+    else:
+        parent = None
+
+    cls = ClassExceptionDefinition(
+        exception_inst.exc_name,
+        base_ex=base_ex,
+        parent=parent,
+        constructor=Constructor(
+            exception_inst.exc_name,
+            body=Body(
+                name="",
+                commands=[],
+            ),
+            arguments_names=[]
+        )
+    )
+    cls.set_info(
+        Info(
+            num=-1,
+            file="",
+            raw_line=""
+        )
+    )
+
+    return cls
+
 
 
 def get_probable_tokens(word: str, sequence: Optional[Iterable[str]] = Tokens, threshold=0.6):
@@ -81,6 +128,10 @@ class BaseError(Exception):
         self.result_msg = f"{self.exc_name}: {msg}"
 
         super().__init__(self.result_msg)
+
+    @classmethod
+    def get_inst(cls):
+        return cls()
 
 
 @_add_ex
@@ -133,19 +184,30 @@ class InvalidSyntaxError(BaseError):
 class InvalidLevelDegree(BaseError):
     exc_name = "ОшибкаЗначенияТипа"
 
-    def __init__(self, degree: str):
-        super().__init__(
-            f"Значение: '{degree}' запрещено для типа '{Tokens.degree} {Tokens.of_rigor}'. "
-            f"Используйте один из следующих типов: {[str(level) for level in Levels]}"
-        )
+    def __init__(self, degree: Optional[str] = None):
+        if degree is None:
+            msg = "Ошибка значения типа!"
+        else:
+            msg = (
+                f"Значение: '{degree}' запрещено для типа '{Tokens.degree} {Tokens.of_rigor}'. "
+                f"Используйте один из следующих типов: {[str(level) for level in Levels]}"
+            )
+
+        super().__init__(msg)
 
 
 @_add_ex
 class InvalidType(BaseError):
     exc_name = "НекорректныйТип"
 
-    def __init__(self, value: Any, type_: str, line: Optional[list[str]] = None):
-        msg = f"Значение: '{value}' должно иметь тип: '{type_}'!"
+    def __init__(
+            self, value: Optional[Any] = None, type_: Optional[str] = None,
+            line: Optional[list[str]] = None
+    ):
+        msg = "Некорректный тип!"
+
+        if value is not None and type_ is not None:
+            msg = f"Значение: '{value}' должно иметь тип: '{type_}'!"
 
         if line is not None:
             msg = f"Ошибка в строке: '{" ".join(line)} ' \n{msg}"
@@ -244,19 +306,25 @@ class NameNotDefine(BaseError):
 class FieldNotDefine(BaseError):
     exc_name = "ОшибкаПолеНеОпределено"
 
-    def __init__(self, field: str, define: str):
-        super().__init__(
-            f"Поле: '{field}' не определено в '{define}'"
-        )
+    def __init__(self, field: Optional[str] = None, define: Optional[str] = None):
+        msg = "Поле не определено!"
+
+        if field is not None and define is not None:
+            msg = f"Поле: '{field}' не определено в '{define}'"
+
+        super().__init__(msg)
 
 
 @_add_ex
 class NameAlreadyExist(BaseError):
     exc_name = "ОшибкаИмяУжеСуществует"
 
-    def __init__(self, name: str, *, msg: Optional[str] = None, info: Optional[Info] = None):
+    def __init__(self, name: Optional[str] = None, *, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
-            msg = f"Имя: '{name}' уже существует"
+            if name is not None:
+                msg = f"Имя: '{name}' уже существует"
+            else:
+                msg = "Имя уже существует"
 
         if info is not None:
             if info.file is not None:
@@ -351,8 +419,11 @@ class ErrorIndex(BaseError):
 class OverWaitTaskError(BaseError):
     exc_name = "ОшибкаПовторноеОжидание"
 
-    def __init__(self, task_name: str, msg: Optional[str] = None, info: Optional[Info] = None):
+    def __init__(self, task_name: Optional[str] = None, msg: Optional[str] = None, info: Optional[Info] = None):
         if msg is None:
-            msg = f"Невозможно ожидать задачу '{task_name}' более одного раза!"
-        
+            msg = "Невозможно ожидать задачу более одного раза!"
+
+            if task_name is None:
+                msg = f"Невозможно ожидать задачу '{task_name}' более одного раза!"
+
         super().__init__(msg, info=info)

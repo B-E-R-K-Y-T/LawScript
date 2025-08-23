@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, Union, Generator
 from src.core.exceptions import ErrorType, NameNotDefine, BaseError, create_law_script_exception_class_instance
 from src.core.executors.expression import ExpressionExecutor
 from src.core.tokens import Tokens
-from src.core.types.atomic import Number, Yield
+from src.core.types.atomic import Number, Yield, String
 from src.core.types.base_declarative_type import BaseDeclarativeType
 from src.core.types.basetype import BaseAtomicType
-from src.core.types.classes import ClassDefinition, ClassField
+from src.core.types.classes import ClassDefinition, ClassField, ClassExceptionDefinition
 from src.core.types.procedure import (
     Print,
     Return,
@@ -323,10 +323,21 @@ class BodyExecutor(Executor):
                             return executed
                     except BaseError as e:
                         for handler in command.handlers:
-                            if handler.exception_class_name != e.exc_name:
+                            exception = self.compiled.compiled_code.get(handler.exception_class_name)
+
+                            if exception is None:
                                 continue
 
-                            ex_inst = create_law_script_exception_class_instance(handler.exception_class_name, e)
+                            if not isinstance(exception, ClassExceptionDefinition):
+                                continue
+
+                            if not isinstance(e, exception.base_ex):
+                                continue
+
+                            if handler.exception_class_name == e.exc_name:
+                                ex_inst = create_law_script_exception_class_instance(handler.exception_class_name, e)
+                            else:
+                                ex_inst = exception.create_instance(e)
 
                             self.tree_variables.set(Variable(handler.exception_inst_name, ex_inst))
 

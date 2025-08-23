@@ -7,7 +7,7 @@ from src.core.exceptions import (
     NameAlreadyExist,
     FieldNotDefine,
     InvalidSyntaxError,
-    ErrorType, EXCEPTIONS,
+    ErrorType, EXCEPTIONS, create_define_class_wrap, BaseError, is_def_err,
 )
 from src.core.extend.function_wrap import PyExtendWrapper
 from src.core.parse.base import MetaObject
@@ -16,7 +16,7 @@ from src.core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from src.core.types.atomic import Array, String
 from src.core.types.basetype import BaseType
 from src.core.types.checkers import CheckerSituation
-from src.core.types.classes import Method, Constructor, ClassDefinition
+from src.core.types.classes import Method, Constructor, ClassDefinition, ClassExceptionDefinition
 from src.core.types.conditions import Condition
 from src.core.types.criteria import Criteria
 from src.core.types.dispositions import Disposition
@@ -275,6 +275,17 @@ class Compiler:
             return compiled_obj
 
         elif isinstance(compiled_obj, ClassDefinition):
+            if isinstance(self.compiled.get(compiled_obj.parent), ClassExceptionDefinition):
+                parent = self.compiled.get(compiled_obj.parent)
+
+                compiled_obj = ClassExceptionDefinition(
+                    name=compiled_obj.name,
+                    base_ex=parent.base_ex,
+                    parent=compiled_obj.parent,
+                    methods=compiled_obj.methods,
+                    constructor=compiled_obj.constructor
+                )
+
             compiled_obj.constructor = self.execute_compile(compiled_obj.constructor)
 
             for method_name, method in compiled_obj.methods.items():
@@ -470,7 +481,15 @@ class Compiler:
 
                 for handler in statement.handlers:
                     printer.logging(f"Компиляция Handler '{handler}'", level="DEBUG")
-                    if handler.exception_class_name not in EXCEPTIONS.keys():
+                    if handler.exception_class_name not in self.compiled:
+                        raise NameNotDefine(
+                            name=handler.exception_class_name,
+                            info=handler.meta_info
+                        )
+
+                    ex = self.compiled[handler.exception_class_name]
+
+                    if not is_def_err(ex):
                         raise ErrorType(
                             f"Ошибки '{handler.exception_class_name}' не существует!",
                             info=handler.meta_info
@@ -524,6 +543,12 @@ class Compiler:
 
     def compile(self) -> Compiled:
         compiled_modules = {}
+
+        for name, ex in EXCEPTIONS.items():
+            ex_def = create_define_class_wrap(ex)
+
+            self.compiled[ex_def.name] = ex_def
+
 
         for idx, meta in enumerate(self.ast):
             compiled = self.execute_compile(meta)
