@@ -63,7 +63,7 @@ class ThreadWorker:
                     self._is_active = False
                 self._stop_event.set()
                 printer.logging(
-                    f"{self.thread=} Нет задач, работа завершена по таймауту {settings.ttl_thread}"
+                    f"{self.thread=} Нет задач, работа завершена по таймауту: {settings.ttl_thread}"
                 )
                 break
 
