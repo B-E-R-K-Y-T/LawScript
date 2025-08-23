@@ -8,7 +8,7 @@ from src.core.types.basetype import BaseType
 from src.core.types.docs import Docs
 from src.core.types.line import Line, Info
 from src.core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
-    AssignOverrideVariable, While, ElseWhen, Context, ExceptionHandler, BlockSync
+    AssignOverrideVariable, While, ElseWhen, Context, ExceptionHandler, BlockSync, ErrorThrow
 from src.core.util import is_ignore_line
 from src.util.console_worker import printer
 
@@ -241,6 +241,9 @@ class BodyParser(Parser):
 
                     previous_command.handlers.append(handler)
                     printer.logging(f"Добавлена команда Handler в Context", level="INFO")
+                case [Tokens.error, *expr, Tokens.end_expr]:
+                    self.commands.append(ErrorThrow(str(), Expression(str(), expr, self.info)))
+                    printer.logging("Парсинг тела завершен: 'ErrorThrow' найден", level="INFO")
                 case [*expr, Tokens.end_expr]:
                     if Tokens.equal in expr:
                         is_string = False

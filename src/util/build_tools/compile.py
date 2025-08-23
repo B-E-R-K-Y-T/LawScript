@@ -43,7 +43,7 @@ from src.core.types.procedure import (
     AssignOverrideVariable,
     When,
     While,
-    Context
+    Context, ErrorThrow
 )
 from src.core.types.rules import Rule
 from src.core.types.sanction_types import SanctionType
@@ -526,6 +526,10 @@ class Compiler:
 
             elif isinstance(statement, Return):
                 printer.logging("Компиляция Return выражения", level="DEBUG")
+                self.expr_compile(statement.expression, statements)
+
+            elif isinstance(statement, ErrorThrow):
+                printer.logging("Компиляция ErrorThrow выражения", level="DEBUG")
                 self.expr_compile(statement.expression, statements)
 
             if isinstance(statement, CodeBlock):

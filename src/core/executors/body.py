@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING, Union, Generator
 
-from src.core.exceptions import ErrorType, NameNotDefine, BaseError, create_law_script_exception_class_instance
+from src.core.exceptions import ErrorType, NameNotDefine, BaseError, create_law_script_exception_class_instance, \
+    InvalidExceptionType, is_def_err
 from src.core.executors.expression import ExpressionExecutor
 from src.core.tokens import Tokens
-from src.core.types.atomic import Number, Yield, String
+from src.core.types.atomic import Number, Yield, String, Void
 from src.core.types.base_declarative_type import BaseDeclarativeType
 from src.core.types.basetype import BaseAtomicType
-from src.core.types.classes import ClassDefinition, ClassField, ClassExceptionDefinition
+from src.core.types.classes import ClassDefinition, ClassField, ClassExceptionDefinition, ClassInstance
 from src.core.types.procedure import (
     Print,
     Return,
@@ -20,7 +21,7 @@ from src.core.types.procedure import (
     Break,
     AssignOverrideVariable,
     While,
-    Context, BlockSync
+    Context, BlockSync, ErrorThrow
 )
 from src.core.executors.base import Executor
 from src.core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
@@ -280,6 +281,28 @@ class BodyExecutor(Executor):
 
                 return command
 
+            elif isinstance(command, ErrorThrow):
+                executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
+                if self.async_mode:
+                    executed = yield from executor.async_execute(as_atomic=True)
+                else:
+                    executed = executor.execute_with_atomic_type()
+
+                if isinstance(executed, ClassExceptionDefinition):
+                    raise executed.base_ex(info=executor.expression.meta_info)
+                elif isinstance(executed, ClassInstance):
+                    if not is_def_err(executed.metadata.parent):
+                        raise InvalidExceptionType(type_ex=executed)
+
+                    info = executed.fields.get(executed.metadata.info_attr_name)
+
+                    raise executed.metadata.base_ex(
+                        info,
+                        info=executor.expression.meta_info,
+                    )
+                else:
+                    raise InvalidExceptionType(type_ex=executed, info=executor.expression.meta_info)
+
             elif isinstance(command, Context):
                 with VariableContextCreator(self.tree_variables):
                     body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
@@ -341,18 +364,20 @@ class BodyExecutor(Executor):
                 body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
 
                 while command.is_blocked:
-                    yield Yield()
+                    if self.async_mode:
+                        yield Yield()
 
                 with command.lock:
                     command.is_blocked = True
 
-                if self.async_mode:
-                    executed = yield from body_executor.async_execute()
-                else:
-                    executed = body_executor.execute()
-
-                with command.lock:
-                    command.is_blocked = False
+                try:
+                    if self.async_mode:
+                        executed = yield from body_executor.async_execute()
+                    else:
+                        executed = body_executor.execute()
+                finally:
+                    with command.lock:
+                        command.is_blocked = False
 
                 if not isinstance(executed, Stop):
                     return executed

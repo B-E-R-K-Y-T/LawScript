@@ -95,6 +95,7 @@ class Tokens(StrEnum):
     handler = "ОБРАБОТЧИК"
     as_ = "КАК"
     blocking = "БЛОКИРОВАТЬ"
+    error = "ОШИБКА"
 
 
 class ServiceTokens(StrEnum):

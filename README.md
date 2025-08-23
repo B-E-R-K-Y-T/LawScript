@@ -17,8 +17,14 @@ python editor/app.py
 
 ## Пример императивного кода
 
+1
 ![img1.png](docs/img1.png)
 
+2
+![img3.png](docs/img3.png)
+
+3
+![img.png](docs/img4.png)
 
 ## Пример декларативного кода
 

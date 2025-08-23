@@ -181,3 +181,12 @@ class BlockSync(CodeBlock):
         super().__init__(name, body)
         self.lock = Lock()
         self.is_blocked = False
+
+
+class ErrorThrow(BaseType):
+    __slots__ = ('expression',)
+
+    def __init__(self, name: str, expression: Expression):
+        super().__init__(name)
+
+        self.expression = expression

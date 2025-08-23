@@ -426,3 +426,19 @@ class OverWaitTaskError(BaseError):
                 msg = f"Невозможно ожидать задачу '{task_name}' более одного раза!"
 
         super().__init__(msg, info=info)
+
+
+@_add_ex
+class InvalidExceptionType(BaseError):
+    exc_name = "НекорректныйТипОшибки"
+
+    def __init__(self, type_ex: Optional[BaseType] = None, msg: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Невозможно возбудить исключение из этого типа"
+
+            if type_ex is not None:
+                msg = f"{msg}: '{type_ex}'"
+            else:
+                msg = f"{msg}!"
+
+        super().__init__(msg, info=info)

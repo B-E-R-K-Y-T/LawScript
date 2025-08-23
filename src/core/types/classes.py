@@ -1,11 +1,9 @@
-from typing import Optional, TypeVar, Generic, TYPE_CHECKING
+from typing import Optional, TypeVar, Generic, TYPE_CHECKING, Type, Union
 
 from src.core.types.atomic import Void
 from src.core.types.basetype import BaseType, BaseAtomicType
 from src.core.types.procedure import Procedure, Body, Expression
-
-if TYPE_CHECKING:
-    from src.core.exceptions import BaseError
+from src.core.exceptions import BaseError, create_define_class_wrap, EXCEPTIONS
 
 
 class Method(Procedure):
@@ -70,25 +68,40 @@ class ClassDefinition(BaseType):
 
 class ClassExceptionDefinition(ClassDefinition):
     def __init__(
-            self, name, *, base_ex, parent: Optional['ClassDefinition'] = None,
+            self, name, *, base_ex: Type[BaseError], parent: Optional['ClassDefinition'] = None,
             methods: Optional[dict[str, ClassField[Method]]] = None, constructor: Optional[Constructor] = None
     ):
         super().__init__(name, parent, methods, constructor)
         self.base_ex = base_ex
+        self.info_attr_name = "информация"
+        self.err_inst_attr_name = "__ошибка__"
 
     def create_instance(
-            self, exception_instance: Optional['BaseError'] = None, children: Optional['ClassInstance'] = None
+            self, exception_instance: Optional[BaseError] = None, children: Optional['ClassInstance'] = None
     ) -> 'ClassInstance':
         from src.core.types.atomic import String, Void
 
+        parent = None
+
         if exception_instance is None:
             exception_instance = Void()
+            ex_cls = EXCEPTIONS.get(self.name)
+
+            if ex_cls is not None:
+                parent = create_define_class_wrap(ex_cls)
 
         ex_inst = super().create_instance(children)
         ex_inst.fields = {
-            "информация": ClassField(String(str(exception_instance))),
-            "__ошибка__": ClassField(BaseAtomicType(exception_instance)),
+            self.info_attr_name: ClassField(String(str(exception_instance))),
+            self.err_inst_attr_name: ClassField(BaseAtomicType(exception_instance)),
         }
+
+        if parent is not None:
+            ex_inst.metadata.parent = parent
+
+        ex_inst.metadata.info_attr_name = self.info_attr_name
+        ex_inst.metadata.err_inst_attr_name = self.err_inst_attr_name
+
         return ex_inst
 
 
@@ -96,7 +109,7 @@ class ClassInstance(BaseAtomicType):
     def __init__(
             self,
             class_name: str,
-            metadata: ClassDefinition,
+            metadata: Union[ClassDefinition, ClassExceptionDefinition],
             children: Optional['ClassInstance'] = None
     ):
         super().__init__("")
