@@ -6,7 +6,7 @@ from src.core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
 standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/"
-name_module = "математика"
+MOD_NAME = "математика"
 
 
 @builder.collect(func_name='степень')
@@ -242,5 +242,9 @@ class Tan(PyExtendWrapper):
         return Number(math.tan(arg.value))
 
 
+def build_module():
+    builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")
+
+
 if __name__ == '__main__':
-    builder.build_python_extend(f"{standard_lib_path}{name_module}")
+    build_module()

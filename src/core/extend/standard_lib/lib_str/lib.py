@@ -6,7 +6,7 @@ from src.core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
 standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/"
-name_module = "строки"
+MOD_NAME = "строки"
 
 
 @builder.collect(func_name='в_строку')
@@ -294,5 +294,9 @@ class RegexMatch(PyExtendWrapper):
             raise ErrorValue("Некорректное регулярное выражение")
 
 
+def build_module():
+    builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")
+
+
 if __name__ == '__main__':
-    builder.build_python_extend(f"{standard_lib_path}{name_module}")
+    build_module()

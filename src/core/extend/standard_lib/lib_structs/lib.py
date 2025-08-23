@@ -31,7 +31,7 @@ class ArrayAppend(PyExtendWrapper):
         self.count_args = 2
 
     def call(self, args: Optional[list[Array]] = None):
-        from src.core.extend.standard_lib.structs.tools import parse_arr_args_two
+        from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_two
         from src.core.types.atomic import Void
 
         array, item = parse_arr_args_two(args)
@@ -48,7 +48,7 @@ class ArrayRemove(PyExtendWrapper):
         self.count_args = 2
 
     def call(self, args: Optional[list[Array]] = None):
-        from src.core.extend.standard_lib.structs.tools import parse_arr_args_two
+        from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_two
         from src.core.types.atomic import Void, Number
         from src.core.exceptions import ErrorType, ErrorIndex
 
@@ -73,7 +73,7 @@ class ArrayGetItem(PyExtendWrapper):
         self.count_args = 2
 
     def call(self, args: Optional[list[Array]] = None):
-        from src.core.extend.standard_lib.structs.tools import parse_arr_args_two
+        from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_two
         from src.core.types.atomic import Number
         from src.core.exceptions import ErrorType, ErrorIndex
 
@@ -99,7 +99,7 @@ class ArraySetItem(PyExtendWrapper):
         self.count_args = 3
 
     def call(self, args: Optional[list[Array]] = None):
-        from src.core.extend.standard_lib.structs.tools import parse_arr_args_inf
+        from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_inf
         from src.core.types.atomic import Number, BaseAtomicType
         from src.core.exceptions import ErrorType, ErrorIndex
         from src.core.types.atomic import Void
@@ -165,6 +165,28 @@ class ArrayLen(PyExtendWrapper):
         arr.value = sorted(arr.value, key=lambda i: i.value)
 
         return arr
+
+
+@builder.collect(func_name='очистить_массив')
+class ArrayClear(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[Array]] = None):
+        from src.core.types.atomic import Array, Void
+        from src.core.exceptions import ErrorValue
+
+        arr = args[0]
+
+        if not isinstance(arr, Array):
+            raise ErrorValue("Аргумент должен быть массивом.")
+
+        arr = arr.value
+        arr.clear()
+
+        return Void()
 
 
 @builder.collect(func_name='таблица')
@@ -285,5 +307,9 @@ class TableLen(PyExtendWrapper):
         return Number(len(table))
 
 
-if __name__ == '__main__':
+def build_module():
     builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")
+
+
+if __name__ == '__main__':
+    build_module()

@@ -8,6 +8,8 @@ from src.core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
 standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/"
+MOD_NAME = "время"
+
 
 @builder.collect(func_name='временная_метка')
 class Time(PyExtendWrapper):
@@ -59,6 +61,8 @@ class BackgroundSleep(PyExtendWrapper):
         if not isinstance(args[0], Number):
             raise ErrorType('Первый аргумент должен быть числом')
 
+        name = self.func_name
+
         class SleepTask(AbstractBackgroundTask):
             def __init__(self):
                 self.sleep_time = args[0].value
@@ -66,7 +70,7 @@ class BackgroundSleep(PyExtendWrapper):
                 self._done = False
                 self._lock = Lock()
                 self._gen_sleep = self.sleep()
-                super().__init__(SleepTask.__name__, self.sleep_time)
+                super().__init__(name, self.sleep_time)
 
             def sleep(self):
                 start_time = time.time()
@@ -102,5 +106,9 @@ class BackgroundSleep(PyExtendWrapper):
         return SleepTask()
 
 
+def build_module():
+    builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")
+
+
 if __name__ == '__main__':
-    builder.build_python_extend(f"{standard_lib_path}время")
+    build_module()
