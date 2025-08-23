@@ -46,7 +46,6 @@ def is_def_err(ex: BaseType):
     return False
 
 
-
 def create_define_class_wrap(exception: Type['BaseError']) -> 'ClassExceptionDefinition':
     from src.core.types.classes import ClassExceptionDefinition, Constructor
     from src.core.types.code_block import Body

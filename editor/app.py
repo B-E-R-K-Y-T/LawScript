@@ -53,7 +53,7 @@ class SyntaxHighlighter:
                     Tokens.run, Tokens.in_, Tokens.background, Tokens.execute,
                     Tokens.docs, Tokens.space, Tokens.class_, Tokens.extend,
                     Tokens.constructor, Tokens.method, Tokens.context,
-                    Tokens.handler, Tokens.as_
+                    Tokens.handler, Tokens.as_, Tokens.blocking,
                 ],
                 'color': 'blue',
                 'case_sensitive': False

@@ -79,7 +79,10 @@ class ClassExceptionDefinition(ClassDefinition):
     def create_instance(
             self, exception_instance: Optional['BaseError'] = None, children: Optional['ClassInstance'] = None
     ) -> 'ClassInstance':
-        from src.core.types.atomic import String
+        from src.core.types.atomic import String, Void
+
+        if exception_instance is None:
+            exception_instance = Void()
 
         ex_inst = super().create_instance(children)
         ex_inst.fields = {

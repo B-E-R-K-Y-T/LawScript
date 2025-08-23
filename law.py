@@ -80,6 +80,6 @@ class Law:
 if __name__ == '__main__':
     law = Law()
     # law.run()
-    file = "tests\\test_25.raw"
+    file = "tests\\test_26.raw"
     run_file(file)
     # build(file)

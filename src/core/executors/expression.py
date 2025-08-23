@@ -466,6 +466,21 @@ class ExpressionExecutor(Executor):
                 operands = self.get_operands(evaluate_stack)
                 evaluate_stack.append(operands.atomic_type(operands.left.sub(operands.right)))
 
+            elif operation.operator == Tokens.plus:
+                if len(evaluate_stack) == 1:
+                    operand = evaluate_stack.pop(-1)
+
+                    if isinstance(operand, ClassField):
+                        operand = operand.value
+
+                    atomic_type = type(operand)
+
+                    evaluate_stack.append(atomic_type(operand.pos()))
+                    continue
+
+                operands = self.get_operands(evaluate_stack)
+                evaluate_stack.append(operands.atomic_type(operands.left.add(operands.right)))
+
             elif operation.operator == Tokens.star:
                 operands = self.get_operands(evaluate_stack)
                 evaluate_stack.append(operands.atomic_type(operands.left.mul(operands.right)))
@@ -510,25 +525,22 @@ class ExpressionExecutor(Executor):
                 operands = self.get_operands(evaluate_stack)
                 evaluate_stack.append(Boolean(operands.left.lt(operands.right)))
 
-            elif operation.operator == Tokens.plus:
-                if len(evaluate_stack) == 1:
-                    operand = evaluate_stack.pop(-1)
-                    atomic_type = type(operand)
-
-                    evaluate_stack.append(atomic_type(operand.pos()))
-                    continue
-
-                operands = self.get_operands(evaluate_stack)
-                evaluate_stack.append(operands.atomic_type(operands.left.add(operands.right)))
-
             elif operation.operator == ServiceTokens.unary_minus:
                 operand = evaluate_stack.pop(-1)
+
+                if isinstance(operand, ClassField):
+                    operand = operand.value
+
                 atomic_type = type(operand)
 
                 evaluate_stack.append(atomic_type(operand.neg()))
 
             elif operation.operator == ServiceTokens.unary_plus:
                 operand = evaluate_stack.pop(-1)
+
+                if isinstance(operand, ClassField):
+                    operand = operand.value
+
                 atomic_type = type(operand)
 
                 evaluate_stack.append(atomic_type(operand.pos()))

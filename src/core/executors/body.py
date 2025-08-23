@@ -74,15 +74,51 @@ class BodyExecutor(Executor):
 
     def _execute(self) -> Union[Generator, Union[BaseAtomicType, Continue, Break]]:
         for command in self.body.commands:
-            if isinstance(command, Return):
-                executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
+            if isinstance(command, Expression):
+                executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
 
                 if self.async_mode:
-                    executed = yield from executor.async_execute(as_atomic=True)
+                    yield from executor.execute(self.async_mode)
                 else:
-                    executed = executor.execute_with_atomic_type()
+                    executor.execute_with_atomic_type()
 
-                return executed
+            elif isinstance(command, AssignOverrideVariable):
+                target_expr_executor = ExpressionExecutor(command.target_expr, self.tree_variables, self.compiled)
+                override_expr_executor = ExpressionExecutor(command.override_expr, self.tree_variables, self.compiled)
+
+                if self.async_mode:
+                    override_expr_result = yield from override_expr_executor.execute(self.async_mode)
+                else:
+                    override_expr_result = override_expr_executor.execute_with_atomic_type()
+
+                if len(command.target_expr.operations) == 1:
+                    target_name = command.target_expr.operations[0].name
+
+                    try:
+                        var = self.tree_variables.get(target_name)
+                    except NameNotDefine as e:
+                        raise NameNotDefine(str(e), info=command.meta_info)
+
+                    override_expr_result.name = target_name
+                    var.set_value(override_expr_result)
+
+                    continue
+
+                if self.async_mode:
+                    target = yield from target_expr_executor.execute(self.async_mode)
+                else:
+                    target = target_expr_executor.execute()
+
+                if isinstance(target, ClassField):
+                    target.value = override_expr_result
+                    continue
+
+                try:
+                    var = self.tree_variables.get(target.name)
+                except NameNotDefine as e:
+                    raise NameNotDefine(str(e), info=command.meta_info)
+
+                var.set_value(override_expr_result)
 
             elif isinstance(command, AssignField):
                 if command.name in self.tree_variables.scopes[-1].variables:
@@ -107,26 +143,6 @@ class BodyExecutor(Executor):
                     executed = executor.execute_with_atomic_type()
 
                 printer.raw_print(executed)
-
-            elif isinstance(command, BlockSync):
-                body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
-
-                while command.is_blocked:
-                    yield Yield()
-
-                with command.lock:
-                    command.is_blocked = True
-
-                if self.async_mode:
-                    executed = yield from body_executor.async_execute()
-                else:
-                    executed = body_executor.execute()
-
-                with command.lock:
-                    command.is_blocked = False
-
-                if not isinstance(executed, Stop):
-                    return executed
 
             elif isinstance(command, When):
                 executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
@@ -252,52 +268,6 @@ class BodyExecutor(Executor):
                         elif not isinstance(executed, Stop):
                             return executed
 
-            elif isinstance(command, Expression):
-                executor = ExpressionExecutor(command, self.tree_variables, self.compiled)
-
-                if self.async_mode:
-                    yield from executor.execute(self.async_mode)
-                else:
-                    executor.execute_with_atomic_type()
-
-            elif isinstance(command, AssignOverrideVariable):
-                target_expr_executor = ExpressionExecutor(command.target_expr, self.tree_variables, self.compiled)
-                override_expr_executor = ExpressionExecutor(command.override_expr, self.tree_variables, self.compiled)
-
-                if self.async_mode:
-                    override_expr_result = yield from override_expr_executor.execute(self.async_mode)
-                else:
-                    override_expr_result = override_expr_executor.execute_with_atomic_type()
-
-                if len(command.target_expr.operations) == 1:
-                    target_name = command.target_expr.operations[0].name
-
-                    try:
-                        var = self.tree_variables.get(target_name)
-                    except NameNotDefine as e:
-                        raise NameNotDefine(str(e), info=command.meta_info)
-
-                    override_expr_result.name = target_name
-                    var.set_value(override_expr_result)
-
-                    continue
-
-                if self.async_mode:
-                    target = yield from target_expr_executor.execute(self.async_mode)
-                else:
-                    target = target_expr_executor.execute()
-
-                if isinstance(target, ClassField):
-                    target.value = override_expr_result
-                    continue
-
-                try:
-                    var = self.tree_variables.get(target.name)
-                except NameNotDefine as e:
-                    raise NameNotDefine(str(e), info=command.meta_info)
-
-                var.set_value(override_expr_result)
-
             elif isinstance(command, Continue):
                 if self.async_mode:
                     yield Yield()
@@ -356,6 +326,36 @@ class BodyExecutor(Executor):
                             break
                         else:
                             raise
+
+            elif isinstance(command, Return):
+                executor = ExpressionExecutor(command.expression, self.tree_variables, self.compiled)
+
+                if self.async_mode:
+                    executed = yield from executor.async_execute(as_atomic=True)
+                else:
+                    executed = executor.execute_with_atomic_type()
+
+                return executed
+
+            elif isinstance(command, BlockSync):
+                body_executor = BodyExecutor(command.body, self.tree_variables, self.compiled)
+
+                while command.is_blocked:
+                    yield Yield()
+
+                with command.lock:
+                    command.is_blocked = True
+
+                if self.async_mode:
+                    executed = yield from body_executor.async_execute()
+                else:
+                    executed = body_executor.execute()
+
+                with command.lock:
+                    command.is_blocked = False
+
+                if not isinstance(executed, Stop):
+                    return executed
 
             else:
                 raise ErrorType(f"Неизвестная команда '{command.name}'!", info=command.meta_info)
