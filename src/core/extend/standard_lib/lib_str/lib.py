@@ -5,7 +5,7 @@ from src.core.extend.function_wrap import PyExtendWrapper, PyExtendBuilder
 from src.core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
-standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/"
+standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/строки/"
 MOD_NAME = "строки"
 
 
