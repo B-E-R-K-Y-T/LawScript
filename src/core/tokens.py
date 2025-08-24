@@ -19,6 +19,7 @@ class Tokens(StrEnum):
     end_expr = ";"
     attr_access = ":"
     quotation = "\""
+    slash = "\\"
 
     define = "ОПРЕДЕЛИТЬ"
     print_ = "НАПЕЧАТАТЬ"
