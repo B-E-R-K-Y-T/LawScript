@@ -13,7 +13,7 @@ from src.core.extend.function_wrap import PyExtendWrapper
 from src.core.parse.base import MetaObject
 from src.core.parse.util.rpn import build_rpn_stack
 from src.core.tokens import Tokens, NOT_ALLOWED_TOKENS
-from src.core.types.atomic import Array, String
+from src.core.types.atomic import Array, String, Table
 from src.core.types.basetype import BaseType
 from src.core.types.checkers import CheckerSituation
 from src.core.types.classes import Method, Constructor, ClassDefinition, ClassExceptionDefinition
@@ -354,7 +354,9 @@ class Compiler:
                 Tokens.condition,
                 Criteria
             )
-            compiled_obj.fields["__критерии__"] = Array([String(k) for k in compiled_obj.criteria.modify.keys()])
+            compiled_obj.fields["__критерии__"] = Table(
+                {String(k): v.value for k, v in compiled_obj.criteria.modify.items()}
+            )
 
         elif isinstance(compiled_obj, FactSituation):
             compiled_obj.object_ = self.process_literal_field(
