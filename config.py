@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     compiled_postfix: str = Field(default="law")
     py_extend_postfix: str = Field(default="pyl")
     max_running_threads_tasks: int = Field(
-        default=min(2, os.cpu_count() or 1),
+        # default=min(2, os.cpu_count() or 1),
+        default=max(1, os.cpu_count() or 1),
         ge=1,
         le=os.cpu_count() or 1
     )
@@ -24,6 +25,8 @@ class Settings(BaseSettings):
     wait_task_time: float = Field(default=.001)
     std_name: str = Field(default="стандартная_библиотека")
     standard_lib_path_postfix: str = Field(default="/core/extend/standard_lib/modules")
+    task_thread_switch_interval: float = Field(default=.1)
+    step_task_size_to_sleep: int = Field(default=10)
 
     @field_validator("std_name")
     def validate_std_name(cls, value: str) -> str:

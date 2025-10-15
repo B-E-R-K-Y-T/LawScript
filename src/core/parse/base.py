@@ -86,8 +86,6 @@ class Parser(ABC):
                 is_string = not is_string
 
             if is_string:
-                # if offset + 1 <= len(raw_line):
-                #     if symbol == Tokens.slash and
                 continue
 
             match symbol:

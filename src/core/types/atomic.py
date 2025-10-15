@@ -1,7 +1,55 @@
-from typing import Union, Final
+from typing import Union, Final, Any, MutableMapping, Optional
 
+from src.core.exceptions import ErrorType
 from src.core.tokens import Tokens
 from src.core.types.basetype import BaseAtomicType
+
+
+def convert_atomic_type_to_py_type(atomic_obj: BaseAtomicType) -> Any:
+    if isinstance(atomic_obj, Number):
+        value = atomic_obj.value
+        return int(value) if isinstance(value, int) or value.is_integer() else float(value)
+
+    elif isinstance(atomic_obj, String):
+        return atomic_obj.value
+
+    elif isinstance(atomic_obj, Array):
+        return [convert_atomic_type_to_py_type(item) for item in atomic_obj.value]
+
+    elif isinstance(atomic_obj, Table):
+        result = {}
+        for key, value in atomic_obj.value.items():
+            if isinstance(key, String):
+                py_key = key.value
+            else:
+                py_key = str(key)
+            result[py_key] = convert_atomic_type_to_py_type(value)
+        return result
+
+    return atomic_obj
+
+
+def convert_py_type_to_atomic_type(py_obj: Any) -> BaseAtomicType:
+    if isinstance(py_obj, (int, float)):
+        return Number(py_obj)
+    elif isinstance(py_obj, str):
+        return String(py_obj)
+    elif isinstance(py_obj, (tuple, list)):
+        array = []
+
+        for offset, item in enumerate(py_obj):
+            array.append(convert_py_type_to_atomic_type(item))
+
+        return Array(array)
+    elif isinstance(py_obj, (dict, MutableMapping)):
+        table = {}
+
+        for key, value in py_obj.items():
+            table[String(str(key))] = convert_py_type_to_atomic_type(value)
+
+        return Table(table)
+
+    raise ErrorType(f"Тип '{type(py_obj)}' невозможно преобразовать")
 
 
 class String(BaseAtomicType):
@@ -94,7 +142,10 @@ class Array(BaseAtomicType):
 
 
 class Table(BaseAtomicType):
-    def __init__(self, value: dict[String, BaseAtomicType]):
+    def __init__(self, value: Optional[dict[String, BaseAtomicType]] = None):
+        if value is None:
+            value = {}
+
         super().__init__(value)
 
     def get(self, key: String):

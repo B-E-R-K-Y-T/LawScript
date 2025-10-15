@@ -1,7 +1,13 @@
 from typing import TYPE_CHECKING, Union, Generator, Final
 
-from src.core.exceptions import ErrorType, NameNotDefine, BaseError, create_law_script_exception_class_instance, \
-    InvalidExceptionType, is_def_err
+from src.core.exceptions import (
+    ErrorType,
+    NameNotDefine,
+    BaseError,
+    create_law_script_exception_class_instance,
+    InvalidExceptionType,
+    is_def_err,
+)
 from src.core.executors.expression import ExpressionExecutor
 from src.core.tokens import Tokens
 from src.core.types.atomic import Number, YIELD
@@ -21,7 +27,9 @@ from src.core.types.procedure import (
     Break,
     AssignOverrideVariable,
     While,
-    Context, BlockSync, ErrorThrow
+    Context,
+    BlockSync,
+    ErrorThrow
 )
 from src.core.executors.base import Executor
 from src.core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope

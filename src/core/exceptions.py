@@ -436,9 +436,21 @@ class InvalidExceptionType(BaseError):
         if msg is None:
             msg = "Невозможно возбудить исключение из этого типа"
 
-            if type_ex is not None:
-                msg = f"{msg}: '{type_ex}'"
-            else:
-                msg = f"{msg}!"
+        if type_ex is not None:
+            msg = f"{msg}: '{type_ex}'"
+
+        super().__init__(msg, info=info)
+
+
+@_add_ex
+class HttpError(BaseError):
+    exc_name = "ОшибкаПротоколаПередачиГиперТекста"
+
+    def __init__(self, status: Optional[int] = None, msg: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Ошибка запроса."
+
+        if status is not None:
+            msg = f"{msg}: статус код ответа: '{status}'"
 
         super().__init__(msg, info=info)

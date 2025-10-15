@@ -1,5 +1,7 @@
+import time
 from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable, Generator, Iterable
 
+from config import settings
 from src.core.background_task.schedule import get_task_scheduler
 from src.core.background_task.task import ProcedureBackgroundTask, AbstractBackgroundTask
 from src.core.call_func_stack import call_func_stack_builder
@@ -558,8 +560,14 @@ class ExpressionExecutor(Executor):
                 if task.is_waited():
                     raise OverWaitTaskError(task.name, info=self.expression.meta_info)
 
+                wait_count = 0
                 while not task.done:
-                    yield YIELD
+                    if wait_count % settings.step_task_size_to_sleep == 0:
+                        time.sleep(settings.task_thread_switch_interval)
+                    else:
+                        yield YIELD
+
+                    wait_count += 1
 
                 task.set_waited()
                 if task.is_error_result:

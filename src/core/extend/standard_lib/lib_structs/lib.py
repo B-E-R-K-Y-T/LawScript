@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from src.core.extend.function_wrap import PyExtendWrapper, PyExtendBuilder
-from src.core.types.atomic import Array, VOID
+from src.core.types.atomic import Array
 from src.core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
@@ -49,7 +49,7 @@ class ArrayRemove(PyExtendWrapper):
 
     def call(self, args: Optional[list[Array]] = None):
         from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_two
-        from src.core.types.atomic import Void, Number
+        from src.core.types.atomic import VOID, Number
         from src.core.exceptions import ErrorType, ErrorIndex
 
         array, item = parse_arr_args_two(args)
@@ -258,7 +258,7 @@ class TableGetValue(PyExtendWrapper):
             raise ErrorValue("Первый аргумент должен быть таблицей.")
 
         if key not in table:
-            raise ErrorValue("Ключ не найден.")
+            raise ErrorValue(f"Ключ '{key}' не найден.")
 
         return table[key]
 

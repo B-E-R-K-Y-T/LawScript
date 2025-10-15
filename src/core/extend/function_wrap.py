@@ -5,7 +5,7 @@ import dill
 
 from config import settings
 from src.core.exceptions import BaseError, ArgumentError
-from src.core.types.atomic import Array
+from src.core.types.atomic import Array, convert_atomic_type_to_py_type
 from src.core.types.basetype import BaseAtomicType, BaseType
 from src.core.types.line import Info
 
@@ -24,6 +24,9 @@ class PyExtendWrapper(BaseType, ABC):
     def check_args(self, args: Optional[list[BaseAtomicType]] = None):
         if not self.empty_args and args is None:
             raise ArgumentError(f"Необходимо передать аргументы в процедуру '{self.func_name}'")
+
+        elif args is None and self.empty_args:
+            return
 
         if self.count_args == 0 and args is None:
             return
@@ -59,26 +62,8 @@ class PyExtendWrapper(BaseType, ABC):
             if not isinstance(arg, BaseAtomicType):
                 raise ArgumentError(f"Аргумент '{arg}' не является экземпляром типа: '{BaseAtomicType.__name__}'")
 
-            if isinstance(arg, Array):
-                def _parse_array(array: Array) -> list:
-                    new_array = []
-
-                    for idx, item in enumerate(array.value):
-                        if isinstance(item, Array):
-                            new_array.append(_parse_array(item))
-
-                        elif isinstance(item, BaseAtomicType):
-                            new_array.append(item.value)
-
-                        else:
-                            new_array.append(item)
-
-                    return new_array
-
-                result.append(_parse_array(arg))
-                continue
-
-            result.append(arg.value)
+            py_obj = convert_atomic_type_to_py_type(arg)
+            result.append(py_obj)
 
         if self.offset_required_args != -1 and len(args) < self.count_args:
             for _ in range(len(args) - self.offset_required_args + 1):

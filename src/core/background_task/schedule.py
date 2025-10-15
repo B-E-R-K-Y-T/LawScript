@@ -43,7 +43,9 @@ class ThreadWorker:
             printer.print_warning(warn.rstrip(), self.thread.name)
 
         if self.thread:
-            self.thread.join(timeout=1.0)
+            self.thread.join(timeout=1.15)
+
+        printer.logging(f"{self.thread=} Остановлен")
 
     def is_active(self):
         return self._is_active
