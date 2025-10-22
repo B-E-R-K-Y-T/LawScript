@@ -76,7 +76,9 @@ class BackgroundSleep(PyExtendWrapper):
                 start_time = time.time()
 
                 while time.time() - start_time < self.sleep_time:
-                   yield YIELD
+                    yield YIELD
+
+                return VOID
 
             def next_command(self):
                 try:

@@ -24,12 +24,13 @@ class Settings(BaseSettings):
         ge=1,
         le=_MAX_THREAD
     )
-    ttl_thread: float = Field(default=1)
+    ttl_thread: float = Field(default=10)
     wait_task_time: float = Field(default=.001)
     std_name: str = Field(default="стандартная_библиотека")
     standard_lib_path_postfix: str = Field(default="/core/extend/standard_lib/modules")
-    task_thread_switch_interval: float = Field(default=.1)
+    task_thread_switch_interval: float = Field(default=.00001)
     step_task_size_to_sleep: int = Field(default=10)
+    time_to_join_thread: float = Field(default=0)
 
     @field_validator("std_name")
     def validate_std_name(cls, value: str) -> str:
