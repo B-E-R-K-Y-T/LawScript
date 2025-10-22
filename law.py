@@ -74,12 +74,12 @@ class Law:
         finally:
             get_task_scheduler().shutdown()
             working_time = time.perf_counter() - start
-            yellow_print(f"Затрачено времени: {working_time:.5f}ms")
+            yellow_print(f"Затрачено времени: {working_time:.5f}s")
 
 
 if __name__ == '__main__':
     law = Law()
     law.run()
-    # file = "tests\\test_28.raw"
+    # file = "tests\\test_29.raw"
     # run_file(file)
     # build(file)

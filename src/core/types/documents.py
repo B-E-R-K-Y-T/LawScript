@@ -26,14 +26,15 @@ class Document(BaseDeclarativeType):
 
 
 class FactSituation(BaseDeclarativeType):
-    def __init__(self, name: str, object_: Object, subject: Subject, data: dict[String, BaseAtomicType]):
+    def __init__(self, name: str, object_: Object, subject: Subject, data: dict[str, BaseAtomicType]):
         super().__init__(name)
         self.object_ = object_
         self.subject = subject
         self.data = data
 
-        self.fields["__данные__"] = Table(self.data)
-
+        self.fields["__данные__"] = Table(
+            {String(k): v for k, v in self.data.items()}
+        )
 
     def __repr__(self):
         return f"{FactSituation.__name__}(__данные__={self.data})"

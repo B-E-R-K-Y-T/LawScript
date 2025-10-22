@@ -13,17 +13,22 @@ def convert_atomic_type_to_py_type(atomic_obj: BaseAtomicType) -> Any:
     elif isinstance(atomic_obj, String):
         return atomic_obj.value
 
+    elif isinstance(atomic_obj, Boolean):
+        return atomic_obj.value
+
     elif isinstance(atomic_obj, Array):
         return [convert_atomic_type_to_py_type(item) for item in atomic_obj.value]
 
     elif isinstance(atomic_obj, Table):
         result = {}
+
         for key, value in atomic_obj.value.items():
             if isinstance(key, String):
                 py_key = key.value
             else:
                 py_key = str(key)
             result[py_key] = convert_atomic_type_to_py_type(value)
+
         return result
 
     return atomic_obj
@@ -32,8 +37,13 @@ def convert_atomic_type_to_py_type(atomic_obj: BaseAtomicType) -> Any:
 def convert_py_type_to_atomic_type(py_obj: Any) -> BaseAtomicType:
     if isinstance(py_obj, (int, float)):
         return Number(py_obj)
+
     elif isinstance(py_obj, str):
         return String(py_obj)
+
+    elif isinstance(py_obj, bool):
+        return Boolean(py_obj)
+
     elif isinstance(py_obj, (tuple, list)):
         array = []
 
@@ -41,6 +51,7 @@ def convert_py_type_to_atomic_type(py_obj: Any) -> BaseAtomicType:
             array.append(convert_py_type_to_atomic_type(item))
 
         return Array(array)
+
     elif isinstance(py_obj, (dict, MutableMapping)):
         table = {}
 

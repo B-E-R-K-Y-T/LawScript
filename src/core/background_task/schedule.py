@@ -36,7 +36,7 @@ class ThreadWorker:
 
         warn = ""
 
-        for offset, task in enumerate(self.tasks):
+        for task in self.tasks:
             warn += f"Задача [{task.id}] '{task.name}' не была завершена корректно!\n"
 
         if warn:

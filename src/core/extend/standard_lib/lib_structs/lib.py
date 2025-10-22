@@ -144,16 +144,24 @@ class ArrayLen(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
         self.empty_args = False
-        self.count_args = 1
+        self.offset_required_args = 1
+        self.count_args = 2
 
     def call(self, args: Optional[list[Array]] = None):
-        from src.core.types.atomic import Array, BaseAtomicType
+        from src.core.types.atomic import Array, BaseAtomicType, Boolean
         from src.core.exceptions import ErrorValue
 
         arr = args[0]
+        is_reverse = False
+
+        if len(args) > 1:
+            if not isinstance(args[1], Boolean):
+                raise ErrorValue("Второй аргумент должен быть логическим.")
+
+            is_reverse = self.parse_args([args[1]])[0]
 
         if not isinstance(arr, Array):
-            raise ErrorValue("Аргумент должен быть массивом.")
+            raise ErrorValue("Первый аргумент должен быть массивом.")
 
         for item in arr.value:
             if isinstance(item, Array):
@@ -162,7 +170,7 @@ class ArrayLen(PyExtendWrapper):
             if not isinstance(item, BaseAtomicType):
                 raise ErrorValue("Аргументы массива должны быть атомарными типами.")
 
-        arr.value = sorted(arr.value, key=lambda i: i.value)
+        arr.value = sorted(arr.value, key=lambda i: i.value, reverse=is_reverse)
 
         return arr
 

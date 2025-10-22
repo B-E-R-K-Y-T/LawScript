@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Final
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,6 +10,9 @@ from rich.panel import Panel
 from rich.text import Text
 
 
+_MAX_THREAD: Final[int] = os.cpu_count() * 2 - 1 or 1
+
+
 class Settings(BaseSettings):
     debug: bool = Field(default=False)
     max_recursion_depth: int = Field(default=10_000)
@@ -16,10 +20,9 @@ class Settings(BaseSettings):
     compiled_postfix: str = Field(default="law")
     py_extend_postfix: str = Field(default="pyl")
     max_running_threads_tasks: int = Field(
-        # default=min(2, os.cpu_count() or 1),
-        default=max(1, os.cpu_count() or 1),
+        default=max(1, _MAX_THREAD),
         ge=1,
-        le=os.cpu_count() or 1
+        le=_MAX_THREAD
     )
     ttl_thread: float = Field(default=1)
     wait_task_time: float = Field(default=.001)

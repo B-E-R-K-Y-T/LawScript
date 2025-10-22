@@ -169,8 +169,12 @@ class BodyParser(Parser):
                     previous_command.else_ = else_
 
                     printer.logging("Добавлена команда Else", level="INFO")
+                case [Tokens.assign, name, Tokens.end_expr]:
+                    self.parse_assign(name, [Tokens.void], line)
+                    printer.logging(f"Добавлено объявление переменной '{name}'", level="INFO")
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
                     self.parse_assign(name, expr, line)
+                    printer.logging(f"Добавлено объявление переменной '{name}'", level="INFO")
                 case [Tokens.while_, *expr, Tokens.left_bracket]:
                     self.commands.append(
                         While(
