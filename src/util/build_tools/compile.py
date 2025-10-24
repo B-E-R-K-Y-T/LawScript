@@ -129,12 +129,12 @@ class Compiler:
 
             elif isinstance(statement, Continue):
                 raise InvalidSyntaxError(
-                    f"Оператор {Tokens.continue_} встретился вне цикла.", info=statement.meta_info
+                    f"Оператор '{Tokens.continue_}' встретился вне цикла.", info=statement.meta_info
                 )
 
             elif isinstance(statement, Break):
                 raise InvalidSyntaxError(
-                    f"Оператор {Tokens.break_} встретился вне цикла.", info=statement.meta_info
+                    f"Оператор '{Tokens.break_}' встретился вне цикла.", info=statement.meta_info
                 )
 
             elif isinstance(statement, CodeBlock):
