@@ -16,6 +16,9 @@ def convert_atomic_type_to_py_type(atomic_obj: BaseAtomicType) -> Any:
     elif isinstance(atomic_obj, Boolean):
         return atomic_obj.value
 
+    elif isinstance(atomic_obj, Void):
+        return atomic_obj.value
+
     elif isinstance(atomic_obj, Array):
         return [convert_atomic_type_to_py_type(item) for item in atomic_obj.value]
 
@@ -40,6 +43,9 @@ def convert_py_type_to_atomic_type(py_obj: Any) -> BaseAtomicType:
 
     elif isinstance(py_obj, str):
         return String(py_obj)
+
+    elif py_obj is None:
+        return VOID
 
     elif isinstance(py_obj, bool):
         return Boolean(py_obj)

@@ -30,9 +30,6 @@ class GetType(PyExtendWrapper):
         elif isinstance(arg, ClassDefinition):
             return String(arg.name)
 
-        elif isinstance(arg, ClassDefinition):
-            return String(arg.name)
-
         elif isinstance(arg, BaseAtomicType):
             return String(arg.__class__.type_name())
 
