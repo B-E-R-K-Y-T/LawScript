@@ -86,7 +86,7 @@ class PyExtendWrapper(BaseType, ABC):
                     f"но передано: {len(args)}"
                 )
 
-    def parse_args(self, args: Optional[list[BaseAtomicType]] = None) -> list:
+    def parse_args(self, args: Optional[list[BaseAtomicType]] = None, *, strict: bool = False) -> list:
         if args is None:
             return []
 
@@ -96,7 +96,7 @@ class PyExtendWrapper(BaseType, ABC):
             if not isinstance(arg, BaseAtomicType):
                 raise ArgumentError(f"Аргумент '{arg}' не является экземпляром типа: '{BaseAtomicType.__name__}'")
 
-            py_obj = convert_atomic_type_to_py_type(arg)
+            py_obj = convert_atomic_type_to_py_type(arg, strict=strict )
             result.append(py_obj)
 
         if self.offset_required_args != -1 and len(args) < self.count_args:

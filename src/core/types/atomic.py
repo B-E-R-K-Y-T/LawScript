@@ -5,7 +5,7 @@ from src.core.tokens import Tokens
 from src.core.types.basetype import BaseAtomicType
 
 
-def convert_atomic_type_to_py_type(atomic_obj: BaseAtomicType) -> Any:
+def convert_atomic_type_to_py_type(atomic_obj: BaseAtomicType, *, strict: bool = False) -> Any:
     if isinstance(atomic_obj, Number):
         value = atomic_obj.value
         return int(value) if isinstance(value, int) or value.is_integer() else float(value)
@@ -33,6 +33,9 @@ def convert_atomic_type_to_py_type(atomic_obj: BaseAtomicType) -> Any:
             result[py_key] = convert_atomic_type_to_py_type(value)
 
         return result
+
+    if strict:
+        raise ErrorType(f"Невозможно преобразовать тип '{type(atomic_obj)}' к Python объекту!")
 
     return atomic_obj
 
