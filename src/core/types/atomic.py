@@ -67,10 +67,12 @@ class String(BaseAtomicType):
     def __init__(self, value: str):
         super().__init__(value)
 
+    @classmethod
+    def type_name(cls):
+        return "Строка"
 
     def __hash__(self) -> int:
         return hash(self.value)
-
 
     def __eq__(self, other):
         if isinstance(other, String):
@@ -86,6 +88,10 @@ class Number(BaseAtomicType):
     def is_int(self) -> bool:
         return isinstance(self.value, int)
 
+    @classmethod
+    def type_name(cls):
+        return "Число"
+
     def __str__(self) -> str:
         if isinstance(self.value, float):
             if self.value == float("inf"):
@@ -99,6 +105,10 @@ class Number(BaseAtomicType):
 class Boolean(BaseAtomicType):
     def __init__(self, value: bool):
         super().__init__(value)
+
+    @classmethod
+    def type_name(cls):
+        return "Логический"
 
     def __str__(self):
         if self.value:
@@ -145,6 +155,10 @@ class Array(BaseAtomicType):
 
         return "[" + result[2:] + "]"
 
+    @classmethod
+    def type_name(cls):
+        return "Массив"
+
     def __setitem__(self, key, value):
         self.value[key] = value
 
@@ -170,6 +184,10 @@ class Table(BaseAtomicType):
 
     def len(self) -> Number:
         return Number(len(self.value))
+
+    @classmethod
+    def type_name(cls):
+        return "Таблица"
 
     def __contains__(self, key):
         return key in self.value
@@ -200,6 +218,10 @@ class Table(BaseAtomicType):
 class Void(BaseAtomicType):
     def __init__(self):
         super().__init__(None)
+
+    @classmethod
+    def type_name(cls):
+        return "Пустота"
 
     def __str__(self) -> str:
         return Tokens.void

@@ -412,7 +412,7 @@ class Compiler:
                 continue
 
             if op in NOT_ALLOWED_TOKENS:
-                error_msg = f"Неверный синтаксис. Нельзя использовать операторы в выражениях: {op}"
+                error_msg = f"Неверный синтаксис. Нельзя использовать операторы в выражениях: '{op}'"
                 printer.logging(error_msg, level="ERROR")
                 raise InvalidSyntaxError(
                     error_msg,
@@ -554,7 +554,6 @@ class Compiler:
             ex_def = create_define_class_wrap(ex)
 
             self.compiled[ex_def.name] = ex_def
-
 
         for idx, meta in enumerate(self.ast):
             compiled = self.execute_compile(meta)

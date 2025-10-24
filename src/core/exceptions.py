@@ -183,7 +183,7 @@ class InvalidSyntaxError(BaseError):
 class InvalidLevelDegree(BaseError):
     exc_name = "ОшибкаЗначенияТипа"
 
-    def __init__(self, degree: Optional[str] = None):
+    def __init__(self, degree: Optional[str] = None, *, info: Optional[Info] = None):
         if degree is None:
             msg = "Ошибка значения типа!"
         else:
@@ -192,7 +192,7 @@ class InvalidLevelDegree(BaseError):
                 f"Используйте один из следующих типов: {[str(level) for level in Levels]}"
             )
 
-        super().__init__(msg)
+        super().__init__(msg, info=info)
 
 
 @_add_ex
@@ -201,7 +201,7 @@ class InvalidType(BaseError):
 
     def __init__(
             self, value: Optional[Any] = None, type_: Optional[str] = None,
-            line: Optional[list[str]] = None
+            line: Optional[list[str]] = None, *, info: Optional[Info] = None
     ):
         msg = "Некорректный тип!"
 
@@ -211,18 +211,18 @@ class InvalidType(BaseError):
         if line is not None:
             msg = f"Ошибка в строке: '{" ".join(line)} ' \n{msg}"
 
-        super().__init__(msg)
+        super().__init__(msg, info=info)
 
 
 @_add_ex
 class UnknownType(BaseError):
     exc_name = "НеизвестныйТип"
 
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self, msg: Optional[str] = None, *, info: Optional[Info] = None):
         if msg is None:
             msg = "Неизвестный тип!"
 
-        super().__init__(msg)
+        super().__init__(msg, info=info)
 
 
 @_add_ex
@@ -305,13 +305,13 @@ class NameNotDefine(BaseError):
 class FieldNotDefine(BaseError):
     exc_name = "ОшибкаПолеНеОпределено"
 
-    def __init__(self, field: Optional[str] = None, define: Optional[str] = None):
+    def __init__(self, field: Optional[str] = None, define: Optional[str] = None, *, info: Optional[Info] = None):
         msg = "Поле не определено!"
 
         if field is not None and define is not None:
             msg = f"Поле: '{field}' не определено в '{define}'"
 
-        super().__init__(msg)
+        super().__init__(msg, info=info)
 
 
 @_add_ex
@@ -338,11 +338,11 @@ class NameAlreadyExist(BaseError):
 class EmptyReturn(BaseError):
     exc_name = "ОшибкаПустойВозврат"
 
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self, msg: Optional[str] = None, *, info: Optional[Info] = None):
         if msg is None:
            msg = "Возвращаемое значение пусто"
 
-        super().__init__(msg)
+        super().__init__(msg, info=info)
 
 
 @_add_ex

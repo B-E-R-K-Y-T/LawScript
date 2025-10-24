@@ -57,7 +57,7 @@ def check_correct_expr(expr: list[str]):
     if filtered_expr:
         if filtered_expr[-1] in ALLOW_OPERATORS - {Tokens.left_bracket, Tokens.right_bracket, Tokens.true, Tokens.false}:
             raise InvalidExpression(
-                f"Выражение: {' '.join(str(item) for item in expr)} не может заканчиваться на: '{filtered_expr[-1]}'"
+                f"Выражение: '{' '.join(str(item) for item in expr)}' не может заканчиваться на: '{filtered_expr[-1]}'"
             )
 
     in_count = sum(1 for op in filtered_expr if op == Tokens.in_)
@@ -65,7 +65,7 @@ def check_correct_expr(expr: list[str]):
 
     if in_count != background_count:
         raise InvalidExpression(
-            f"В выражении: {' '.join(str(item) for item in expr)} "
+            f"В выражении: '{' '.join(str(item) for item in expr)}' "
             f"не может быть оператора '{Tokens.in_}' без '{Tokens.background}'"
         )
 

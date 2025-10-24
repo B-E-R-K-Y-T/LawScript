@@ -1,13 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Type
+from typing import Optional, Type, TYPE_CHECKING
 
 import dill
 
 from config import settings
-from src.core.exceptions import BaseError, ArgumentError
-from src.core.types.atomic import Array, convert_atomic_type_to_py_type
+from src.core.exceptions import BaseError, ArgumentError, ErrorType
+from src.core.types.atomic import convert_atomic_type_to_py_type, VOID
 from src.core.types.basetype import BaseAtomicType, BaseType
 from src.core.types.line import Info
+from src.core.types.variable import ScopeStack, Variable
+
+if TYPE_CHECKING:
+    from src.core.types.procedure import Procedure
+    from src.util.build_tools.compile import Compiled
 
 
 class PyExtendWrapper(BaseType, ABC):
@@ -17,9 +22,35 @@ class PyExtendWrapper(BaseType, ABC):
         self.empty_args = False
         self.count_args = -1
         self.offset_required_args = -1
+        self.namespace: Optional['Compiled'] = None
 
     @abstractmethod
     def call(self, args: Optional[list[BaseAtomicType]] = None) -> BaseAtomicType: ...
+
+    def run_procedure(self, procedure: 'Procedure', arguments: list[BaseAtomicType]) -> BaseAtomicType:
+        from src.core.executors.procedure import ProcedureExecutor
+        from src.core.executors.body import STOP
+
+        if len(arguments) != len(procedure.arguments_names):
+            raise ArgumentError(
+                f"Процедура '{self.func_name}' при попытке вызова '{procedure.name}' "
+                f"передала некорректное количество аргументов! Ожидалось {len(procedure.arguments_names)}, "
+                f"но передано: {len(arguments)}"
+            )
+
+        procedure.tree_variables = ScopeStack()
+
+        for arg_name, arg_value in zip(procedure.arguments_names, arguments):
+            if not isinstance(arg_value, BaseAtomicType):
+                raise ErrorType(f"Некорректный тип аргумента у '{arg_name}'")
+
+            procedure.tree_variables.set(Variable(arg_name, arg_value))
+
+        res = ProcedureExecutor(procedure, self.namespace).execute()
+
+        if res is STOP: return VOID
+
+        return res
 
     def check_args(self, args: Optional[list[BaseAtomicType]] = None):
         if not self.empty_args and args is None:

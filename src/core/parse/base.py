@@ -75,7 +75,7 @@ class Parser(ABC):
         return num_line - 1
 
     def separate_line_to_token(self, line: Line) -> list[str]:
-        self.__check_quotes(line)
+        self._check_quotes(line)
         raw_line = line.raw_data
 
         is_string = False
@@ -145,7 +145,7 @@ class Parser(ABC):
         return tokens
 
     @staticmethod
-    def __check_quotes(line: Line) -> None:
+    def _check_quotes(line: Line) -> None:
         raw_line = line.raw_data
         count_quotes = sum(1 for symbol in raw_line if symbol == Tokens.quotation)
 

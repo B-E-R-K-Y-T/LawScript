@@ -272,10 +272,11 @@ class ExpressionExecutor(Executor):
         evaluate_stack.pop(-1)
         evaluate_stack.append(instance)
 
-    @staticmethod
     def init_py_extend_procedure_context(
-            py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
+            self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
     ) -> ProcedureWrapper:
+        py_extend_procedure.namespace = self.compiled
+
         if not evaluate_stack:
             evaluate_stack.append(py_extend_procedure)
             return ProcedureWrapper()
