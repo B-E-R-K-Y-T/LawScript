@@ -28,8 +28,11 @@ class PyExtendWrapper(BaseType, ABC):
     def call(self, args: Optional[list[BaseAtomicType]] = None) -> BaseAtomicType: ...
 
     def run_procedure(self, procedure: 'Procedure', arguments: list[BaseAtomicType]) -> BaseAtomicType:
-        from src.core.executors.procedure import ProcedureExecutor
+        from src.core.executors.procedure import ProcedureExecutor, Procedure
         from src.core.executors.body import STOP
+
+        if not isinstance(procedure, Procedure):
+            raise ErrorType(f"'{procedure.name}' не является процедурой!")
 
         if len(arguments) != len(procedure.arguments_names):
             raise ArgumentError(
