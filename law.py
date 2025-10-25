@@ -12,7 +12,6 @@ from src.util.console_worker import printer
 from src.util.build_tools.starter import run_file
 
 printer.debug = settings.debug
-SELF_DIR = Path(__file__).parent.resolve()
 
 
 def get_working_directory() -> Path:
