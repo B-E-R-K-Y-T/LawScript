@@ -15,10 +15,22 @@ printer.debug = settings.debug
 SELF_DIR = Path(__file__).parent.resolve()
 
 
-def create_absolute_path_to_file(filename: str) -> Path:
-    """Создает абсолютный путь к файлу относительно директории скрипта."""
-    return (SELF_DIR / filename).resolve()
+def get_working_directory() -> Path:
+    """Получает корректную рабочую директорию для собранного приложения."""
+    if getattr(sys, 'frozen', False):
+        # Если приложение собрано PyInstaller
+        return Path(sys.executable).parent.resolve()
+    else:
+        # Если запуск из исходного кода
+        return Path(__file__).parent.resolve()
 
+
+WORKING_DIR = get_working_directory()
+
+
+def create_absolute_path_to_file(filename: str) -> Path:
+    """Создает абсолютный путь к файлу относительно рабочей директории."""
+    return (WORKING_DIR / filename).resolve()
 
 class Law:
     @staticmethod
