@@ -8,16 +8,18 @@ from src.core.tokens import Tokens
 from src.core.types.line import Line, Info
 
 
-def is_integer(s: str) -> bool:
-    return bool(re.match(r"^-?\d+$", str(s)))
+_INTEGER_PATTERN = re.compile(r"^-?\d+$")
+_FLOAT_PATTERN = re.compile(r"^-?\d+(\.\d+)?$")
+_IDENTIFIER_PATTERN = re.compile(r"^[А-Яа-яЁёA-Za-z_][А-Яа-яЁёA-Za-z0-9_]*$")
 
+def is_integer(s: str) -> bool:
+    return bool(_INTEGER_PATTERN.match(str(s)))
 
 def is_float(s: str) -> bool:
-    return bool(re.match(r"^-?\d+(\.\d+)?$", str(s)))
-
+    return bool(_FLOAT_PATTERN.match(str(s)))
 
 def is_identifier(s: str) -> bool:
-    return bool(re.match(r"^[А-Яа-яЁёA-Za-z_][А-Яа-яЁёA-Za-z0-9_]*$", str(s)))
+    return bool(_IDENTIFIER_PATTERN.match(str(s)))
 
 
 class Image:
