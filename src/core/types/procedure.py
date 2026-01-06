@@ -58,6 +58,7 @@ class Expression(BaseType):
         self.meta_info = info_line
         self.operations: Optional[list[Union[Operator, BaseAtomicType]]] = None
         self.raw_operations = operations
+        self.raw_expr = " ".join(operations)
 
 
 class AssignOverrideVariable(BaseType):

@@ -687,22 +687,22 @@ class ExpressionExecutor(Executor):
                 raise e
             except TypeError:
                 raise ErrorType(
-                    f"Ошибка выполнения операции между операндами в выражении '{self.expression.meta_info.raw_line}'!",
+                    f"Ошибка выполнения операции между операндами в выражении '{self.expression.raw_expr}'!",
                     info=self.expression.meta_info
                 )
             except ZeroDivisionError:
                 raise DivisionByZeroError(
-                    f"Деление на ноль в выражении '{self.expression.meta_info.raw_line}'!",
+                    f"Деление на ноль в выражении '{self.expression.raw_expr}'!",
                     info=self.expression.meta_info
                 )
             except OverflowError:
                 raise ErrorOverflow(
-                    f"Выражение вышло за пределы типа данных в выражении: '{self.expression.meta_info.raw_line}'!",
+                    f"Выражение вышло за пределы типа данных в выражении: '{self.expression.raw_expr}'!",
                     info=self.expression.meta_info
                 )
             except Exception:
                 raise InvalidExpression(
-                    f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                    f"Некорректное выражение: '{self.expression.raw_expr}'!",
                     info=self.expression.meta_info
                 )
 
@@ -719,21 +719,21 @@ class ExpressionExecutor(Executor):
             raise e
         except TypeError:
             raise ErrorType(
-                f"Ошибка выполнения операции между операндами в выражении '{self.expression.meta_info.raw_line}'!",
+                f"Ошибка выполнения операции между операндами в выражении '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
         except ZeroDivisionError:
             raise DivisionByZeroError(
-                f"Деление на ноль в выражении '{self.expression.meta_info.raw_line}'!",
+                f"Деление на ноль в выражении '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
         except OverflowError:
             raise ErrorOverflow(
-                f"Выражение вышло за пределы типа данных в выражении: '{self.expression.meta_info.raw_line}'!",
+                f"Выражение вышло за пределы типа данных в выражении: '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
         except Exception:
             raise InvalidExpression(
-                f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                f"Некорректное выражение: '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
