@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/B-E-R-K-Y-T/LawScript)
 
-## Запуск:
+## Сырой запуск:
 
 
 ### Windows
@@ -22,6 +22,18 @@ py -m venv .venv
 export PYTHONPATH=$(pwd)
 pip install -r requirements.txt
 py law.py --run hello_world.raw
+```
+
+## Сборка:
+
+```
+pyinstaller --onefile --add-data="src;src" --hidden-import=requests .\law.py
+```
+
+### Запуск exe
+
+```
+law.exe --run hello_world.raw
 ```
 
 Если Вы увидете такой вывод: 

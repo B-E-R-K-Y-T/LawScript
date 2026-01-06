@@ -14,6 +14,7 @@ from src.core.extend.standard_lib.lib_util.lib import build_module as _util_buil
 from src.core.extend.standard_lib.lib_structs.lib import build_module as _structs_build
 from src.core.extend.standard_lib.lib_web.lib import build_module as _web_build
 from src.core.extend.standard_lib.lib_types.lib import build_module as _types_build
+from src.core.extend.standard_lib.lib_io.lib import build_module as _io_build
 
 
 _BUILDERS = [
@@ -24,6 +25,7 @@ _BUILDERS = [
     _structs_build,
     _web_build,
     _types_build,
+    _io_build,
 ]
 
 if __name__ == '__main__':
