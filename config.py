@@ -14,7 +14,6 @@ from rich.text import Text
 _MAX_THREAD: Final[int] = os.cpu_count() * 2 - 1 or 1
 
 
-
 def get_working_directory() -> Path:
     """Получает корректную рабочую директорию для собранного приложения."""
     if getattr(sys, 'frozen', False):
