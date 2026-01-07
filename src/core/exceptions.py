@@ -454,3 +454,17 @@ class HttpError(BaseError):
             msg = f"{msg}: статус код ответа: '{status}'"
 
         super().__init__(msg, info=info)
+
+
+@_add_ex
+class FileError(BaseError):
+    exc_name = "ОшибкаФайла"
+
+    def __init__(self, path: Optional[str] = None, msg: Optional[str] = None, info: Optional[Info] = None):
+        if msg is None:
+            msg = "Ошибка файла"
+
+        if path is not None:
+            msg = f"{msg}: Путь не существует '{path}'"
+
+        super().__init__(msg, info=info)

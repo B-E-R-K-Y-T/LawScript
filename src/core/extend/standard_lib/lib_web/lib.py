@@ -19,9 +19,11 @@ class Request(PyExtendWrapper):
         self.count_args = 5
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
+        import json
+
         import requests
 
-        from src.core.types.atomic import Table, String, Number, convert_py_type_to_atomic_type
+        from src.core.types.atomic import Table, String, Number, Boolean, convert_py_type_to_atomic_type
         from src.core.exceptions import ErrorType, ErrorValue, HttpError
 
         headers = Table()
@@ -75,10 +77,20 @@ class Request(PyExtendWrapper):
         except requests.exceptions.RequestException as e:
             raise HttpError(msg=f"При запросе произошла ошибка. Детали: '{e}'")
 
+        try:
+            json_data = resp.json()
+        except json.JSONDecodeError:
+            json_data = {}
+
+        text_data = resp.text
+
         result = Table({
             String("статус_код"): Number(resp.status_code),
             String("заголовки"): convert_py_type_to_atomic_type(resp.headers),
             String("cookies"): convert_py_type_to_atomic_type(resp.cookies),
+            String("json"): convert_py_type_to_atomic_type(json_data),
+            String("текст"): String(text_data),
+            String("успешно"): Boolean(resp.status_code < 400),
         })
 
         return result

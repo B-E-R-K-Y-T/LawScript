@@ -315,6 +315,30 @@ class TableLen(PyExtendWrapper):
         return Number(len(table))
 
 
+@builder.collect(func_name='есть_ключ_в_таблице')
+class IsKeyTableExist(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 2
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from src.core.types.atomic import Boolean, Table, String
+        from src.core.exceptions import ErrorValue
+
+        table, key = args
+
+        if not isinstance(table, Table):
+            raise ErrorValue("Первый аргумент должен быть таблицей.")
+
+        if not isinstance(key, String):
+            raise ErrorValue("Второй аргумент должен быть строкой.")
+
+        table, key = self.parse_args(args)
+
+        return Boolean(key in table.keys())
+
+
 def build_module():
     builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")
 

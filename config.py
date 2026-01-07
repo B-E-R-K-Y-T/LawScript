@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from typing import Final
 
 from pydantic import Field, field_validator
@@ -12,6 +13,24 @@ from rich.text import Text
 
 _MAX_THREAD: Final[int] = os.cpu_count() * 2 - 1 or 1
 
+
+
+def get_working_directory() -> Path:
+    """Получает корректную рабочую директорию для собранного приложения."""
+    if getattr(sys, 'frozen', False):
+        # Если приложение собрано PyInstaller
+        return Path(sys.executable).parent.resolve()
+    else:
+        # Если запуск из исходного кода
+        return Path(__file__).parent.resolve()
+
+
+class ScriptDirStorage:
+    def __init__(self):
+        self.LW_SCRIPT_DIR = ""
+
+script_dir_storage = ScriptDirStorage()
+WORKING_DIR = get_working_directory()
 
 class Settings(BaseSettings):
     debug: bool = Field(default=False)
