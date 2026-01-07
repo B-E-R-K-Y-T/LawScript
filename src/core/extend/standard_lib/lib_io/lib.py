@@ -10,7 +10,7 @@ MOD_NAME = "ввод_вывод"
 
 
 @builder.collect(func_name='вывод')
-class ViewObjectFields(PyExtendWrapper):
+class Print(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
         self.empty_args = False
@@ -51,7 +51,7 @@ class ViewObjectFields(PyExtendWrapper):
 
 
 @builder.collect(func_name='ввод')
-class ViewObjectFields(PyExtendWrapper):
+class Input(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
         self.empty_args = False
@@ -64,6 +64,54 @@ class ViewObjectFields(PyExtendWrapper):
 
         return convert_py_type_to_atomic_type(input(parsed_args[0]))
 
+
+@builder.collect(func_name='прочитать_файл')
+class ReadFile(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        import os
+        from config import script_dir_storage
+        from src.core.types.atomic import String, Array
+        from src.core.exceptions import ErrorValue, FileError
+
+        path = args[0]
+
+        if not isinstance(path, String):
+            raise ErrorValue("Аргумент должен быть строкой.")
+
+        path = self.parse_args(args)[0]
+        lines = []
+
+        # Формируем полный путь относительно рабочей директории
+        # Если путь абсолютный, os.path.join корректно его обработает
+        full_path = os.path.join(script_dir_storage.LW_SCRIPT_DIR, path)
+
+        # Нормализуем путь (убираем ../, ./ и т.д.)
+        full_path = os.path.normpath(full_path)
+
+        try:
+            with open(full_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    # Убираем символы новой строки в конце
+                    clean_line = line.rstrip('\n\r')
+                    lines.append(String(clean_line))
+        except FileNotFoundError:
+            # Пробуем также исходный путь (на случай абсолютных путей)
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        clean_line = line.rstrip('\n\r')
+                        lines.append(String(clean_line))
+            except FileNotFoundError:
+                raise FileError(f"Файл не найден: '{full_path}'")
+        except Exception as e:
+            raise FileError(f"Ошибка чтения файла '{path}': {str(e)}")
+
+        return Array(lines)
 
 def build_module():
     builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")

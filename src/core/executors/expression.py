@@ -620,6 +620,11 @@ class ExpressionExecutor(Executor):
                 try:
                     call_metadata = self.init_procedure_context(func, evaluate_stack)
 
+                    if isinstance(func, Method):
+                        this = Variable(func.this_name, func.this)
+
+                        call_metadata.procedure.tree_variables.set(this)
+
                     if call_metadata.procedure is not None:
                         executor = self.procedure_executor(call_metadata.procedure, self.compiled)
                         background_task = ProcedureBackgroundTask(call_metadata.procedure.name, executor)
