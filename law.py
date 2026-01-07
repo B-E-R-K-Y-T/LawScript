@@ -79,7 +79,6 @@ class Law:
 if __name__ == '__main__':
     law = Law()
     law.run()
-    # file = r"E:\Programs\JetBrains\Toolbox\apps\PyCharm-C\Projects\LawScript\examples\tg_bot\main.raw"
-    # file = "tests\\test_33.raw"
+    # file = "tests\\test_38.raw"
     # run_file(file)
     # build(file)

@@ -45,7 +45,7 @@ class Print(PyExtendWrapper):
             sep = sep.replace(old, new)
             end = end.replace(old, new)
 
-        print(parsed_args[0], sep=sep, end=end)
+        print(args[0], sep=sep, end=end)
 
         return VOID
 
