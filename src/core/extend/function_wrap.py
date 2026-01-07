@@ -1,13 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Type
+from typing import Optional, Type, TYPE_CHECKING
 
 import dill
 
 from config import settings
-from src.core.exceptions import BaseError, ArgumentError
-from src.core.types.atomic import Array
+from src.core.exceptions import BaseError, ArgumentError, ErrorType
+from src.core.types.atomic import convert_atomic_type_to_py_type, VOID
 from src.core.types.basetype import BaseAtomicType, BaseType
 from src.core.types.line import Info
+from src.core.types.variable import ScopeStack, Variable
+
+if TYPE_CHECKING:
+    from src.core.types.procedure import Procedure
+    from src.util.build_tools.compile import Compiled
 
 
 class PyExtendWrapper(BaseType, ABC):
@@ -17,13 +22,45 @@ class PyExtendWrapper(BaseType, ABC):
         self.empty_args = False
         self.count_args = -1
         self.offset_required_args = -1
+        self.namespace: Optional['Compiled'] = None
 
     @abstractmethod
     def call(self, args: Optional[list[BaseAtomicType]] = None) -> BaseAtomicType: ...
 
+    def run_procedure(self, procedure: 'Procedure', arguments: list[BaseAtomicType]) -> BaseAtomicType:
+        from src.core.executors.procedure import ProcedureExecutor, Procedure
+        from src.core.executors.body import STOP
+
+        if not isinstance(procedure, Procedure):
+            raise ErrorType(f"'{procedure.name}' не является процедурой!")
+
+        if len(arguments) != len(procedure.arguments_names):
+            raise ArgumentError(
+                f"Процедура '{self.func_name}' при попытке вызова '{procedure.name}' "
+                f"передала некорректное количество аргументов! Ожидалось {len(procedure.arguments_names)}, "
+                f"но передано: {len(arguments)}"
+            )
+
+        procedure.tree_variables = ScopeStack()
+
+        for arg_name, arg_value in zip(procedure.arguments_names, arguments):
+            if not isinstance(arg_value, BaseAtomicType):
+                raise ErrorType(f"Некорректный тип аргумента у '{arg_name}'")
+
+            procedure.tree_variables.set(Variable(arg_name, arg_value))
+
+        res = ProcedureExecutor(procedure, self.namespace).execute()
+
+        if res is STOP: return VOID
+
+        return res
+
     def check_args(self, args: Optional[list[BaseAtomicType]] = None):
         if not self.empty_args and args is None:
             raise ArgumentError(f"Необходимо передать аргументы в процедуру '{self.func_name}'")
+
+        elif args is None and self.empty_args:
+            return
 
         if self.count_args == 0 and args is None:
             return
@@ -49,7 +86,7 @@ class PyExtendWrapper(BaseType, ABC):
                     f"но передано: {len(args)}"
                 )
 
-    def parse_args(self, args: Optional[list[BaseAtomicType]] = None) -> list:
+    def parse_args(self, args: Optional[list[BaseAtomicType]] = None, *, strict: bool = False) -> list:
         if args is None:
             return []
 
@@ -59,26 +96,8 @@ class PyExtendWrapper(BaseType, ABC):
             if not isinstance(arg, BaseAtomicType):
                 raise ArgumentError(f"Аргумент '{arg}' не является экземпляром типа: '{BaseAtomicType.__name__}'")
 
-            if isinstance(arg, Array):
-                def _parse_array(array: Array) -> list:
-                    new_array = []
-
-                    for idx, item in enumerate(array.value):
-                        if isinstance(item, Array):
-                            new_array.append(_parse_array(item))
-
-                        elif isinstance(item, BaseAtomicType):
-                            new_array.append(item.value)
-
-                        else:
-                            new_array.append(item)
-
-                    return new_array
-
-                result.append(_parse_array(arg))
-                continue
-
-            result.append(arg.value)
+            py_obj = convert_atomic_type_to_py_type(arg, strict=strict )
+            result.append(py_obj)
 
         if self.offset_required_args != -1 and len(args) < self.count_args:
             for _ in range(len(args) - self.offset_required_args + 1):

@@ -2,7 +2,7 @@ import sys
 import time
 from pathlib import Path
 
-from config import settings
+from config import settings, WORKING_DIR, script_dir_storage
 from src.core.background_task.schedule import get_task_scheduler
 from src.core.call_func_stack import get_stack_pretty_str
 from src.core.exceptions import BaseError
@@ -12,13 +12,11 @@ from src.util.console_worker import printer
 from src.util.build_tools.starter import run_file
 
 printer.debug = settings.debug
-SELF_DIR = Path(__file__).parent.resolve()
 
 
 def create_absolute_path_to_file(filename: str) -> Path:
-    """Создает абсолютный путь к файлу относительно директории скрипта."""
-    return (SELF_DIR / filename).resolve()
-
+    """Создает абсолютный путь к файлу относительно рабочей директории."""
+    return (WORKING_DIR / filename).resolve()
 
 class Law:
     @staticmethod
@@ -32,6 +30,7 @@ class Law:
             command = sys.argv[1]
             filename = sys.argv[2]
             absolute_file_path = create_absolute_path_to_file(filename)
+            script_dir_storage.LW_SCRIPT_DIR = absolute_file_path.parent
 
             if command == '--build':
                 printer.debug = True
@@ -74,12 +73,13 @@ class Law:
         finally:
             get_task_scheduler().shutdown()
             working_time = time.perf_counter() - start
-            yellow_print(f"Затрачено времени: {working_time:.5f}ms")
+            yellow_print(f"Затрачено времени: {working_time:.5f}s")
 
 
 if __name__ == '__main__':
     law = Law()
     law.run()
-    # file = "tests\\test_26.raw"
+    # file = r"E:\Programs\JetBrains\Toolbox\apps\PyCharm-C\Projects\LawScript\examples\tg_bot\main.raw"
+    # file = "tests\\test_33.raw"
     # run_file(file)
     # build(file)

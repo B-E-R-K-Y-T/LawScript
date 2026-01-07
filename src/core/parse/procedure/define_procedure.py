@@ -92,7 +92,17 @@ class DefineProcedureParser(Parser):
                         continue
 
                     if default_arguments_expressions:
-                        default_arguments_expressions[-1] += default_argument_token + " "
+                        default_arguments_expressions[-1] += default_argument_token
+
+                        if default_offset < len(default) - 1:
+                            next_tok = default[default_offset + 1]
+                            sep = ""
+
+                            if next_tok == " " or next_tok in Tokens:
+                                sep = " "
+
+                            default_arguments_expressions[-1] += sep
+
                         printer.logging(
                             f"Добавлено в выражение: '{default_argument_token}', текущее: '{default_arguments_expressions[-1]}'",
                             level="DEBUG")

@@ -1,5 +1,7 @@
+import time
 from typing import Union, NamedTuple, Type, Optional, TYPE_CHECKING, Callable, Generator, Iterable
 
+from config import settings
 from src.core.background_task.schedule import get_task_scheduler
 from src.core.background_task.task import ProcedureBackgroundTask, AbstractBackgroundTask
 from src.core.call_func_stack import call_func_stack_builder
@@ -14,7 +16,7 @@ from src.core.exceptions import (
 )
 from src.core.executors.base import Executor
 from src.core.tokens import Tokens, ServiceTokens, ALL_TOKENS
-from src.core.types.atomic import Void, Boolean, Yield
+from src.core.types.atomic import Boolean, Yield, VOID, YIELD
 from src.core.types.base_declarative_type import BaseDeclarativeType
 from src.core.types.basetype import BaseAtomicType, BaseType
 from src.core.types.classes import ClassDefinition, ClassInstance, Method, ClassField, Constructor
@@ -244,7 +246,7 @@ class ExpressionExecutor(Executor):
         result = executor.execute()
 
         if isinstance(result, Stop):
-            result = Void()
+            result = VOID
 
         evaluate_stack.append(result)
 
@@ -270,10 +272,11 @@ class ExpressionExecutor(Executor):
         evaluate_stack.pop(-1)
         evaluate_stack.append(instance)
 
-    @staticmethod
     def init_py_extend_procedure_context(
-            py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
+            self, py_extend_procedure: PyExtendWrapper, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]
     ) -> ProcedureWrapper:
+        py_extend_procedure.namespace = self.compiled
+
         if not evaluate_stack:
             evaluate_stack.append(py_extend_procedure)
             return ProcedureWrapper()
@@ -558,8 +561,14 @@ class ExpressionExecutor(Executor):
                 if task.is_waited():
                     raise OverWaitTaskError(task.name, info=self.expression.meta_info)
 
+                wait_count = 0
                 while not task.done:
-                    yield Yield()
+                    if wait_count % settings.step_task_size_to_sleep == 0:
+                        time.sleep(settings.task_thread_switch_interval)
+                    else:
+                        yield YIELD
+
+                    wait_count += 1
 
                 task.set_waited()
                 if task.is_error_result:
@@ -611,6 +620,11 @@ class ExpressionExecutor(Executor):
                 try:
                     call_metadata = self.init_procedure_context(func, evaluate_stack)
 
+                    if isinstance(func, Method):
+                        this = Variable(func.this_name, func.this)
+
+                        call_metadata.procedure.tree_variables.set(this)
+
                     if call_metadata.procedure is not None:
                         executor = self.procedure_executor(call_metadata.procedure, self.compiled)
                         background_task = ProcedureBackgroundTask(call_metadata.procedure.name, executor)
@@ -641,7 +655,7 @@ class ExpressionExecutor(Executor):
         if evaluate_stack:
             return evaluate_stack[0]
 
-        return Void()
+        return VOID
 
     def execute(self, async_execute=False) -> Union[BaseAtomicType, Iterable]:
         if async_execute:
@@ -678,22 +692,22 @@ class ExpressionExecutor(Executor):
                 raise e
             except TypeError:
                 raise ErrorType(
-                    f"Ошибка выполнения операции между операндами в выражении '{self.expression.meta_info.raw_line}'!",
+                    f"Ошибка выполнения операции между операндами в выражении '{self.expression.raw_expr}'!",
                     info=self.expression.meta_info
                 )
             except ZeroDivisionError:
                 raise DivisionByZeroError(
-                    f"Деление на ноль в выражении '{self.expression.meta_info.raw_line}'!",
+                    f"Деление на ноль в выражении '{self.expression.raw_expr}'!",
                     info=self.expression.meta_info
                 )
             except OverflowError:
                 raise ErrorOverflow(
-                    f"Выражение вышло за пределы типа данных в выражении: '{self.expression.meta_info.raw_line}'!",
+                    f"Выражение вышло за пределы типа данных в выражении: '{self.expression.raw_expr}'!",
                     info=self.expression.meta_info
                 )
             except Exception:
                 raise InvalidExpression(
-                    f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                    f"Некорректное выражение: '{self.expression.raw_expr}'!",
                     info=self.expression.meta_info
                 )
 
@@ -710,21 +724,21 @@ class ExpressionExecutor(Executor):
             raise e
         except TypeError:
             raise ErrorType(
-                f"Ошибка выполнения операции между операндами в выражении '{self.expression.meta_info.raw_line}'!",
+                f"Ошибка выполнения операции между операндами в выражении '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
         except ZeroDivisionError:
             raise DivisionByZeroError(
-                f"Деление на ноль в выражении '{self.expression.meta_info.raw_line}'!",
+                f"Деление на ноль в выражении '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
         except OverflowError:
             raise ErrorOverflow(
-                f"Выражение вышло за пределы типа данных в выражении: '{self.expression.meta_info.raw_line}'!",
+                f"Выражение вышло за пределы типа данных в выражении: '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
         except Exception:
             raise InvalidExpression(
-                f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                f"Некорректное выражение: '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )

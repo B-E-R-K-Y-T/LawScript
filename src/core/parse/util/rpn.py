@@ -4,7 +4,7 @@ from src.core.exceptions import InvalidExpression, BaseError
 from src.core.extend.function_wrap import PyExtendWrapper
 from src.core.parse.base import is_integer, is_float, is_identifier
 from src.core.tokens import Tokens, ServiceTokens
-from src.core.types.atomic import Number, String, Boolean, Void
+from src.core.types.atomic import Number, String, Boolean, Void, VOID
 from src.core.types.basetype import BaseAtomicType
 from src.core.types.line import Info
 from src.core.types.operation import Operator
@@ -57,7 +57,7 @@ def check_correct_expr(expr: list[str]):
     if filtered_expr:
         if filtered_expr[-1] in ALLOW_OPERATORS - {Tokens.left_bracket, Tokens.right_bracket, Tokens.true, Tokens.false}:
             raise InvalidExpression(
-                f"Выражение: {' '.join(str(item) for item in expr)} не может заканчиваться на: '{filtered_expr[-1]}'"
+                f"Выражение: '{' '.join(str(item) for item in expr)}' не может заканчиваться на: '{filtered_expr[-1]}'"
             )
 
     in_count = sum(1 for op in filtered_expr if op == Tokens.in_)
@@ -65,7 +65,7 @@ def check_correct_expr(expr: list[str]):
 
     if in_count != background_count:
         raise InvalidExpression(
-            f"В выражении: {' '.join(str(item) for item in expr)} "
+            f"В выражении: '{' '.join(str(item) for item in expr)}' "
             f"не может быть оператора '{Tokens.in_}' без '{Tokens.background}'"
         )
 
@@ -643,7 +643,7 @@ def compile_rpn(expr):
             continue
 
         if op == Tokens.void:
-            op = Void()
+            op = VOID
 
         if isinstance(op, Operator):
             compiled_stack.append(op)

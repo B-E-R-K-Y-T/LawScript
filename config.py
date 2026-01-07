@@ -1,5 +1,7 @@
 import os
 import sys
+from pathlib import Path
+from typing import Final
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,6 +11,27 @@ from rich.panel import Panel
 from rich.text import Text
 
 
+_MAX_THREAD: Final[int] = os.cpu_count() * 2 - 1 or 1
+
+
+
+def get_working_directory() -> Path:
+    """Получает корректную рабочую директорию для собранного приложения."""
+    if getattr(sys, 'frozen', False):
+        # Если приложение собрано PyInstaller
+        return Path(sys.executable).parent.resolve()
+    else:
+        # Если запуск из исходного кода
+        return Path(__file__).parent.resolve()
+
+
+class ScriptDirStorage:
+    def __init__(self):
+        self.LW_SCRIPT_DIR = ""
+
+script_dir_storage = ScriptDirStorage()
+WORKING_DIR = get_working_directory()
+
 class Settings(BaseSettings):
     debug: bool = Field(default=False)
     max_recursion_depth: int = Field(default=10_000)
@@ -16,14 +39,17 @@ class Settings(BaseSettings):
     compiled_postfix: str = Field(default="law")
     py_extend_postfix: str = Field(default="pyl")
     max_running_threads_tasks: int = Field(
-        default=min(2, os.cpu_count() or 1),
+        default=max(1, _MAX_THREAD),
         ge=1,
-        le=os.cpu_count() or 1
+        le=_MAX_THREAD
     )
-    ttl_thread: float = Field(default=1)
+    ttl_thread: float = Field(default=10)
     wait_task_time: float = Field(default=.001)
     std_name: str = Field(default="стандартная_библиотека")
     standard_lib_path_postfix: str = Field(default="/core/extend/standard_lib/modules")
+    task_thread_switch_interval: float = Field(default=.00001)
+    step_task_size_to_sleep: int = Field(default=10)
+    time_to_join_thread: float = Field(default=0)
 
     @field_validator("std_name")
     def validate_std_name(cls, value: str) -> str:

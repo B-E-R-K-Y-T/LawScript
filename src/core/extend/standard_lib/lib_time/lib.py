@@ -34,7 +34,7 @@ class Sleep(PyExtendWrapper):
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         import time
-        from src.core.types.atomic import Number, Void
+        from src.core.types.atomic import Number, VOID
         from src.core.exceptions import ErrorType
 
         if not isinstance(args[0], Number):
@@ -42,7 +42,7 @@ class Sleep(PyExtendWrapper):
 
         time.sleep(args[0].value)
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='спать_в_фоне')
@@ -54,7 +54,7 @@ class BackgroundSleep(PyExtendWrapper):
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         from threading import Lock
-        from src.core.types.atomic import Number, Void, Yield, BaseAtomicType
+        from src.core.types.atomic import Number, VOID, YIELD, BaseAtomicType
         from src.core.exceptions import ErrorType
         from src.core.background_task.task import AbstractBackgroundTask
 
@@ -66,7 +66,7 @@ class BackgroundSleep(PyExtendWrapper):
         class SleepTask(AbstractBackgroundTask):
             def __init__(self):
                 self.sleep_time = args[0].value
-                self._result = Void()
+                self._result = VOID
                 self._done = False
                 self._lock = Lock()
                 self._gen_sleep = self.sleep()
@@ -76,7 +76,9 @@ class BackgroundSleep(PyExtendWrapper):
                 start_time = time.time()
 
                 while time.time() - start_time < self.sleep_time:
-                   yield Yield()
+                    yield YIELD
+
+                return VOID
 
             def next_command(self):
                 try:

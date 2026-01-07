@@ -58,8 +58,20 @@ class StringFormat(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
         self.empty_args = False
-        self.offset_required_args = 2
+        self.offset_required_args = 1
         self.count_args = -1
+        self.replace_map = {
+            "\\n": "\n",      # Новая строка
+            "\\t": "\t",      # Табуляция
+            "\\r": "\r",      # Возврат каретки
+            "\\\\": "\\",     # Обратный слеш
+            "\\'": "'",       # Одинарная кавычка
+            '\\"': '"',       # Двойная кавычка
+            "\\b": "\b",      # Backspace
+            "\\f": "\f",      # Form feed
+            "\\v": "\v",      # Вертикальная табуляция
+            "\\a": "\a",      # Звонок (bell)
+        }
 
     def convert_wrap_args(self, tail_args):
         from src.core.tokens import Tokens
@@ -85,9 +97,15 @@ class StringFormat(PyExtendWrapper):
 
         line, *tail_args = self.parse_args(args)
 
+        for old, new in self.replace_map.items():
+            line = line.replace(old, new)
+
         self.convert_wrap_args(tail_args)
 
-        return String(line.format(*tail_args))
+        try:
+            return String(line.format(*tail_args))
+        except IndexError:
+            raise IndexError("Индекс замены вне диапазона для позиционного кортежа аргументов.")
 
 
 @builder.collect(func_name='объединить_строки')

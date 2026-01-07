@@ -11,11 +11,11 @@ builder = PyExtendBuilder()
 @builder.collect(func_name='print')
 class Print(PyExtendWrapper):
     def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from src.core.types.atomic import Void
+        from src.core.types.atomic import VOID
 
         print(*self.parse_args(args))
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='input')
@@ -96,10 +96,10 @@ class FuncWa(PyExtendWrapper):
         self.offset_required_args = 2
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from src.core.types.atomic import Void
+        from src.core.types.atomic import VOID
         args = self.parse_args(args)
         print(args)
-        return Void()
+        return VOID
 
 
 if __name__ == '__main__':

@@ -130,6 +130,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.ppvenv
 env/
 venv/
 ENV/
@@ -171,3 +172,5 @@ cython_debug/
 .pypirc
 tests/test_folder
 law_config.env
+
+gi_*

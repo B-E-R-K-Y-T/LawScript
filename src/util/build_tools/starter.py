@@ -35,7 +35,7 @@ def run(raw_code: str, path: str):
 
 
 def run_string(raw_code: str):
-    run(raw_code, "__VIRTUAL_FILE__")
+    run(raw_code, "")
 
 
 def run_file(path: str):

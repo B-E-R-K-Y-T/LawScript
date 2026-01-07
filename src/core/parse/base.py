@@ -8,16 +8,18 @@ from src.core.tokens import Tokens
 from src.core.types.line import Line, Info
 
 
-def is_integer(s: str) -> bool:
-    return bool(re.match(r"^-?\d+$", str(s)))
+_INTEGER_PATTERN = re.compile(r"^-?\d+$")
+_FLOAT_PATTERN = re.compile(r"^-?\d+(\.\d+)?$")
+_IDENTIFIER_PATTERN = re.compile(r"^[А-Яа-яЁёA-Za-z_][А-Яа-яЁёA-Za-z0-9_]*$")
 
+def is_integer(s: str) -> bool:
+    return bool(_INTEGER_PATTERN.match(str(s)))
 
 def is_float(s: str) -> bool:
-    return bool(re.match(r"^-?\d+(\.\d+)?$", str(s)))
-
+    return bool(_FLOAT_PATTERN.match(str(s)))
 
 def is_identifier(s: str) -> bool:
-    return bool(re.match(r"^[А-Яа-яЁёA-Za-z_][А-Яа-яЁёA-Za-z0-9_]*$", str(s)))
+    return bool(_IDENTIFIER_PATTERN.match(str(s)))
 
 
 class Image:
@@ -75,7 +77,7 @@ class Parser(ABC):
         return num_line - 1
 
     def separate_line_to_token(self, line: Line) -> list[str]:
-        self.__check_quotes(line)
+        self._check_quotes(line)
         raw_line = line.raw_data
 
         is_string = False
@@ -145,7 +147,7 @@ class Parser(ABC):
         return tokens
 
     @staticmethod
-    def __check_quotes(line: Line) -> None:
+    def _check_quotes(line: Line) -> None:
         raw_line = line.raw_data
         count_quotes = sum(1 for symbol in raw_line if symbol == Tokens.quotation)
 

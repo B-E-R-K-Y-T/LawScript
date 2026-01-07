@@ -48,7 +48,7 @@ class PrintPrettyTable(PyExtendWrapper):
         from rich import print as rich_print
         from rich.box import SQUARE
 
-        from src.core.types.atomic import Table, Void
+        from src.core.types.atomic import Table, VOID
         from src.core.exceptions import ErrorValue
 
         if not isinstance(args[0], Table):
@@ -77,7 +77,31 @@ class PrintPrettyTable(PyExtendWrapper):
         # Выводим таблицу
         rich_print(rich_table)
 
-        return Void()
+        return VOID
+
+
+@builder.collect(func_name='показать_атрибуты_сущности')
+class ViewObjectFields(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from src.core.types.atomic import Table, String
+        from src.core.types.classes import ClassInstance
+
+        obj = args[0]
+
+        attrs = {}
+
+        if hasattr(obj, "fields"):
+            attrs.update({String(k): v for k, v in obj.fields.items()})
+
+        if isinstance(obj, ClassInstance):
+            attrs.update({String(k): v for k, v in obj.metadata.methods.items()})
+
+        return Table(attrs)
 
 
 def build_module():

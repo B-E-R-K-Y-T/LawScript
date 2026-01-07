@@ -32,12 +32,12 @@ class ArrayAppend(PyExtendWrapper):
 
     def call(self, args: Optional[list[Array]] = None):
         from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_two
-        from src.core.types.atomic import Void
+        from src.core.types.atomic import VOID
 
         array, item = parse_arr_args_two(args)
         array.append(item)
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='удалить_из_массива')
@@ -49,7 +49,7 @@ class ArrayRemove(PyExtendWrapper):
 
     def call(self, args: Optional[list[Array]] = None):
         from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_two
-        from src.core.types.atomic import Void, Number
+        from src.core.types.atomic import VOID, Number
         from src.core.exceptions import ErrorType, ErrorIndex
 
         array, item = parse_arr_args_two(args)
@@ -62,7 +62,7 @@ class ArrayRemove(PyExtendWrapper):
         except IndexError:
             raise ErrorIndex("Выход за границы массива.")
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='достать_из_массива')
@@ -102,7 +102,7 @@ class ArraySetItem(PyExtendWrapper):
         from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_inf
         from src.core.types.atomic import Number, BaseAtomicType
         from src.core.exceptions import ErrorType, ErrorIndex
-        from src.core.types.atomic import Void
+        from src.core.types.atomic import VOID
 
         array, arr_args = parse_arr_args_inf(args)
         index, value = arr_args
@@ -118,7 +118,7 @@ class ArraySetItem(PyExtendWrapper):
         except IndexError:
             raise ErrorIndex("Выход за границы массива.")
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='длина_массива')
@@ -144,16 +144,24 @@ class ArrayLen(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
         self.empty_args = False
-        self.count_args = 1
+        self.offset_required_args = 1
+        self.count_args = 2
 
     def call(self, args: Optional[list[Array]] = None):
-        from src.core.types.atomic import Array, BaseAtomicType
+        from src.core.types.atomic import Array, BaseAtomicType, Boolean
         from src.core.exceptions import ErrorValue
 
         arr = args[0]
+        is_reverse = False
+
+        if len(args) > 1:
+            if not isinstance(args[1], Boolean):
+                raise ErrorValue("Второй аргумент должен быть логическим.")
+
+            is_reverse = self.parse_args([args[1]])[0]
 
         if not isinstance(arr, Array):
-            raise ErrorValue("Аргумент должен быть массивом.")
+            raise ErrorValue("Первый аргумент должен быть массивом.")
 
         for item in arr.value:
             if isinstance(item, Array):
@@ -162,7 +170,7 @@ class ArrayLen(PyExtendWrapper):
             if not isinstance(item, BaseAtomicType):
                 raise ErrorValue("Аргументы массива должны быть атомарными типами.")
 
-        arr.value = sorted(arr.value, key=lambda i: i.value)
+        arr.value = sorted(arr.value, key=lambda i: i.value, reverse=is_reverse)
 
         return arr
 
@@ -175,7 +183,7 @@ class ArrayClear(PyExtendWrapper):
         self.count_args = 1
 
     def call(self, args: Optional[list[Array]] = None):
-        from src.core.types.atomic import Array, Void
+        from src.core.types.atomic import Array, VOID
         from src.core.exceptions import ErrorValue
 
         arr = args[0]
@@ -186,7 +194,7 @@ class ArrayClear(PyExtendWrapper):
         arr = arr.value
         arr.clear()
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='таблица')
@@ -222,7 +230,7 @@ class TableAppend(PyExtendWrapper):
         self.count_args = 3
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from src.core.types.atomic import Table, Void, String
+        from src.core.types.atomic import Table, VOID, String
         from src.core.exceptions import ErrorValue
 
         table, key, value = args
@@ -235,7 +243,7 @@ class TableAppend(PyExtendWrapper):
 
         table[key] = value
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='извлечь_из_таблицы')
@@ -258,7 +266,7 @@ class TableGetValue(PyExtendWrapper):
             raise ErrorValue("Первый аргумент должен быть таблицей.")
 
         if key not in table:
-            raise ErrorValue("Ключ не найден.")
+            raise ErrorValue(f"Ключ '{key}' не найден.")
 
         return table[key]
 
@@ -271,7 +279,7 @@ class TableRemove(PyExtendWrapper):
         self.count_args = 2
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
-        from src.core.types.atomic import Table, String, Void
+        from src.core.types.atomic import Table, String, VOID
         from src.core.exceptions import ErrorValue
 
         table, key = args
@@ -285,7 +293,7 @@ class TableRemove(PyExtendWrapper):
         if key in table:
             table.del_(key)
 
-        return Void()
+        return VOID
 
 
 @builder.collect(func_name='длина_таблицы')
@@ -305,6 +313,30 @@ class TableLen(PyExtendWrapper):
             raise ErrorValue("Первый аргумент должен быть таблицей.")
 
         return Number(len(table))
+
+
+@builder.collect(func_name='есть_ключ_в_таблице')
+class IsKeyTableExist(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 2
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from src.core.types.atomic import Boolean, Table, String
+        from src.core.exceptions import ErrorValue
+
+        table, key = args
+
+        if not isinstance(table, Table):
+            raise ErrorValue("Первый аргумент должен быть таблицей.")
+
+        if not isinstance(key, String):
+            raise ErrorValue("Второй аргумент должен быть строкой.")
+
+        table, key = self.parse_args(args)
+
+        return Boolean(key in table.keys())
 
 
 def build_module():

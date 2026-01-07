@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from src.core.executors.base import Executor
 from src.core.executors.expression import ExpressionExecutor
-from src.core.types.atomic import Void
+from src.core.types.atomic import VOID
 from src.core.types.basetype import BaseAtomicType
 from src.core.types.variable import ScopeStack, Variable
 
@@ -26,4 +26,4 @@ class ExecuteBlockExecutor(Executor):
             expression_executor = ExpressionExecutor(expression, scope_stack, self.compiled)
             expression_executor.execute()
 
-        return Void()
+        return VOID

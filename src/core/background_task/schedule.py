@@ -7,7 +7,7 @@ from typing import Optional
 from config import settings
 from src.core.background_task.task import AbstractBackgroundTask
 from src.core.exceptions import BaseError, create_law_script_exception_class_instance
-from src.core.types.atomic import Void
+from src.core.types.atomic import VOID
 from src.util.console_worker import printer
 
 
@@ -26,7 +26,7 @@ class ThreadWorker:
             self.tasks.append(task)
 
     def start(self):
-        self.thread = Thread(target=self._work, daemon=True)
+        self.thread = Thread(target=self._work)
         self.thread.start()
         printer.logging(f"{self.thread=} Запущен")
 
@@ -36,14 +36,16 @@ class ThreadWorker:
 
         warn = ""
 
-        for offset, task in enumerate(self.tasks):
+        for task in self.tasks:
             warn += f"Задача [{task.id}] '{task.name}' не была завершена корректно!\n"
 
         if warn:
             printer.print_warning(warn.rstrip(), self.thread.name)
 
         if self.thread:
-            self.thread.join(timeout=1.0)
+            self.thread.join(timeout=settings.time_to_join_thread)
+
+        printer.logging(f"{self.thread=} Остановлен")
 
     def is_active(self):
         return self._is_active
@@ -81,7 +83,7 @@ class ThreadWorker:
                     from src.core.executors.body import Stop
 
                     if isinstance(task.result, Stop):
-                        task.result = Void()
+                        task.result = VOID
 
                     self.done_task(task, idx)
                 except BaseError as e:
@@ -90,7 +92,7 @@ class ThreadWorker:
                     task.error = e
                     self.done_task(task, idx)
                 except Exception as e:
-                    task.result = Void()
+                    task.result = VOID
                     self.done_task(task, idx)
 
                     err_message = f"{self.thread.name}: Ошибка при выполнении задачи: [{idx}] '{task.name}'.\n\nДетали: {e}"

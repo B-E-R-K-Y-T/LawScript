@@ -1,16 +1,46 @@
 # Язык написания контрактов: LawScript!
 
-Запуск:
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/B-E-R-K-Y-T/LawScript)
 
+## Сырой запуск:
+
+
+### Windows
 ```
-# Windows
+py -m venv .venv 
+.venv/Scripts/activate
 set PYTHONPATH=%CD%
-py editor/app.py
-
-# Linux/Mac
-export PYTHONPATH=$(pwd)
-python editor/app.py
+pip install -r requirements.txt
+py law.py --run hello_world.raw
 ```
+
+### Linux/Mac
+
+```
+py -m venv .venv 
+.venv/Scripts/activate
+export PYTHONPATH=$(pwd)
+pip install -r requirements.txt
+py law.py --run hello_world.raw
+```
+
+## Сборка:
+
+```
+pyinstaller --onefile --add-data="src;src" --hidden-import=requests .\law.py
+```
+
+### Запуск exe
+
+```
+law.exe --run hello_world.raw
+```
+
+Если Вы увидете такой вывод: 
+
+![img.png](docs/img_6.png)
+
+Значит LawScript работает штатно!
 
 Данный язык совмещает в себе две философии: Декларативную и Императивную
 
