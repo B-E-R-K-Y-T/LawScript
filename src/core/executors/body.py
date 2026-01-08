@@ -111,7 +111,8 @@ class BodyExecutor(Executor):
                     except NameNotDefine as e:
                         raise NameNotDefine(str(e), info=command.meta_info)
 
-                    override_expr_result.name = target_name
+                    # Странный код, не помню, зачем он тут. Если его закомментировать, тесты не падают, но пока оставлю
+                    # override_expr_result.name = target_name
                     var.set_value(override_expr_result)
 
                     continue

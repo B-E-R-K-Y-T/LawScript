@@ -191,8 +191,9 @@ class ExpressionExecutor(Executor):
                 if rev_arguments_names and arg_position < len(rev_arguments_names):
                     argument = rev_arguments_names[arg_position]
 
-                    if not operand.name:
-                        operand.name = argument
+                    # Странный код, не помню, зачем он тут. Если его закомментировать, тесты не падают, но пока оставлю
+                    # if not operand.name:
+                    #     operand.name = argument
 
                     procedure.tree_variables.set(Variable(argument, operand))
                     arg_position += 1
