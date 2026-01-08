@@ -1,4 +1,4 @@
-# Telegram Bot на языке Law
+# Telegram Bot на языке LawScript
 ## Простой Telegram-бот, написанный на языке программирования Law.
 
 ## Описание
