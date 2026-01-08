@@ -90,7 +90,7 @@ class StringFormat(PyExtendWrapper):
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         from src.core.types.atomic import String
-        from src.core.exceptions import ErrorValue
+        from src.core.exceptions import ErrorValue, ErrorIndex
 
         if not isinstance(args[0], String):
             raise ErrorValue("Первый аргумент должен быть строкой.")
@@ -105,7 +105,7 @@ class StringFormat(PyExtendWrapper):
         try:
             return String(line.format(*tail_args))
         except IndexError:
-            raise IndexError("Индекс замены вне диапазона для позиционного кортежа аргументов.")
+            raise ErrorIndex("Индекс замены вне диапазона для позиционного кортежа аргументов.")
 
 
 @builder.collect(func_name='объединить_строки')
@@ -122,8 +122,7 @@ class StringConcat(PyExtendWrapper):
         if not all(isinstance(x, String) for x in args):
             raise ErrorValue("Все аргументы должны быть строками")
 
-        parts = [x for x in self.parse_args(args)]
-        return String(''.join(parts))
+        return String(''.join(x for x in self.parse_args(args)))
 
 
 @builder.collect(func_name='разделить_строку')

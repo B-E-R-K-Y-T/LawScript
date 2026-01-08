@@ -117,6 +117,13 @@ class ExpressionExecutor(Executor):
                     operation.func = var
                     new_expression_stack.append(operation)
                 else:
+                    next_operation = self.expression.operations[offset + 1] if offset + 1 < len(self.expression.operations) else None
+
+                    if next_operation is not None:
+                        if isinstance(next_operation, Operator) and next_operation.operator == Tokens.attr_access:
+                            new_expression_stack.append(operation)
+                            continue
+
                     new_expression_stack.append(scope_vars[operation.name])
             else:
                 new_expression_stack.append(operation)
@@ -224,7 +231,9 @@ class ExpressionExecutor(Executor):
                 fact_default_args_count += 1
 
                 value = ExpressionExecutor(expr, self.tree_variable, self.compiled).execute()
-                value.name = name
+
+                # Странный код, не помню, зачем он тут. Если его закомментировать, тесты не падают, но пока оставлю
+                # value.name = name
 
                 procedure.tree_variables.set(Variable(name, value))
 
@@ -322,11 +331,8 @@ class ExpressionExecutor(Executor):
         )
 
     def call_py_extend_procedure(self, py_extend_procedure, args, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]):
-        try:
-            py_extend_procedure.check_args(args)
-            result = py_extend_procedure.call(args)
-        except BaseError as e:
-            raise InvalidExpression(str(e), info=self.expression.meta_info)
+        py_extend_procedure.check_args(args)
+        result = py_extend_procedure.call(args)
 
         if not isinstance(result, (BaseAtomicType, BaseDeclarativeType, Procedure, PyExtendWrapper, LinkedProcedure)):
             raise ErrorType(
@@ -427,8 +433,10 @@ class ExpressionExecutor(Executor):
 
                     if call_metadata.procedure is not None:
                         call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
-                        self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
-                        call_func_stack_builder.pop()
+                        try:
+                            self.call_py_extend_procedure(call_metadata.procedure, call_metadata.args, evaluate_stack)
+                        finally:
+                            call_func_stack_builder.pop()
 
                     continue
 
@@ -440,12 +448,14 @@ class ExpressionExecutor(Executor):
                             call_func_stack_builder.push(func_name=operation.name, meta_info=self.expression.meta_info)
                             instance = operation.create_instance()
 
-                            self.call_constructor(
-                                call_metadata.procedure,
-                                evaluate_stack,
-                                instance
-                            )
-                            call_func_stack_builder.pop()
+                            try:
+                                self.call_constructor(
+                                    call_metadata.procedure,
+                                    evaluate_stack,
+                                    instance
+                                )
+                            finally:
+                                call_func_stack_builder.pop()
                     except RecursionError:
                         raise MaxRecursionError(
                             f"Вызов процедуры '{operation.name}' завершился с ошибкой. Циклический вызов.",
@@ -687,8 +697,8 @@ class ExpressionExecutor(Executor):
                     return exc.value
 
                 return exc
-            except BaseError as e:
-                raise e
+            except BaseError:
+                raise
             except TypeError:
                 raise ErrorType(
                     f"Ошибка выполнения операции между операндами в выражении '{self.expression.raw_expr}'!",
@@ -719,8 +729,8 @@ class ExpressionExecutor(Executor):
                     next(gen)
             except StopIteration as exc:
                 return exc.value
-        except BaseError as e:
-            raise e
+        except BaseError:
+            raise
         except TypeError:
             raise ErrorType(
                 f"Ошибка выполнения операции между операндами в выражении '{self.expression.raw_expr}'!",
