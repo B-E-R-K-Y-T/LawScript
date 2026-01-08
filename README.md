@@ -16,6 +16,8 @@ py law.py --run hello_world.raw
 
 ### Linux/Mac
 
+#### ВАЖНО! На маке могут потребоваться "танцы с бубном!"
+
 ```
 py -m venv .venv 
 .venv/Scripts/activate
