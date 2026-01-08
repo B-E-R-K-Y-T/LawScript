@@ -67,3 +67,31 @@ law.exe --run hello_world.raw
 ## Пример декларативного кода
 
 ![img.png](docs/img.png)
+
+
+## Пример обработки ошибок
+
+----
+Очепятки
+![img.png](docs/img5.png)
+![img.png](docs/img7.png)
+
+----
+Не переданные аргументы
+![img.png](docs/img8.png)
+![img.png](docs/img9.png)
+
+----
+Одинаковые аргументы
+![img.png](docs/img10.png)
+![img.png](docs/img11.png)
+
+----
+Двойное ожидание фоновой задачи
+![img.png](docs/img12.png)
+![img.png](docs/img13.png)
+
+----
+Хорошо понимает контекст ошибки
+![img.png](docs/img14.png)
+![img.png](docs/img15.png)
