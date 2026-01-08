@@ -132,7 +132,9 @@ class ExpressionExecutor(Executor):
                         new_expression_stack[offset] = field
                         break
 
-                raise NameNotDefine(name=operation.name, scopes=self.tree_variable.scopes)
+                raise NameNotDefine(
+                    name=operation.name, scopes=self.tree_variable.scopes, info=self.expression.meta_info
+                )
 
         return new_expression_stack
 
@@ -189,8 +191,9 @@ class ExpressionExecutor(Executor):
                 if rev_arguments_names and arg_position < len(rev_arguments_names):
                     argument = rev_arguments_names[arg_position]
 
-                    if not operand.name:
-                        operand.name = argument
+                    # Странный код, не помню, зачем он тут. Если его закомментировать, тесты не падают, но пока оставлю
+                    # if not operand.name:
+                    #     operand.name = argument
 
                     procedure.tree_variables.set(Variable(argument, operand))
                     arg_position += 1
@@ -346,11 +349,7 @@ class ExpressionExecutor(Executor):
         return False
 
     def evaluate(self) -> Union[BaseAtomicType, Generator[BaseAtomicType, None, None]]:
-        try:
-            prepared_operations: list[Union[BaseAtomicType, Operator]] = self.prepare_operations()
-        except BaseError as e:
-            raise InvalidExpression(str(e), info=self.expression.meta_info)
-
+        prepared_operations: list[Union[BaseAtomicType, Operator]] = self.prepare_operations()
         evaluate_stack: list[Union[AbstractBackgroundTask, BaseAtomicType, BaseType]] = []
 
         for offset, operation in enumerate(prepared_operations):

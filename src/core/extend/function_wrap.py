@@ -121,6 +121,8 @@ class CallableWrapper:
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
+            except BaseError:
+                raise
             except Exception as e:
                 if settings.debug:
                     raise

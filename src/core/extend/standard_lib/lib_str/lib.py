@@ -282,10 +282,28 @@ class EndsWith(PyExtendWrapper):
         from src.core.exceptions import ErrorValue
 
         if not isinstance(args[0], String) or not isinstance(args[1], String):
-            raise ErrorValue("Ожидались две строки")
+            raise ErrorValue("Ожидались две строки в аргументах")
 
         text, suffix = self.parse_args(args)
         return Boolean(text.endswith(suffix))
+
+
+@builder.collect(func_name='входит_в_строку')
+class EnterIn(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 2
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from src.core.types.atomic import Boolean, String
+        from src.core.exceptions import ErrorValue
+
+        if not isinstance(args[0], String) or not isinstance(args[1], String):
+            raise ErrorValue("Ожидались две строки в аргументах")
+
+        text, suffix = self.parse_args(args)
+        return Boolean(suffix in text)
 
 
 @builder.collect(func_name='регулярное_выражение')
