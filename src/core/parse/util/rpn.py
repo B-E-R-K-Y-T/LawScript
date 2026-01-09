@@ -306,8 +306,8 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
         if op == Tokens.left_bracket:
             if len(expr) > 2 and offset != 0 and (is_identifier(expr[offset - 1]) or isinstance(expr[offset - 1], AttrAccess)) and expr[offset - 1] not in {*ALLOW_OPERATORS, Tokens.true, Tokens.false}:
                 printer.logging(
-                    f"Перед скобкой находится идентификатор/атрибут: '{expr[offset - 1]}'."
-                    f" Проверка аргументов функции...",
+                    f"Перед скобкой находится идентификатор/атрибут: '{expr[offset - 1]}'. "
+                    f"Проверка аргументов функции...",
                     level="INFO"
                 )
 
