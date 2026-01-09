@@ -16,6 +16,8 @@ py law.py --run hello_world.raw
 
 ### Linux/Mac
 
+#### ВАЖНО! На маке могут потребоваться "танцы с бубном!"
+
 ```
 py -m venv .venv 
 .venv/Scripts/activate
@@ -42,6 +44,12 @@ law.exe --run hello_world.raw
 
 Значит LawScript работает штатно!
 
+### Конфигурация
+
+Для настройки LawScript создайте файл law_config.env
+
+### Философия языка
+
 Данный язык совмещает в себе две философии: Декларативную и Императивную
 
 
@@ -59,3 +67,31 @@ law.exe --run hello_world.raw
 ## Пример декларативного кода
 
 ![img.png](docs/img.png)
+
+
+## Пример обработки ошибок
+
+----
+Язык понимает, что вы имели в виду, даже когда вы ошибаетесь!
+![img.png](docs/img5.png)
+![img.png](docs/img7.png)
+
+----
+Не переданные аргументы
+![img.png](docs/img8.png)
+![img.png](docs/img9.png)
+
+----
+Одинаковые аргументы
+![img.png](docs/img10.png)
+![img.png](docs/img11.png)
+
+----
+Двойное ожидание фоновой задачи
+![img.png](docs/img12.png)
+![img.png](docs/img13.png)
+
+----
+Хорошо понимает контекст ошибки
+![img.png](docs/img14.png)
+![img.png](docs/img15.png)

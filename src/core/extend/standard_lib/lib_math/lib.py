@@ -242,6 +242,33 @@ class Tan(PyExtendWrapper):
         return Number(math.tan(arg.value))
 
 
+@builder.collect(func_name='в_число')
+class ToNumber(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from src.core.types.atomic import BaseAtomicType, Number
+        from src.core.exceptions import ErrorType, ErrorValue
+
+        arg = args[0]
+
+        if not isinstance(arg, BaseAtomicType):
+            raise ErrorValue(f"Невозможно преобразовать значение '{str(arg)}' к числу")
+
+        if isinstance(arg, Number):
+            return arg
+
+        try:
+            return Number(float(arg.value))
+        except TypeError:
+            raise ErrorType(f"Невозможно преобразовать тип '{arg.type_name()}' к числу")
+        except ValueError:
+            raise ErrorValue(f"Невозможно преобразовать значение '{str(arg)}' к числу")
+
+
 def build_module():
     builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")
 

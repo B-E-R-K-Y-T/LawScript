@@ -1,0 +1,11 @@
+def func main() (
+    loop i from 1 to 1000 (
+        if i greater 20 then (
+            print i * 2;
+        )
+    )
+)
+
+execute (
+    main();
+)

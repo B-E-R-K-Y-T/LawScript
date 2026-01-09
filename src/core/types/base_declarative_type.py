@@ -1,4 +1,4 @@
-from src.core.types.atomic import Void, String
+from src.core.types.atomic import String, VOID
 from src.core.types.basetype import BaseType, BaseAtomicType
 from src.core.types.classes import ClassField
 
@@ -9,4 +9,4 @@ class BaseDeclarativeType(BaseType):
         self.fields: dict[str, BaseAtomicType] = {"__имя__": String(self.name)}
 
     def get_attribute(self, name: str) -> BaseAtomicType:
-        return ClassField(self.fields.get(name, Void()))
+        return ClassField(self.fields.get(name, VOID))

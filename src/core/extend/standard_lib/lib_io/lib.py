@@ -113,6 +113,7 @@ class ReadFile(PyExtendWrapper):
 
         return Array(lines)
 
+
 def build_module():
     builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")
 
