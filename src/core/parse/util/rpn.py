@@ -305,11 +305,23 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
         if op == Tokens.left_bracket:
             if len(expr) > 2 and offset != 0 and (is_identifier(expr[offset - 1]) or isinstance(expr[offset - 1], AttrAccess)) and expr[offset - 1] not in {*ALLOW_OPERATORS, Tokens.true, Tokens.false}:
+                printer.logging(
+                    f"Перед скобкой находится идентификатор/атрибут: '{expr[offset - 1]}'."
+                    f" Проверка аргументов функции...",
+                    level="INFO"
+                )
+
                 dont_repeat_flag = False
                 unary_ops = {ServiceTokens.in_background, Tokens.wait}
 
                 for offset_, token_ in enumerate(expr[offset:]):
+                    printer.logging(
+                        f"Проверка токена '{token_}' на позиции {offset_} относительно скобки",
+                        level="DEBUG"
+                    )
+
                     if token_ == Tokens.right_bracket:
+                        printer.logging(f"Обнаружена закрывающая скобка, завершение проверки аргументов", level="DEBUG")
                         break
 
                     conditions = (
@@ -321,12 +333,29 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     if any(conditions):
                         previous_tok = expr[offset_]
 
+                        printer.logging(
+                            f"Токен '{token_}' является операндом. Предыдущий токен: '{previous_tok}'",
+                            level="DEBUG"
+                        )
                         if previous_tok in unary_ops:
+                            printer.logging(
+                                f"Предыдущий токен '{previous_tok}' является унарным оператором, пропускаем проверку",
+                                level="DEBUG"
+                            )
                             continue
 
                         if not dont_repeat_flag:
+                            printer.logging(
+                                f"Установка флага dont_repeat_flag в True. Первый операнд: '{token_}'",
+                                level="DEBUG"
+                            )
                             dont_repeat_flag = True
                         else:
+                            printer.logging(
+                                f"Обнаружен второй операнд '{token_}' без разделителя между предыдущим операндом",
+                                level="WARNING"
+                            )
+
                             if token_ == ServiceTokens.in_background:
                                 token_ = f"{Tokens.in_} {Tokens.background}"
 
@@ -335,8 +364,15 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                                 f"между операндами: '{previous_tok}' и '{token_}'"
                             )
                     else:
+                        printer.logging(
+                            f"Токен '{token_}' не является операндом. Сбрасываем флаг dont_repeat_flag", level="DEBUG"
+                        )
                         dont_repeat_flag = False
 
+                printer.logging(
+                    f"Проверка аргументов завершена. Добавляем разделитель аргументов в результирующий стек",
+                    level="INFO"
+                )
                 result_stack.append(ServiceTokens.arg_separator)
 
             stack.append(op)
