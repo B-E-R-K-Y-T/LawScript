@@ -36,8 +36,12 @@ ALLOW_OPERATORS = {
 
 
 class AttrAccess:
-    def __init__(self, expr: list[Union[Operator, BaseAtomicType]]):
+    def __init__(self, expr: list[Union[Operator, BaseAtomicType]], raw_expr: list):
         self.expr = expr
+        self.raw_expr = raw_expr
+
+    def __str__(self):
+        return "".join(str(x) for x in self.raw_expr)
 
 
 def check_correct_expr(expr: list[str]):
@@ -228,7 +232,7 @@ def prepare_expr(expr: list[str]) -> list:
                     printer.logging("Обнаружены скобки в цепочке атрибутов", level="ERROR")
                     raise InvalidExpression("Нельзя разрывать цепочки атрибутов скобками")
 
-                expr[start_idx:end_idx + 1] = [AttrAccess(_build_rpn(attr_access_expr))]
+                expr[start_idx:end_idx + 1] = [AttrAccess(_build_rpn(attr_access_expr), attr_access_expr)]
                 printer.logging(f"Замена цепочки на AttrAccess", level="DEBUG")
                 i = start_idx
 
@@ -321,6 +325,24 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     )
 
                     if token_ == Tokens.right_bracket:
+                        sub_expr = expr[offset:]
+                        previous_tok = sub_expr[offset_ - 1]
+
+                        if previous_tok == Tokens.comma:
+                            err_expr = ''.join([str(i) for i in sub_expr][:offset_+1])
+                            sub_expr = [str(i) for i in sub_expr]
+                            res_expr = ''.join(str(i) for i in expr)
+
+                            target_comma = (
+                                f"{err_expr}\n"
+                                f"{" " * (sum(len(t) for o, t in enumerate(sub_expr) if o < offset_ - 1))}^"
+                            )
+
+                            raise InvalidExpression(
+                                f"В выражении: '{res_expr}' стоит лишняя запятая '{Tokens.comma}'\n\n"
+                                f"{target_comma}\n"
+                            )
+
                         printer.logging(f"Обнаружена закрывающая скобка, завершение проверки аргументов", level="DEBUG")
                         break
 
@@ -360,7 +382,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                                 token_ = f"{Tokens.in_} {Tokens.background}"
 
                             raise InvalidExpression(
-                                f"В выражении: '{' '.join(expr)}' не хватает запятой: '{Tokens.comma}' "
+                                f"В выражении: '{' '.join(str(i) for i in expr)}' не хватает запятой: '{Tokens.comma}' "
                                 f"между операндами: '{previous_tok}' и '{token_}'"
                             )
                     else:
