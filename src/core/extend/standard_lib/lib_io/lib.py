@@ -107,7 +107,7 @@ class ReadFile(PyExtendWrapper):
                         clean_line = line.rstrip('\n\r')
                         lines.append(String(clean_line))
             except FileNotFoundError:
-                raise FileError(f"Файл не найден: '{full_path}'")
+                raise FileError(path)
         except Exception as e:
             raise FileError(f"Ошибка чтения файла '{path}': {str(e)}")
 

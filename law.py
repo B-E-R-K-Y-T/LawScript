@@ -79,7 +79,6 @@ class Law:
 if __name__ == '__main__':
     law = Law()
     law.run()
-    # file = r"examples\tg_bot\main.raw"
-    # file = "tests\\test_43.raw"
+    # file = "tests\\test_48.raw"
     # run_file(file)
     # build(file)

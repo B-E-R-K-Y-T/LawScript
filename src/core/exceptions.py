@@ -114,6 +114,7 @@ class BaseError(Exception):
 
     def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
         self.sub_ex: Optional[BaseError] = None
+        self._raw_mode = False
 
         if msg is None:
             msg = "Ошибка."
@@ -124,9 +125,23 @@ class BaseError(Exception):
         if info is not None:
             msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
+        self.msg = msg
+        self.line = line
+        self.info = info
         self.result_msg = f"{self.exc_name}: {msg}"
 
         super().__init__(self.result_msg)
+
+    def __str__(self) -> str:
+        if self._raw_mode:
+            return self.msg
+
+        return f"{self.exc_name}: {self.msg}"
+
+    def raw_throw(self):
+        self._raw_mode = True
+
+        return self
 
     @classmethod
     def get_inst(cls):
