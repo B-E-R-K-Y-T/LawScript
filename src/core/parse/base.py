@@ -12,6 +12,7 @@ _INTEGER_PATTERN = re.compile(r"^-?\d+$")
 _FLOAT_PATTERN = re.compile(r"^-?\d+(\.\d+)?$")
 _IDENTIFIER_PATTERN = re.compile(r"^[А-Яа-яЁёA-Za-z_][А-Яа-яЁёA-Za-z0-9_]*$")
 
+
 def is_integer(s: str) -> bool:
     return bool(_INTEGER_PATTERN.match(str(s)))
 
