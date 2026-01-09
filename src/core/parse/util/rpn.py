@@ -351,8 +351,15 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         is_float(token_),
                         is_integer(token_),
                     )
+                    ignores = (
+                        token_ in {
+                            Tokens.bool_equal, Tokens.bool_not_equal,
+                            Tokens.or_, Tokens.not_, Tokens.and_,
+                            Tokens.less, Tokens.greater
+                        },
+                    )
 
-                    if any(conditions):
+                    if any(conditions) and not any(ignores):
                         previous_tok = expr[offset_]
 
                         printer.logging(
