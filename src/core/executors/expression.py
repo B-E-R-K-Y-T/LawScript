@@ -331,8 +331,11 @@ class ExpressionExecutor(Executor):
         )
 
     def call_py_extend_procedure(self, py_extend_procedure, args, evaluate_stack: list[Union[BaseAtomicType, PyExtendWrapper]]):
-        py_extend_procedure.check_args(args)
-        result = py_extend_procedure.call(args)
+        try:
+            py_extend_procedure.check_args(args)
+            result = py_extend_procedure.call(args)
+        except BaseError as e:
+            raise e.__class__(msg=e.msg, info=self.expression.meta_info)
 
         if not isinstance(result, (BaseAtomicType, BaseDeclarativeType, Procedure, PyExtendWrapper, LinkedProcedure)):
             raise ErrorType(
