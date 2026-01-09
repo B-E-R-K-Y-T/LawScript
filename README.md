@@ -92,6 +92,6 @@ law.exe --run hello_world.raw
 ![img.png](docs/img13.png)
 
 ----
-Хорошо понимает контекст ошибки
+Хорошо понимает контекст ошибки. Показывает конкретное выражение
 ![img.png](docs/img14.png)
 ![img.png](docs/img15.png)
