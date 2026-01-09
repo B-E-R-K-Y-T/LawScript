@@ -251,7 +251,7 @@ def build_rpn_stack(expr: list[str], meta_info: Info) -> list[Union[Operator, Ba
         new_expr = prepare_expr(expr)
         return _build_rpn(new_expr)
     except BaseError as e:
-        raise InvalidExpression(str(e), meta_info)
+        raise InvalidExpression(str(e), meta_info).raw_throw()
     except IndexError:
         prepared_expr = []
 
@@ -305,6 +305,38 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
         if op == Tokens.left_bracket:
             if len(expr) > 2 and offset != 0 and (is_identifier(expr[offset - 1]) or isinstance(expr[offset - 1], AttrAccess)) and expr[offset - 1] not in {*ALLOW_OPERATORS, Tokens.true, Tokens.false}:
+                dont_repeat_flag = False
+                unary_ops = {ServiceTokens.in_background, Tokens.wait}
+
+                for offset_, token_ in enumerate(expr[offset:]):
+                    if token_ == Tokens.right_bracket:
+                        break
+
+                    conditions = (
+                        is_identifier(token_),
+                        is_float(token_),
+                        is_integer(token_),
+                    )
+
+                    if any(conditions):
+                        previous_tok = expr[offset_]
+
+                        if previous_tok in unary_ops:
+                            continue
+
+                        if not dont_repeat_flag:
+                            dont_repeat_flag = True
+                        else:
+                            if token_ == ServiceTokens.in_background:
+                                token_ = f"{Tokens.in_} {Tokens.background}"
+
+                            raise InvalidExpression(
+                                f"В выражении: '{' '.join(expr)}' не хватает запятой: '{Tokens.comma}' "
+                                f"между операндами: '{previous_tok}' и '{token_}'"
+                            )
+                    else:
+                        dont_repeat_flag = False
+
                 result_stack.append(ServiceTokens.arg_separator)
 
             stack.append(op)

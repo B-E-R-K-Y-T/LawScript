@@ -114,6 +114,7 @@ class BaseError(Exception):
 
     def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
         self.sub_ex: Optional[BaseError] = None
+        self._raw_mode = False
 
         if msg is None:
             msg = "Ошибка."
@@ -130,6 +131,17 @@ class BaseError(Exception):
         self.result_msg = f"{self.exc_name}: {msg}"
 
         super().__init__(self.result_msg)
+
+    def __str__(self) -> str:
+        if self._raw_mode:
+            return self.msg
+
+        return f"{self.exc_name}: {self.msg}"
+
+    def raw_throw(self):
+        self._raw_mode = True
+
+        return self
 
     @classmethod
     def get_inst(cls):

@@ -95,3 +95,8 @@ law.exe --run hello_world.raw
 Хорошо понимает контекст ошибки. Показывает конкретное выражение
 ![img.png](docs/img14.png)
 ![img.png](docs/img15.png)
+
+----
+В рамках выражений, тоже хорошо понимает, что сломалось
+![img.png](docs/img16.png)
+![img.png](docs/img17.png)
