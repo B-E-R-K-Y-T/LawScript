@@ -1,14 +1,17 @@
 import atexit
+import random
 import time
 from itertools import cycle
 from threading import Lock, Thread, Event
-from typing import Optional
+from typing import Optional, Final, Generator
 
 from config import settings
 from src.core.background_task.task import AbstractBackgroundTask
 from src.core.exceptions import BaseError, create_law_script_exception_class_instance
 from src.core.types.atomic import VOID
 from src.util.console_worker import printer
+
+_MAIN_LOCK: Final[Lock] = Lock()
 
 
 class ThreadWorker:
@@ -23,7 +26,7 @@ class ThreadWorker:
         self._scheduler = get_task_scheduler()
 
     def add_task(self, task: AbstractBackgroundTask):
-        with self.lock:
+        with _MAIN_LOCK:
             self.tasks.append(task)
 
     def start(self):
@@ -52,13 +55,9 @@ class ThreadWorker:
         return self._is_active
 
     def done_task(self, task: AbstractBackgroundTask):
-        with self.lock:
+        with _MAIN_LOCK:
             task.done = True
-
-            for offset, target_task in enumerate(self.tasks):
-                if target_task.id == task.id:
-                    self.tasks.pop(offset)
-                    break
+            self.tasks.remove(task)
 
     def _work(self):
         while not self._stop_event.is_set():
@@ -72,6 +71,8 @@ class ThreadWorker:
                 if task is not None:
                     printer.logging(f"{self.thread=} Забрал задачу")
                     self.add_task(task)
+                else:
+                    time.sleep(settings.ttl_check_free_tasks)
 
             if not self.tasks and elapsed > settings.ttl_thread:
                 with self.lock:
@@ -89,11 +90,13 @@ class ThreadWorker:
 
             self._start_time = time.time()
 
-            for idx, task in enumerate(self.tasks):
+            with _MAIN_LOCK:
+                task: AbstractBackgroundTask = random.choice(self.tasks)
+
+            with task.exec_lock:
                 try:
-                    with task.exec_lock:
-                        task.is_active = True
-                        next(task.next_command())
+                    task.is_active = True
+                    next(task.next_command())
                 except StopIteration:
                     from src.core.executors.body import Stop
 
@@ -111,8 +114,8 @@ class ThreadWorker:
                     self.done_task(task)
 
                     err_message = (
-                        f"{self.thread.name}: "
-                        f"Ошибка при выполнении задачи: [{task.id}] '{task.name}'.\n\nДетали: {e}"
+                        f"{self.thread.name}: Ошибка при выполнении задачи: [{task.id}] '{task.name}'."
+                        f"\n\nДетали: {e}"
                     )
 
                     printer.print_error(err_message)
@@ -123,7 +126,7 @@ class ThreadWorker:
 class TaskScheduler:
     def __init__(self):
         self.threads: list[ThreadWorker] = []
-        self._round_robin_process_list = None
+        self._round_robin_process_list: Optional[Generator[ThreadWorker]] = None
         self._lock = Lock()
         atexit.register(self.shutdown)
 
@@ -138,7 +141,7 @@ class TaskScheduler:
             if not worker.is_active():
                 continue
 
-            with worker.lock:
+            with _MAIN_LOCK:
                 if len(worker.tasks) > 1:
                     for idx, task in enumerate(worker.tasks):
                         if task.is_active:
@@ -164,6 +167,12 @@ class TaskScheduler:
                 if not self.threads[i].is_active():
                     self.threads.pop(i)
                 i -= 1
+
+            if self.threads and self._round_robin_process_list is not None:
+                worker = next(self._round_robin_process_list)
+
+                if len(worker.tasks) < settings.task_on_thread_step:
+                    return worker
 
             if len(self.threads) >= settings.max_running_threads_tasks:
                 if self._round_robin_process_list is None:

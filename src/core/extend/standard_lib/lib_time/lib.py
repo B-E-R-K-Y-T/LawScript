@@ -70,12 +70,19 @@ class BackgroundSleep(PyExtendWrapper):
                 self._done = False
                 self._lock = Lock()
                 self._gen_sleep = self.sleep()
+                self._delta_sleep_time = 0.0001
+                self._switch_point = 100
                 super().__init__(name, self.sleep_time)
 
             def sleep(self):
                 start_time = time.time()
+                switch = 0
 
                 while time.time() - start_time < self.sleep_time:
+                    if switch >= self._switch_point:
+                        time.sleep(self._delta_sleep_time)
+                        switch = 0
+
                     yield YIELD
 
                 return VOID
