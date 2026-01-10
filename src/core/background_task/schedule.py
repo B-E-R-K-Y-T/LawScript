@@ -1,4 +1,5 @@
 import atexit
+import random
 import time
 from itertools import cycle
 from threading import Lock, Thread, Event
@@ -50,10 +51,10 @@ class ThreadWorker:
     def is_active(self):
         return self._is_active
 
-    def done_task(self, task: AbstractBackgroundTask, task_id: int):
+    def done_task(self, task: AbstractBackgroundTask):
         with self._lock:
             task.done = True
-            self.tasks.pop(task_id)
+            self.tasks.remove(task)
 
     def _work(self):
         while not self._stop_event.is_set():
@@ -75,29 +76,32 @@ class ThreadWorker:
                 continue
 
             self._start_time = time.time()
+            task = random.choice(self.tasks)
 
-            for idx, task in enumerate(self.tasks):
-                try:
-                    next(task.next_command())
-                except StopIteration:
-                    from src.core.executors.body import Stop
+            try:
+                next(task.next_command())
+            except StopIteration:
+                from src.core.executors.body import Stop
 
-                    if isinstance(task.result, Stop):
-                        task.result = VOID
-
-                    self.done_task(task, idx)
-                except BaseError as e:
-                    task.result = create_law_script_exception_class_instance(e.exc_name, e)
-                    task.is_error_result = True
-                    task.error = e
-                    self.done_task(task, idx)
-                except Exception as e:
+                if isinstance(task.result, Stop):
                     task.result = VOID
-                    self.done_task(task, idx)
 
-                    err_message = f"{self.thread.name}: Ошибка при выполнении задачи: [{idx}] '{task.name}'.\n\nДетали: {e}"
+                self.done_task(task)
+            except BaseError as e:
+                task.result = create_law_script_exception_class_instance(e.exc_name, e)
+                task.is_error_result = True
+                task.error = e
+                self.done_task(task)
+            except Exception as e:
+                task.result = VOID
+                self.done_task(task)
 
-                    printer.print_error(err_message)
+                err_message = (
+                    f"{self.thread.name}: Ошибка при выполнении задачи: [{task.id}] '{task.name}'."
+                    f"\n\nДетали: {e}"
+                )
+
+                printer.print_error(err_message)
 
 
 class TaskScheduler:
@@ -123,9 +127,12 @@ class TaskScheduler:
 
     def next_worker(self) -> ThreadWorker:
         with self._lock:
-            for idx, worker in enumerate(self.threads):
-                if not worker.is_active():
-                    self.threads.pop(idx)
+            i = len(self.threads) - 1
+            while i >= 0:
+                if not self.threads[i].is_active():
+                    self.threads.pop(i)
+
+                i -= 1
 
             if len(self.threads) >= settings.max_running_threads_tasks:
                 if self._round_robin_process_list is None:
@@ -136,7 +143,7 @@ class TaskScheduler:
             worker = ThreadWorker()
             worker.start()
             self.threads.append(worker)
-            self._round_robin_process_list = cycle(self.threads)
+            # self._round_robin_process_list = cycle(self.threads)
 
             return worker
 
