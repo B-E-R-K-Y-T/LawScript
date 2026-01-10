@@ -350,6 +350,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         is_identifier(token_),
                         is_float(token_),
                         is_integer(token_),
+                        isinstance(token_, BaseAtomicType)
                     )
                     ignores = (
                         token_ in {
@@ -388,9 +389,14 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                             if token_ == ServiceTokens.in_background:
                                 token_ = f"{Tokens.in_} {Tokens.background}"
 
+
+                            len_path_to_err = len(' '.join(str(i) for i in expr[:offset_ + 1]))
+                            res_expr = ' '.join(str(i) for i in expr)
+
                             raise InvalidExpression(
                                 f"В выражении: '{' '.join(str(i) for i in expr)}' не хватает запятой: '{Tokens.comma}' "
-                                f"между операндами: '{previous_tok}' и '{token_}'"
+                                f"между операндами: '{previous_tok}' и '{token_}'\n\n"
+                                f"{res_expr}\n{' ' * len_path_to_err}^\n\n"
                             )
                     else:
                         printer.logging(

@@ -103,8 +103,9 @@ class Parser(ABC):
                 break
         else:
             raise InvalidSyntaxError(
-                f"Некорректная строка: '{line}', возможно Вы забыли один из этих знаков в конце: "
-                f"{", ".join([f"'{s}'" for s in end_symbols])}",
+                f"Некорректная строка: '{line.raw_data}', возможно Вы забыли один из этих знаков в конце: "
+                f"{", ".join([f"'{s}'" for s in end_symbols])}\n\n"
+                f"{line.raw_data}\n{" " * len(line.raw_data)}^\n\n",
                 info=line.get_file_info()
             )
 
