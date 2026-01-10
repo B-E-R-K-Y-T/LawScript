@@ -45,7 +45,7 @@ class Sleep(PyExtendWrapper):
         return VOID
 
 
-@builder.collect(func_name='спать_в_фоне')
+@builder.collect(func_name='асинхронный_сон')
 class BackgroundSleep(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
