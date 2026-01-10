@@ -24,9 +24,22 @@ class AbstractBackgroundTask(BaseAtomicType, ABC):
         self.name = name
         self.id = _next_id()
         self.is_error_result = False
+        self._is_active = False
         self.error: Optional['BaseError'] = None
         self._waited_lock = Lock()
+        self._lock = Lock()
+        self.exec_lock = Lock()
         self._waited = False
+
+    @property
+    def is_active(self):
+        with self._lock:
+            return self._is_active
+
+    @is_active.setter
+    def is_active(self, value: bool):
+        with self._lock:
+            self._is_active = value
 
     def is_waited(self):
         return self._waited
@@ -52,7 +65,7 @@ class ProcedureBackgroundTask(AbstractBackgroundTask):
         self._generator = executor.async_execute()
         self._current_result = None
         self._done = False
-        self._lock = Lock()
+        self._procedure_lock = Lock()
 
     @property
     def done(self):
@@ -60,7 +73,7 @@ class ProcedureBackgroundTask(AbstractBackgroundTask):
 
     @done.setter
     def done(self, value: bool):
-        with self._lock:
+        with self._procedure_lock:
             self._done = value
 
     @property
@@ -69,7 +82,7 @@ class ProcedureBackgroundTask(AbstractBackgroundTask):
 
     @result.setter
     def result(self, value):
-        with self._lock:
+        with self._procedure_lock:
             self._current_result = value
 
     def next_command(self):
