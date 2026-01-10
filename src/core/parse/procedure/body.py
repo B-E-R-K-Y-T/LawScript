@@ -66,6 +66,24 @@ class BodyParser(Parser):
         start_expr = expr[:sep_idx]
         end_expr = expr[sep_idx + 1:]
 
+        if not start_expr:
+            start_expr_len = len(' '.join(line[:line.index(Tokens.to)]))
+
+            raise InvalidSyntaxError(
+                f"Не обнаружено выражение для оператора '{Tokens.from_}'\n\n"
+                f"{' '.join(line)}\n{' ' * start_expr_len}^\n\n",
+                info=self.info
+            )
+
+        if not end_expr:
+            end_expr_len = len(' '.join(line[:line.index(Tokens.left_bracket)]))
+
+            raise InvalidSyntaxError(
+                f"Не обнаружено выражение для оператора '{Tokens.to}'\n\n"
+                f"{' '.join(line)}\n{' ' * end_expr_len}^\n\n",
+                info=self.info
+            )
+
         loop = Loop(
             str(), Expression(str(), start_expr, self.info), Expression(str(), end_expr, self.info),
             self.execute_parse(BodyParser, body, self.next_num_line(num))
@@ -118,6 +136,13 @@ class BodyParser(Parser):
                     self.commands.append(Print(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Print с выражением: {expr}", level="INFO")
                 case [Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
+                    if not expr:
+                        raise InvalidSyntaxError(
+                            f"Не обнаружено выражение для оператора '{Tokens.when}'",
+                            info=self.info,
+                            line=line
+                        )
+
                     when_body = self.execute_parse(BodyParser, body, self.next_num_line(num))
                     when = When(
                         str(), Expression(str(), expr, self.info), when_body,
@@ -128,21 +153,28 @@ class BodyParser(Parser):
                     self.commands.append(when)
                     printer.logging("Добавлена команда When", level="INFO")
                 case [Tokens.else_, Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
+                    if not expr:
+                        raise InvalidSyntaxError(
+                            f"Не обнаружено выражение для оператора '{Tokens.else_} {Tokens.when}'",
+                            info=self.info,
+                            line=line
+                        )
+
                     err_msg = (
                         f"Перед '{Tokens.else_} {Tokens.when}' "
                         f"всегда должен быть блок '{Tokens.when}' или '{Tokens.else_} {Tokens.when}'"
                     )
 
                     if not self.commands:
-                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info, pretty=False)
 
                     previous_command = self.commands[len(self.commands) - 1]
 
                     if not isinstance(previous_command, When):
-                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info, pretty=False)
 
                     if previous_command.else_ is not None:
-                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info, pretty=False)
 
                     else_when = ElseWhen(
                             str(), Expression(str(), expr, self.info),
@@ -176,6 +208,13 @@ class BodyParser(Parser):
                     self.parse_assign(name, expr, line)
                     printer.logging(f"Добавлено объявление переменной '{name}'", level="INFO")
                 case [Tokens.while_, *expr, Tokens.left_bracket]:
+                    if not expr:
+                        raise InvalidSyntaxError(
+                            f"Не обнаружено выражение для оператора '{Tokens.while_}'",
+                            info=self.info,
+                            line=line
+                        )
+
                     self.commands.append(
                         While(
                             str(), Expression(str(), expr, self.info),
@@ -230,12 +269,12 @@ class BodyParser(Parser):
                     err_msg = f"Перед '{Tokens.handler}' всегда должен быть блок '{Tokens.context}'"
 
                     if not self.commands:
-                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info, pretty=False)
 
                     previous_command = self.commands[len(self.commands) - 1]
 
                     if not isinstance(previous_command, Context):
-                        raise InvalidSyntaxError(err_msg, line=line, info=self.info)
+                        raise InvalidSyntaxError(err_msg, line=line, info=self.info, pretty=False)
 
                     handler = ExceptionHandler(str(), self.execute_parse(BodyParser, body, self.next_num_line(num)))
 
@@ -298,7 +337,7 @@ class BodyParser(Parser):
                     return num
                 case _:
                     printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(info=self.info)
+                    raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг тела завершен с ошибкой: неверный синтаксис", level="ERROR")
         raise InvalidSyntaxError

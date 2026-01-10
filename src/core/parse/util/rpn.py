@@ -36,8 +36,12 @@ ALLOW_OPERATORS = {
 
 
 class AttrAccess:
-    def __init__(self, expr: list[Union[Operator, BaseAtomicType]]):
+    def __init__(self, expr: list[Union[Operator, BaseAtomicType]], raw_expr: list):
         self.expr = expr
+        self.raw_expr = raw_expr
+
+    def __str__(self):
+        return "".join(str(x) for x in self.raw_expr)
 
 
 def check_correct_expr(expr: list[str]):
@@ -228,7 +232,7 @@ def prepare_expr(expr: list[str]) -> list:
                     printer.logging("Обнаружены скобки в цепочке атрибутов", level="ERROR")
                     raise InvalidExpression("Нельзя разрывать цепочки атрибутов скобками")
 
-                expr[start_idx:end_idx + 1] = [AttrAccess(_build_rpn(attr_access_expr))]
+                expr[start_idx:end_idx + 1] = [AttrAccess(_build_rpn(attr_access_expr), attr_access_expr)]
                 printer.logging(f"Замена цепочки на AttrAccess", level="DEBUG")
                 i = start_idx
 
@@ -305,38 +309,105 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
         if op == Tokens.left_bracket:
             if len(expr) > 2 and offset != 0 and (is_identifier(expr[offset - 1]) or isinstance(expr[offset - 1], AttrAccess)) and expr[offset - 1] not in {*ALLOW_OPERATORS, Tokens.true, Tokens.false}:
+                printer.logging(
+                    f"Перед скобкой находится идентификатор/атрибут: '{expr[offset - 1]}'. "
+                    f"Проверка аргументов функции...",
+                    level="INFO"
+                )
+
                 dont_repeat_flag = False
                 unary_ops = {ServiceTokens.in_background, Tokens.wait}
 
                 for offset_, token_ in enumerate(expr[offset:]):
+                    printer.logging(
+                        f"Проверка токена '{token_}' на позиции {offset_} относительно скобки",
+                        level="DEBUG"
+                    )
+
                     if token_ == Tokens.right_bracket:
+                        sub_expr = expr[offset:]
+                        previous_tok = sub_expr[offset_ - 1]
+
+                        if previous_tok == Tokens.comma:
+                            err_expr = ''.join([str(i) for i in sub_expr][:offset_+1])
+                            sub_expr = [str(i) for i in sub_expr]
+                            res_expr = ''.join(str(i) for i in expr)
+
+                            target_comma = (
+                                f"{err_expr}\n"
+                                f"{" " * (sum(len(t) for o, t in enumerate(sub_expr) if o < offset_ - 1))}^"
+                            )
+
+                            raise InvalidExpression(
+                                f"В выражении: '{res_expr}' стоит лишняя запятая '{Tokens.comma}'\n\n"
+                                f"{target_comma}\n"
+                            )
+
+                        printer.logging(f"Обнаружена закрывающая скобка, завершение проверки аргументов", level="DEBUG")
                         break
 
                     conditions = (
                         is_identifier(token_),
                         is_float(token_),
                         is_integer(token_),
+                        isinstance(token_, BaseAtomicType)
+                    )
+                    ignores = (
+                        token_ in {
+                            Tokens.bool_equal, Tokens.bool_not_equal,
+                            Tokens.or_, Tokens.not_, Tokens.and_,
+                            Tokens.less, Tokens.greater
+                        },
                     )
 
-                    if any(conditions):
+                    if any(conditions) and not any(ignores):
                         previous_tok = expr[offset_]
 
+                        printer.logging(
+                            f"Токен '{token_}' является операндом. Предыдущий токен: '{previous_tok}'",
+                            level="DEBUG"
+                        )
                         if previous_tok in unary_ops:
+                            printer.logging(
+                                f"Предыдущий токен '{previous_tok}' является унарным оператором, пропускаем проверку",
+                                level="DEBUG"
+                            )
                             continue
 
                         if not dont_repeat_flag:
+                            printer.logging(
+                                f"Установка флага dont_repeat_flag в True. Первый операнд: '{token_}'",
+                                level="DEBUG"
+                            )
                             dont_repeat_flag = True
                         else:
+                            printer.logging(
+                                f"Обнаружен второй операнд '{token_}' без разделителя между предыдущим операндом",
+                                level="WARNING"
+                            )
+
                             if token_ == ServiceTokens.in_background:
                                 token_ = f"{Tokens.in_} {Tokens.background}"
 
+
+                            len_path_to_err = len(' '.join(str(i) for i in expr[:offset_ + 1]))
+                            res_expr = ' '.join(str(i) for i in expr)
+
                             raise InvalidExpression(
-                                f"В выражении: '{' '.join(expr)}' не хватает запятой: '{Tokens.comma}' "
-                                f"между операндами: '{previous_tok}' и '{token_}'"
+                                f"В выражении: '{' '.join(str(i) for i in expr)}' не хватает запятой: '{Tokens.comma}' "
+                                f"между операндами: '{previous_tok}' и '{token_}'\n\n"
+                                f"{res_expr}\n{' ' * len_path_to_err}^\n\n"
                             )
                     else:
+                        printer.logging(
+                            f"Токен '{token_}' не является операндом. Сбрасываем флаг dont_repeat_flag", level="DEBUG"
+                        )
                         dont_repeat_flag = False
 
+                printer.logging(
+                    f"Проверка аргументов завершена. Добавляем разделитель аргументов в результирующий стек",
+                    level="INFO"
+                )
                 result_stack.append(ServiceTokens.arg_separator)
 
             stack.append(op)

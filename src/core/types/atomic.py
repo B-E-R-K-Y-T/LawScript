@@ -113,6 +113,9 @@ class Number(BaseAtomicType):
 
 class Boolean(BaseAtomicType):
     def __init__(self, value: bool):
+        if not isinstance(value, bool):
+            value = bool(value)
+
         super().__init__(value)
 
     @classmethod

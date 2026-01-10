@@ -251,9 +251,15 @@ class BodyExecutor(Executor):
                 else:
                     result_to = executor_to.execute_with_atomic_type()
 
-                if not isinstance(result_from, Number) or not isinstance(result_to, Number):
+                if not isinstance(result_from, Number):
                     raise ErrorType(
-                        f"В цикле в блоках '{Tokens.from_}' и '{Tokens.to}' должны быть числа!",
+                        f"В цикле в блоке '{Tokens.from_}' должно быть число!",
+                        info=command.meta_info
+                    )
+
+                if not isinstance(result_to, Number):
+                    raise ErrorType(
+                        f"В цикле в блоке '{Tokens.to}' должно быть число!",
                         info=command.meta_info
                     )
 

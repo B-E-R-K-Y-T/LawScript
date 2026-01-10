@@ -33,7 +33,7 @@ class Print(PyExtendWrapper):
         from src.core.types.atomic import VOID
 
         parsed_args = self.parse_args(args)
-        sep, end = "", ""
+        sep, end = " ", "\n"
 
         if len(args) > 1:
             sep = parsed_args[1]

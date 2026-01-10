@@ -477,7 +477,7 @@ class Compiler:
                 printer.logging("Компиляция Context", level="DEBUG")
                 if not statement.handlers:
                     raise InvalidSyntaxError(
-                        f"У блока '{Tokens.context}' должен быть хотя бы 1 '{Tokens.handler}'",
+                        f"У блока '{Tokens.context}' должен быть хотя бы один '{Tokens.handler}'",
                         info=statement.meta_info
                     )
 

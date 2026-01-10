@@ -169,29 +169,70 @@ class MaxRecursionError(BaseError):
 class InvalidSyntaxError(BaseError):
     exc_name = "ОшибкаСинтаксиса"
 
-    def __init__(self, msg: Optional[str] = None, *, line: Optional[list[str]] = None, info: Optional[Info] = None):
+    def __init__(
+            self, msg: Optional[str] = None, *, line: Optional[list[str]] = None,
+            info: Optional[Info] = None, pretty: bool = True
+    ):
         if msg is None:
             msg = "Некорректный синтаксис"
 
         if line is not None:
+            probable_tokens = ""
+
             for word in line:
                 if word not in Tokens:
                     sorted_matches = get_probable_tokens(word)
-                    probable_tokens = ""
 
                     for i, (token, percent) in enumerate(sorted_matches[:3], 1):
                         probable_tokens += f"{i}. {token}\n"
 
                     if probable_tokens:
-                        msg = (
-                            f"{msg}\n\n"
-                            f"Возможно, Вы имели ввиду? \n{probable_tokens}\n"
-                        )
                         break
-                else:
-                    msg = f"{msg} Строка: '{" ".join(line)}'"
+
+            shift = "\n\n"
+
+            if probable_tokens:
+                msg = (
+                    f"{msg}\n\n"
+                    f"Возможно, Вы имели ввиду? \n{probable_tokens}\n"
+                )
+                shift = ""
+
+            if pretty:
+                hint = self.pretty_syntax_hint(line)
+
+                if hint:
+                    msg = f"{msg}{shift}Подсказка: {hint}\n\n"
 
         super().__init__(msg, info=info)
+
+    @staticmethod
+    def pretty_syntax_hint(line: list[str]):
+        match line:
+            case [Tokens.when, *_]:
+                return f"{Tokens.when} <ВЫРАЖЕНИЕ> {Tokens.then} {Tokens.left_bracket}"
+
+            case [Tokens.else_, Tokens.when, *_]:
+                return f"{Tokens.else_} {Tokens.when} <ВЫРАЖЕНИЕ> {Tokens.then} {Tokens.left_bracket}"
+
+            case [Tokens.while_, *_]:
+                return f"{Tokens.while_} <ВЫРАЖЕНИЕ> {Tokens.left_bracket}"
+
+            case [Tokens.loop, *_]:
+                return (
+                    f"{Tokens.loop} {Tokens.from_} <НАЧАЛО> {Tokens.to} <КОНЕЦ> {Tokens.left_bracket}"
+                    f"\nили\n"
+                    f"{Tokens.loop} <ИМЯ_ПЕРЕМЕННОЙ_ЦИКЛА> {Tokens.from_} <НАЧАЛО> {Tokens.to} <КОНЕЦ> {Tokens.left_bracket}"
+                )
+
+            case [Tokens.handler, *_]:
+                return f"{Tokens.handler} <ИМЯ_КЛАССА_ОШИБКИ> {Tokens.as_} <ИМЯ_ПЕРЕМЕННОЙ> {Tokens.left_bracket}"
+
+            case [Tokens.right_bracket]:
+                return f"{Tokens.right_bracket} (закрытие блока)"
+
+            case _:
+                return ""
 
 
 @_add_ex

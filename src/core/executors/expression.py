@@ -603,7 +603,7 @@ class ExpressionExecutor(Executor):
 
                         if not isinstance(background_task, AbstractBackgroundTask):
                             raise ErrorType(
-                                f"Возвращаемое значение процедуры '{func.name}' должно быть задачей!",
+                                f"Возвращаемое значение внешней процедуры '{func.name}' должно быть задачей!",
                                 self.expression.meta_info
                             )
 

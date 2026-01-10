@@ -11,7 +11,8 @@ from rich.panel import Panel
 from rich.text import Text
 
 
-_MAX_THREAD: Final[int] = os.cpu_count() * 2 - 1 or 1
+_MAX_THREAD_SUGGESTED: Final[int] = os.cpu_count() * 2 - 1 or 1
+_MAX_THREAD_SAFE: Final[int] = min(_MAX_THREAD_SUGGESTED * 4, 256)
 
 
 def get_working_directory() -> Path:
@@ -38,9 +39,9 @@ class Settings(BaseSettings):
     compiled_postfix: str = Field(default="law")
     py_extend_postfix: str = Field(default="pyl")
     max_running_threads_tasks: int = Field(
-        default=max(1, _MAX_THREAD),
+        default=_MAX_THREAD_SUGGESTED,
         ge=1,
-        le=_MAX_THREAD
+        le=_MAX_THREAD_SAFE
     )
     ttl_thread: float = Field(default=10)
     wait_task_time: float = Field(default=.001)
@@ -48,7 +49,7 @@ class Settings(BaseSettings):
     standard_lib_path_postfix: str = Field(default="/core/extend/standard_lib/modules")
     task_thread_switch_interval: float = Field(default=.00001)
     step_task_size_to_sleep: int = Field(default=10)
-    time_to_join_thread: float = Field(default=0)
+    time_to_join_thread: float = Field(default=1)
 
     @field_validator("std_name")
     def validate_std_name(cls, value: str) -> str:
