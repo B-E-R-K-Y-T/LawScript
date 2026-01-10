@@ -26,7 +26,7 @@ class ThreadWorker:
             self.tasks.append(task)
 
     def start(self):
-        self.thread = Thread(target=self._work)
+        self.thread = Thread(target=self._work, daemon=True)
         self.thread.start()
         printer.logging(f"{self.thread=} Запущен")
 

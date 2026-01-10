@@ -43,7 +43,7 @@ class Settings(BaseSettings):
         ge=1,
         le=_MAX_THREAD_SAFE
     )
-    ttl_thread: float = Field(default=10)
+    ttl_thread: float = Field(default=60)
     wait_task_time: float = Field(default=.001)
     std_name: str = Field(default="стандартная_библиотека")
     standard_lib_path_postfix: str = Field(default="/core/extend/standard_lib/modules")
