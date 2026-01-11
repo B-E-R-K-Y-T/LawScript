@@ -21,7 +21,7 @@ class ThreadWorker:
         self._stop_event = Event()
         self.lock = Lock()
         self._task_added_event = Event()
-        self._start_time = time.time()
+        self._start_time = time.monotonic()
         self._is_active = True
         self._scheduler = get_task_scheduler()
 
@@ -61,7 +61,7 @@ class ThreadWorker:
 
     def _work(self):
         while not self._stop_event.is_set():
-            current_time = time.time()
+            current_time = time.monotonic()
             elapsed = current_time - self._start_time
 
             if not self.tasks:
@@ -88,7 +88,7 @@ class ThreadWorker:
                 self._task_added_event.clear()
                 continue
 
-            self._start_time = time.time()
+            self._start_time = time.monotonic()
 
             with _MAIN_LOCK:
                 task: AbstractBackgroundTask = random.choice(self.tasks)
@@ -137,11 +137,11 @@ class TaskScheduler:
             self.threads.clear()
 
     def get_free_task(self) -> Optional[AbstractBackgroundTask]:
-        for worker in self.threads:
-            if not worker.is_active():
-                continue
+        with self._lock:
+            for worker in self.threads:
+                if not worker.is_active():
+                    continue
 
-            with _MAIN_LOCK:
                 if len(worker.tasks) > 1:
                     for idx, task in enumerate(worker.tasks):
                         if task.is_active:

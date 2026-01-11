@@ -43,7 +43,7 @@ class Settings(BaseSettings):
         ge=1,
         le=_MAX_THREAD_SAFE
     )
-    task_on_thread_step: int = Field(default=5)
+    task_on_thread_step: int = Field(default=2)
     ttl_thread: float = Field(default=2)
     ttl_check_free_tasks: float = Field(default=0.5)
     wait_task_time: float = Field(default=.001)

@@ -350,13 +350,14 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         is_identifier(token_),
                         is_float(token_),
                         is_integer(token_),
-                        isinstance(token_, BaseAtomicType)
+                        isinstance(token_, BaseAtomicType),
+                        isinstance(token_, AttrAccess),
                     )
                     ignores = (
                         token_ in {
                             Tokens.bool_equal, Tokens.bool_not_equal,
                             Tokens.or_, Tokens.not_, Tokens.and_,
-                            Tokens.less, Tokens.greater
+                            Tokens.less, Tokens.greater, Tokens.wait
                         },
                     )
 
@@ -388,7 +389,6 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                             if token_ == ServiceTokens.in_background:
                                 token_ = f"{Tokens.in_} {Tokens.background}"
-
 
                             len_path_to_err = len(' '.join(str(i) for i in expr[:offset_ + 1]))
                             res_expr = ' '.join(str(i) for i in expr)
