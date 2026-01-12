@@ -11,7 +11,7 @@ from src.core.exceptions import BaseError, create_law_script_exception_class_ins
 from src.core.types.atomic import VOID
 from src.util.console_worker import printer
 
-_MAIN_LOCK: Final[Lock] = Lock()
+_GLOBAL_TASKS_LOCK: Final[Lock] = Lock()
 
 
 class ThreadWorker:
@@ -26,7 +26,7 @@ class ThreadWorker:
         self._scheduler = get_task_scheduler()
 
     def add_task(self, task: AbstractBackgroundTask):
-        with _MAIN_LOCK:
+        with _GLOBAL_TASKS_LOCK:
             self.tasks.append(task)
 
     def start(self):
@@ -55,7 +55,7 @@ class ThreadWorker:
         return self._is_active
 
     def done_task(self, task: AbstractBackgroundTask):
-        with _MAIN_LOCK:
+        with _GLOBAL_TASKS_LOCK:
             task.done = True
             self.tasks.remove(task)
 
@@ -90,7 +90,7 @@ class ThreadWorker:
 
             self._start_time = time.monotonic()
 
-            with _MAIN_LOCK:
+            with _GLOBAL_TASKS_LOCK:
                 task: AbstractBackgroundTask = random.choice(self.tasks)
 
             with task.exec_lock:
