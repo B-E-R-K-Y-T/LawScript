@@ -162,6 +162,8 @@ class Array(BaseAtomicType):
 
             if isinstance(value, String):
                 result += f"\"{value}\""
+            elif value is self:
+                result += "ЦИКЛИЧЕСКАЯ ССЫЛКА"
             else:
                 result += str(value)
 
@@ -221,6 +223,8 @@ class Table(BaseAtomicType):
 
             if isinstance(value, String):
                 result += f"\"{key}\": \"{value}\""
+            elif value is self:
+                result += f"\"{key}\": {'ЦИКЛИЧЕСКАЯ ССЫЛКА'}"
             else:
                 result += f"\"{key}\": {value}"
 
