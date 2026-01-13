@@ -83,15 +83,15 @@ class ThreadWorker:
                 )
                 break
 
-            if len(self.tasks) == 0:
-                self._task_added_event.wait(timeout=settings.wait_task_time)
-                self._task_added_event.clear()
-                continue
+            with _GLOBAL_TASKS_LOCK:
+                if len(self.tasks) == 0:
+                    self._task_added_event.wait(timeout=settings.wait_task_time)
+                    self._task_added_event.clear()
+                    continue
+
+                task: AbstractBackgroundTask = random.choice(self.tasks)
 
             self._start_time = time.monotonic()
-
-            with _GLOBAL_TASKS_LOCK:
-                task: AbstractBackgroundTask = random.choice(self.tasks)
 
             with task.exec_lock:
                 try:
