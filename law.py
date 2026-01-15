@@ -18,6 +18,7 @@ def create_absolute_path_to_file(filename: str) -> Path:
     """Создает абсолютный путь к файлу относительно рабочей директории."""
     return (WORKING_DIR / filename).resolve()
 
+
 class Law:
     @staticmethod
     def run():
@@ -79,6 +80,6 @@ class Law:
 if __name__ == '__main__':
     law = Law()
     law.run()
-    # file = "tests\\err_test_1.raw"
+    # file = "tests\\test_50.raw"
     # run_file(file)
     # build(file)
