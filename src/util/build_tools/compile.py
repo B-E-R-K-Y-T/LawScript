@@ -138,7 +138,24 @@ class Compiler:
                 )
 
             elif isinstance(statement, CodeBlock):
-                self.check_code_body(statement.body)
+                if isinstance(statement, When):
+                    self.check_code_body(statement.body)
+
+                    if statement.else_whens is not None:
+                        for else_when in statement.else_whens:
+                            self.check_code_body(else_when.body)
+
+                    if statement.else_ is not None:
+                        self.check_code_body(statement.else_.body)
+
+                elif isinstance(statement, Context):
+                    self.check_code_body(statement.body)
+
+                    for handler in statement.handlers:
+                        self.check_code_body(handler.body)
+
+                else:
+                    self.check_code_body(statement.body)
 
     def compile_procedure(self, compiled_obj: Union[Procedure, Method, Constructor]) -> Union[Procedure, Method, Constructor]:
         self.check_code_body(compiled_obj.body)

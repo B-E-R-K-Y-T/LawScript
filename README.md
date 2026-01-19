@@ -29,7 +29,7 @@ py law.py --run hello_world.raw
 ## Сборка:
 
 ```
-pyinstaller --onefile --add-data="src;src" --hidden-import=requests .\law.py
+pyinstaller --onedir --hidden-import=requests .\law.py
 ```
 
 ### Запуск exe

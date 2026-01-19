@@ -1,11 +1,13 @@
 import sys
+from typing import Union
 
 from src.core.tokens import Tokens
+from src.core.types.line import Line
 from src.util.build_tools.compile import Compiled
 from src.util.console_worker import printer
 
 
-def is_ignore_line(line: str) -> bool:
+def is_ignore_line(line: Union[Line, Compiled]) -> bool:
     if isinstance(line, Compiled):
         return True
 
