@@ -132,6 +132,7 @@ class Boolean(BaseAtomicType):
 class Array(BaseAtomicType):
     def __init__(self, value: list[BaseAtomicType]):
         super().__init__(value)
+        self.visited = set()
 
     def append(self, obj: BaseAtomicType):
         self.value.append(obj)
@@ -155,6 +156,11 @@ class Array(BaseAtomicType):
         return len(self.value)
 
     def __str__(self):
+        if id(self) in self.visited:
+            return "ЦИКЛИЧЕСКАЯ ССЫЛКА"
+
+        self.visited.add(id(self))
+
         result = ""
 
         for value in self.value:
@@ -166,6 +172,8 @@ class Array(BaseAtomicType):
                 result += "ЦИКЛИЧЕСКАЯ ССЫЛКА"
             else:
                 result += str(value)
+
+        self.visited.remove(id(self))
 
         return "[" + result[2:] + "]"
 
@@ -186,6 +194,7 @@ class Table(BaseAtomicType):
             value = {}
 
         super().__init__(value)
+        self.visited = set()
 
     def get(self, key: String):
         return self.value[key]
@@ -215,7 +224,11 @@ class Table(BaseAtomicType):
     def __len__(self):
         return len(self.value)
 
-    def __str__(self) -> str:
+    def __str__(self):
+        if id(self) in self.visited:
+            return "ЦИКЛИЧЕСКАЯ ССЫЛКА"
+
+        self.visited.add(id(self))
         result = ""
 
         for key, value in self.value.items():
@@ -227,6 +240,8 @@ class Table(BaseAtomicType):
                 result += f"\"{key}\": {'ЦИКЛИЧЕСКАЯ ССЫЛКА'}"
             else:
                 result += f"\"{key}\": {value}"
+
+        self.visited.remove(id(self))
 
         return "{" + result[2:] + "}"
 

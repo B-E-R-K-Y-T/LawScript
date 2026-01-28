@@ -4,6 +4,7 @@ from multiprocessing import Queue, Process
 from tkinter import scrolledtext, messagebox
 import re
 import sys
+import io
 
 from config import settings
 from src.core.call_func_stack import get_stack_pretty_str
@@ -22,6 +23,21 @@ class OutputRedirector:
     def write(self, string):
         self.text_widget.insert(tk.END, string)
         self.text_widget.see(tk.END)
+        self.text_widget.update_idletasks()  # Принудительное обновление GUI
+
+    def flush(self):
+        pass
+
+
+class RealTimeOutputQueue:
+    """Очередь с немедленным выводом"""
+
+    def __init__(self, output_queue):
+        self.output_queue = output_queue
+
+    def write(self, string):
+        if string:  # Игнорируем пустые строки
+            self.output_queue.put(("output", string))
 
     def flush(self):
         pass
@@ -227,8 +243,7 @@ class TextEditor:
             wrap=tk.WORD,
             font=("Courier New", 10),
             height=8,
-            state=tk.DISABLED,
-            bg="#f0f0f0"
+            bg="#f0f0f0"  # Убрали state=tk.DISABLED для возможности вставки
         )
         self.output_area.pack(fill=tk.BOTH, expand=True)
         paned_window.add(output_frame)
@@ -236,7 +251,6 @@ class TextEditor:
         # Настройка разделителя (70% редактор, 30% вывод)
         paned_window.paneconfig(editor_frame, stretch="always")
         paned_window.paneconfig(output_frame, stretch="never")
-        # paned_window.sashpos(0, int(self.root.winfo_height() * 0.7))
 
         # Панель статуса
         self.status_bar = tk.Label(self.root, text="Готов", relief=tk.SUNKEN, anchor=tk.W)
@@ -322,9 +336,7 @@ class TextEditor:
 
     def clear_output(self):
         """Очищает область вывода"""
-        self.output_area.config(state=tk.NORMAL)
         self.output_area.delete(1.0, tk.END)
-        self.output_area.config(state=tk.DISABLED)
 
     def build_code(self):
         """Собирает код из файла"""
@@ -382,80 +394,75 @@ class TextEditor:
     def monitor_output(self):
         """Мониторит вывод из дочернего процесса"""
         try:
-            # Пытаемся получить данные из очереди
+            # Пытаемся получить все доступные данные из очереди
+            got_data = False
             while True:
                 try:
                     msg_type, content = self.output_queue.get_nowait()
+                    got_data = True
 
-                    if msg_type == "output":
-                        self.output_area.config(state=tk.NORMAL)
-                        self.output_area.insert(tk.END, content)
-                        self.output_area.config(state=tk.DISABLED)
+                    # Вставляем вывод в текстовое поле
+                    self.output_area.insert(tk.END, content)
+                    self.output_area.see(tk.END)
 
-                    elif msg_type == "error":
-                        self.output_area.config(state=tk.NORMAL)
-                        self.output_area.insert(tk.END, f"\n{content}\n")
-                        self.output_area.config(state=tk.DISABLED)
-
-                    elif msg_type == "status":
-                        if content == "completed":
-                            self.output_area.config(state=tk.NORMAL)
-                            self.output_area.insert(tk.END, "\n=== Выполнение завершено ===\n")
-                            self.output_area.config(state=tk.DISABLED)
-                            self.status_bar.config(text="Готов")
-                        elif content == "error":
-                            self.status_bar.config(text="Ошибка выполнения")
-                        break
+                    # Немедленное обновление GUI
+                    self.output_area.update_idletasks()
 
                 except queue.Empty:
                     break
 
+            # Если процесс завершился и данных больше нет
+            if not self.execution_process.is_alive():
+                try:
+                    # Получаем оставшиеся данные
+                    while True:
+                        msg_type, content = self.output_queue.get_nowait()
+                        self.output_area.insert(tk.END, content)
+                        self.output_area.see(tk.END)
+                        self.output_area.update_idletasks()
+                except queue.Empty:
+                    pass
+
+                self.output_area.insert(tk.END, "\n=== Выполнение завершено ===\n")
+                self.output_area.see(tk.END)
+                self.status_bar.config(text="Готов")
+                return
+
         except Exception as e:
-            self.output_area.config(state=tk.NORMAL)
             self.output_area.insert(tk.END, f"Ошибка мониторинга: {e}\n")
-            self.output_area.config(state=tk.DISABLED)
             self.status_bar.config(text="Ошибка мониторинга")
 
         # Продолжаем мониторинг, если процесс еще работает
         if self.execution_process.is_alive():
-            self.root.after(100, self.monitor_output)
+            self.root.after(50, self.monitor_output)  # Уменьшил интервал до 50мс
 
     @staticmethod
     def _execute_code_in_process(code, output_queue):
-        """Выполняет код в отдельном процессе"""
+        """Выполняет код в отдельном процессе с немедленным выводом"""
         try:
-            # Перенаправляем вывод в очередь
-            import sys
-            from io import StringIO
+            # Перенаправляем вывод прямо в очередь
+            real_time_output = RealTimeOutputQueue(output_queue)
 
-            # Захватываем вывод
+            # Сохраняем оригинальные потоки
             old_stdout = sys.stdout
             old_stderr = sys.stderr
 
-            # Создаем буфер для вывода
-            output_buffer = StringIO()
-            sys.stdout = output_buffer
-            sys.stderr = output_buffer
+            # Перенаправляем stdout и stderr
+            sys.stdout = real_time_output
+            sys.stderr = real_time_output
 
             try:
                 run_string(code)
             except Exception as e:
                 stack_trace = get_stack_pretty_str()
-
                 if stack_trace:
                     stack_trace += "\n"
-
                 printer.print_error(f"{stack_trace}{str(e)}")
-            # Отправляем вывод в очередь
-            output = output_buffer.getvalue()
-            output_queue.put(("output", output))
-            output_queue.put(("status", "completed"))
 
         except Exception as e:
             import traceback
-            error_msg = f"Ошибка: {str(e)}\n{traceback.format_exc()}"
+            error_msg = f"Ошибка в процессе выполнения: {str(e)}\n{traceback.format_exc()}"
             output_queue.put(("error", error_msg))
-            output_queue.put(("status", "error"))
 
         finally:
             # Восстанавливаем stdout/stderr
@@ -465,12 +472,11 @@ class TextEditor:
     def stop_execution(self):
         """Останавливает выполнение"""
         if hasattr(self, 'execution_process') and self.execution_process.is_alive():
-            self.execution_process.terminate()  # Более надежное завершение
+            self.execution_process.terminate()
             self.execution_process.join(timeout=1.0)
 
-        self.output_area.config(state=tk.NORMAL)
         self.output_area.insert(tk.END, "\n=== Выполнение прервано пользователем ===\n")
-        self.output_area.config(state=tk.DISABLED)
+        self.output_area.see(tk.END)
         self.status_bar.config(text="Выполнение прервано")
 
     def run_file_dialog(self):
@@ -495,7 +501,6 @@ class TextEditor:
         self.status_bar.config(text=f"Запуск файла: {file_path}")
 
         try:
-            self.output_area.config(state=tk.NORMAL)
             self.output_area.insert(tk.END, f"=== Запуск файла: {file_path} ===\n")
 
             # Сохраняем оригинальные stdout/stderr
@@ -517,7 +522,6 @@ class TextEditor:
             # Восстанавливаем оригинальные stdout/stderr
             sys.stdout = old_stdout
             sys.stderr = old_stderr
-            self.output_area.config(state=tk.DISABLED)
             self.status_bar.config(text="Готов")
 
     def save_as_file(self):
@@ -537,10 +541,8 @@ class TextEditor:
             self.current_file_path = file_path
             self.save_file()
 
-    # ... (остальные ваши методы остаются без изменений)
     def setup_keybindings(self):
         """Настраивает горячие клавиши"""
-        # Существующие привязки...
         self.root.bind('<F5>', lambda e: self.run_code())
         self.root.bind('<F6>', lambda e: self.stop_execution())
 
@@ -654,26 +656,30 @@ class TextEditor:
                 messagebox.showerror("Ошибка", f"Не удалось открыть файл: {e}")
 
     def save_file(self):
-        from tkinter import filedialog
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".txt",
-            filetypes=[
-                ("Контракты", "*.raw"),
-                ("Скомпилированные проекты", "*.law"),
-                ("Python расширения", "*.pyl"),
-                ("Все файлы", "*.*"),
-            ]
-        )
+        if not self.current_file_path:
+            from tkinter import filedialog
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".raw",
+                filetypes=[
+                    ("Контракты", "*.raw"),
+                    ("Скомпилированные проекты", "*.law"),
+                    ("Python расширения", "*.pyl"),
+                    ("Все файлы", "*.*"),
+                ]
+            )
+            if file_path:
+                self.current_file_path = file_path
+            else:
+                return
 
-        if file_path:
-            try:
-                with open(file_path, 'w', encoding='utf-8') as file:
-                    content = self.text_area.get(1.0, tk.END)
-                    file.write(content)
-                    self.root.title(f"{file_path} - Текстовый редактор")
-                    messagebox.showinfo("Успех", "Файл сохранен!")
-            except Exception as e:
-                messagebox.showerror("Ошибка", f"Не удалось сохранить файл: {e}")
+        try:
+            with open(self.current_file_path, 'w', encoding='utf-8') as file:
+                content = self.text_area.get(1.0, tk.END)
+                file.write(content)
+                self.root.title(f"{self.current_file_path} - Текстовый редактор")
+                messagebox.showinfo("Успех", "Файл сохранен!")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось сохранить файл: {e}")
 
     def exit_editor(self):
         if messagebox.askokcancel("Выход", "Вы уверены, что хотите выйти?"):
