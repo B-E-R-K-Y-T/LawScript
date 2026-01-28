@@ -25,11 +25,13 @@ def get_working_directory() -> Path:
         return Path(__file__).parent.resolve()
 
 
-class ScriptDirStorage:
+class GlobalStorage:
     def __init__(self):
         self.LW_SCRIPT_DIR = ""
+        self.SYS_ARGS = []
 
-script_dir_storage = ScriptDirStorage()
+
+global_storage = GlobalStorage()
 WORKING_DIR = get_working_directory()
 
 class Settings(BaseSettings):

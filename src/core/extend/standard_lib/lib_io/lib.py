@@ -74,7 +74,7 @@ class ReadFile(PyExtendWrapper):
 
     def call(self, args: Optional[list[BaseAtomicType]] = None):
         import os
-        from config import script_dir_storage
+        from config import global_storage
         from src.core.types.atomic import String, Array
         from src.core.exceptions import ErrorValue, FileError
 
@@ -88,7 +88,7 @@ class ReadFile(PyExtendWrapper):
 
         # Формируем полный путь относительно рабочей директории
         # Если путь абсолютный, os.path.join корректно его обработает
-        full_path = os.path.join(script_dir_storage.LW_SCRIPT_DIR, path)
+        full_path = os.path.join(global_storage.LW_SCRIPT_DIR, path)
 
         # Нормализуем путь (убираем ../, ./ и т.д.)
         full_path = os.path.normpath(full_path)
