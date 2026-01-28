@@ -93,6 +93,16 @@ class BodyParser(Parser):
         return loop
 
     def parse_assign(self, name: str, expr: list, line: list[str]):
+        if not expr:
+            raw_expr = " ".join(line)
+            arrow = f"\n\n\n{raw_expr}\n{" " * (len(raw_expr) - 2) + "^"}\n\n"
+
+            raise InvalidSyntaxError(
+                f"{arrow}Отсутствует выражение для переменной: '{name}'",
+                line=line,
+                info=self.info
+            )
+
         if not is_identifier(name):
             raise InvalidSyntaxError(
                 f"Имя переменной должно состоять только из букв и цифр! Переменная: {name}",
