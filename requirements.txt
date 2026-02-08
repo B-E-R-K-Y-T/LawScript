@@ -9,7 +9,9 @@ pydantic-settings~=2.10.1
 dill~=0.4.0
 
 Jinja2~=3.1.6
-setuptools~=80.9.0
+setuptools~=79.0.1
 packaging~=25.0
 
 requests~=2.32.5
+
+pygame~=2.6.1

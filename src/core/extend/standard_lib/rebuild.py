@@ -15,6 +15,9 @@ from src.core.extend.standard_lib.lib_structs.lib import build_module as _struct
 from src.core.extend.standard_lib.lib_web.lib import build_module as _web_build
 from src.core.extend.standard_lib.lib_types.lib import build_module as _types_build
 from src.core.extend.standard_lib.lib_io.lib import build_module as _io_build
+from src.core.extend.standard_lib.lib_sys_args.lib import build_module as _sys_args_build
+from src.core.extend.standard_lib.lib_game.lib import build_module as _game_build
+from src.core.extend.standard_lib.lib_os.lib import build_module as _os_build
 
 
 _BUILDERS = [
@@ -26,8 +29,13 @@ _BUILDERS = [
     _web_build,
     _types_build,
     _io_build,
+    _sys_args_build,
+    _game_build,
+    _os_build,
 ]
 
 if __name__ == '__main__':
     for builder in track(_BUILDERS, description="[green]Building..."):
         builder()
+
+    print("Done!")

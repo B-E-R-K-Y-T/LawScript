@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from functools import wraps
 from typing import Optional, Type, TYPE_CHECKING
 
 import dill
@@ -96,7 +97,7 @@ class PyExtendWrapper(BaseType, ABC):
             if not isinstance(arg, BaseAtomicType):
                 raise ArgumentError(f"Аргумент '{arg}' не является экземпляром типа: '{BaseAtomicType.__name__}'")
 
-            py_obj = convert_atomic_type_to_py_type(arg, strict=strict )
+            py_obj = convert_atomic_type_to_py_type(arg, strict=strict)
             result.append(py_obj)
 
         if self.offset_required_args != -1 and len(args) < self.count_args:
@@ -118,6 +119,7 @@ class CallableWrapper:
         self.meta_info: Optional[Info] = None
 
     def callable_py_wrap(self, func, func_name: str):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)

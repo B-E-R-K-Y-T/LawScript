@@ -1,10 +1,9 @@
 import queue
 import tkinter as tk
 from multiprocessing import Queue, Process
-from tkinter import scrolledtext, messagebox
+from tkinter import scrolledtext, messagebox, Text
 import re
 import sys
-import io
 
 from config import settings
 from src.core.call_func_stack import get_stack_pretty_str
@@ -12,6 +11,66 @@ from src.core.tokens import Tokens
 from src.util.build_tools.build import build
 from src.util.build_tools.starter import run_file, run_string
 from src.util.console_worker import printer
+
+
+class LineNumbers(Text):
+    """Виджет для отображения номеров строк"""
+
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        self.text_widget = None  # Будет установлен позже
+
+        # Конфигурация виджета номеров строк
+        self.config(
+            state='disabled',
+            width=4,
+            padx=5,
+            pady=5,
+            bg='#f0f0f0',
+            font=("Courier New", 12),
+            relief='flat',
+            borderwidth=0,
+            takefocus=0
+        )
+
+    def set_text_widget(self, text_widget):
+        """Устанавливает текстовый виджет и привязывает события"""
+        self.text_widget = text_widget
+
+        # Привязываем события для синхронизации прокрутки
+        self.text_widget.bind('<KeyRelease>', self.update_line_numbers)
+        self.text_widget.bind('<MouseWheel>', self.update_line_numbers)
+        self.text_widget.bind('<Button-1>', self.update_line_numbers)
+        self.bind('<Configure>', self.update_line_numbers)
+
+        # Связываем прокрутку
+        self.text_widget.bind('<Configure>', lambda e: self.update_line_numbers())
+
+    def update_line_numbers(self, event=None):
+        """Обновляет номера строк"""
+        if self.text_widget is None:
+            return
+
+        try:
+            # Получаем информацию о прокрутке
+            first_visible_line = self.text_widget.yview()[0]
+
+            # Получаем количество строк в тексте
+            lines = self.text_widget.get('1.0', 'end-1c').count('\n') + 1
+
+            # Генерируем текст с номерами строк
+            line_numbers_text = '\n'.join(str(i) for i in range(1, lines + 1))
+
+            # Обновляем виджет номеров строк
+            self.config(state='normal')
+            self.delete('1.0', 'end')
+            self.insert('1.0', line_numbers_text)
+            self.config(state='disabled')
+
+            # Синхронизируем прокрутку
+            self.yview_moveto(first_visible_line)
+        except Exception:
+            pass  # Игнорируем ошибки при обновлении
 
 
 class OutputRedirector:
@@ -197,7 +256,7 @@ class TextEditor:
         self.execution_process = None
         self.output_queue = None
         self.root = root
-        self.root.title("Текстовый редактор с подсветкой синтаксиса")
+        self.root.title("IDE LawScript")
         self.root.geometry("1000x700")
 
         self.highlighter = SyntaxHighlighter()
@@ -207,6 +266,11 @@ class TextEditor:
         self.create_widgets()
         self.bind_events()
         self.setup_keybindings()
+
+    def update_line_numbers_scroll(self, *args):
+        """Обновляет прокрутку номеров строк"""
+        if hasattr(self, 'line_numbers'):
+            self.line_numbers.yview_moveto(args[0])
 
     def create_widgets(self):
         """Создает элементы интерфейса"""
@@ -221,16 +285,59 @@ class TextEditor:
         paned_window = tk.PanedWindow(main_frame, orient=tk.VERTICAL)
         paned_window.pack(fill=tk.BOTH, expand=True)
 
-        # Редактор кода
+        # Редактор кода с номерами строк
         editor_frame = tk.Frame(paned_window)
-        self.text_area = scrolledtext.ScrolledText(
-            editor_frame,
-            wrap=tk.WORD,
+
+        # Создаем фрейм для номеров строк и текстового редактора
+        editor_container = tk.Frame(editor_frame)
+        editor_container.pack(fill=tk.BOTH, expand=True)
+
+        # Создаем горизонтальный фрейм для номеров строк и редактора
+        horizontal_frame = tk.Frame(editor_container)
+        horizontal_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Виджет номеров строк
+        self.line_numbers = LineNumbers(
+            horizontal_frame,
+            width=4
+        )
+        self.line_numbers.pack(side=tk.LEFT, fill=tk.Y)
+
+        # Текстовый редактор с полосами прокрутки
+        text_frame = tk.Frame(horizontal_frame)
+        text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Создаем Scrollbar'ы
+        v_scrollbar = tk.Scrollbar(text_frame)
+        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        h_scrollbar = tk.Scrollbar(text_frame, orient=tk.HORIZONTAL)
+        h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Текстовый редактор
+        self.text_area = tk.Text(
+            text_frame,
+            wrap=tk.NONE,  # Отключаем перенос строк для горизонтальной прокрутки
             font=("Courier New", 12),
             undo=True,
-            selectbackground="lightblue"
+            selectbackground="lightblue",
+            yscrollcommand=v_scrollbar.set,
+            xscrollcommand=h_scrollbar.set
         )
-        self.text_area.pack(fill=tk.BOTH, expand=True)
+        self.text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Настраиваем scrollbar'ы
+        v_scrollbar.config(command=self.text_area.yview)
+        h_scrollbar.config(command=self.text_area.xview)
+
+        # Связываем виджет номеров строк с текстовым редактором
+        self.line_numbers.set_text_widget(self.text_area)
+
+        # Настраиваем команду для вертикальной прокрутки
+        self.text_area.config(
+            yscrollcommand=lambda *args: [v_scrollbar.set(*args), self.update_line_numbers_scroll(*args)])
+
+        # Добавляем редактор в paned_window
         paned_window.add(editor_frame)
 
         # Панель вывода
@@ -243,7 +350,7 @@ class TextEditor:
             wrap=tk.WORD,
             font=("Courier New", 10),
             height=8,
-            bg="#f0f0f0"  # Убрали state=tk.DISABLED для возможности вставки
+            bg="#f0f0f0"
         )
         self.output_area.pack(fill=tk.BOTH, expand=True)
         paned_window.add(output_frame)
@@ -261,6 +368,13 @@ class TextEditor:
 
         # Настройка перенаправления вывода
         self.setup_output_redirector()
+
+    def update_scroll(self, *args):
+        """Обновляет прокрутку для синхронизации номеров строк"""
+        if hasattr(self, 'line_numbers'):
+            self.line_numbers.yview_moveto(args[0])
+        if hasattr(self, 'text_area'):
+            self.text_area.yview(*args)
 
     def create_toolbar(self, parent):
         """Создает панель инструментов с кнопками"""
@@ -545,6 +659,10 @@ class TextEditor:
         """Настраивает горячие клавиши"""
         self.root.bind('<F5>', lambda e: self.run_code())
         self.root.bind('<F6>', lambda e: self.stop_execution())
+        self.root.bind('<Control-n>', lambda e: self.new_file())
+        self.root.bind('<Control-o>', lambda e: self.open_file())
+        self.root.bind('<Control-s>', lambda e: self.save_file())
+        self.root.bind('<Control-q>', lambda e: self.exit_editor())
 
     def bind_events(self):
         """Привязывает события"""
@@ -555,6 +673,9 @@ class TextEditor:
         """Обработчик отпускания клавиши"""
         self.update_highlighting()
         self.update_status_bar()
+        # Обновляем номера строк
+        if hasattr(self, 'line_numbers'):
+            self.line_numbers.update_line_numbers()
 
     def update_highlighting(self):
         """Обновляет подсветку синтаксиса"""
@@ -632,6 +753,8 @@ class TextEditor:
     def new_file(self):
         self.text_area.delete(1.0, tk.END)
         self.root.title("Новый файл - Текстовый редактор")
+        if hasattr(self, 'line_numbers'):
+            self.line_numbers.update_line_numbers()
 
     def open_file(self):
         from tkinter import filedialog
@@ -652,6 +775,8 @@ class TextEditor:
                     self.text_area.insert(1.0, content)
                     self.update_highlighting()
                     self.root.title(f"{file_path} - Текстовый редактор")
+                    if hasattr(self, 'line_numbers'):
+                        self.line_numbers.update_line_numbers()
             except Exception as e:
                 messagebox.showerror("Ошибка", f"Не удалось открыть файл: {e}")
 
