@@ -58,6 +58,7 @@ class ThreadWorker:
         with _GLOBAL_TASKS_LOCK:
             task.done = True
             self.tasks.remove(task)
+            printer.logging(f"{self.thread=} Завершил задачу {task.name=} {task.id=}")
 
     def _work(self):
         while not self._stop_event.is_set():
@@ -69,7 +70,7 @@ class ThreadWorker:
                 task = self._scheduler.get_free_task()
 
                 if task is not None:
-                    printer.logging(f"{self.thread=} Забрал задачу")
+                    printer.logging(f"{self.thread=} Забрал задачу {task.name=} {task.id=}")
                     self.add_task(task)
                 else:
                     time.sleep(settings.ttl_check_free_tasks)
@@ -147,7 +148,7 @@ class TaskScheduler:
                         if task.is_active:
                             continue
 
-                        printer.logging(f"{worker.thread=} Отдал задачу")
+                        printer.logging(f"{worker.thread=} Отдал задачу {task.name=} {task.id=}")
                         return worker.tasks.pop(idx)
 
         return None

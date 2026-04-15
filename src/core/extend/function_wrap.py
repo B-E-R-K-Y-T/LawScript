@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Optional, Type, TYPE_CHECKING
+from typing import Optional, Type, TYPE_CHECKING, Union
 
 import dill
 
@@ -24,6 +24,7 @@ class PyExtendWrapper(BaseType, ABC):
         self.count_args = -1
         self.offset_required_args = -1
         self.namespace: Optional['Compiled'] = None
+        self.signature: tuple[Union[Type[BaseAtomicType], Type[Procedure]]] = tuple()
 
     @abstractmethod
     def call(self, args: Optional[list[BaseAtomicType]] = None) -> BaseAtomicType: ...
@@ -52,9 +53,7 @@ class PyExtendWrapper(BaseType, ABC):
 
         res = ProcedureExecutor(procedure, self.namespace).execute()
 
-        if res is STOP: return VOID
-
-        return res
+        return VOID if res is STOP else res
 
     def check_args(self, args: Optional[list[BaseAtomicType]] = None):
         if not self.empty_args and args is None:
@@ -85,6 +84,16 @@ class PyExtendWrapper(BaseType, ABC):
                 raise ArgumentError(
                     f"Неверное количество аргументов процедуры '{self.func_name}'. Ожидалось: {self.count_args}, "
                     f"но передано: {len(args)}"
+                )
+
+        if not self.signature:
+            return
+
+        for offset, (arg, arg_type) in enumerate(zip(args, self.signature)):
+            if not isinstance(arg, arg_type):
+                raise ErrorType(
+                    f"Аргумент '{arg.value}' под номером {offset + 1} должен иметь тип: '{arg_type.type_name()}' "
+                    f"для процедуры: '{self.func_name}'"
                 )
 
     def parse_args(self, args: Optional[list[BaseAtomicType]] = None, *, strict: bool = False) -> list:
@@ -145,6 +154,11 @@ class PyExtendBuilder:
         def decorator(py_wrapper: Type[PyExtendWrapper]):
             py_wrapper.call = self.callable_wrapper.callable_py_wrap(py_wrapper.call, func_name)
             instance_py_wrapper = py_wrapper(func_name)
+
+            if instance_py_wrapper.signature and len(instance_py_wrapper.signature) != instance_py_wrapper.count_args:
+                raise ValueError(
+                    "Длина сигнатуры и кол-во аргументов должны быть равны. Либо сигнатура должна быть пуста!"
+                )
 
             self.wrappers.append(instance_py_wrapper)
 

@@ -22,6 +22,10 @@ class Procedure(CodeBlock):
         self.default_arguments = default_arguments
         self.tree_variables: Optional[ScopeStack] = None
 
+    @classmethod
+    def type_name(cls):
+        return "Процедура"
+
     def __str__(self):
         return f"Процедура('{self.name}') кол-во аргументов: {len(self.arguments_names)}"
 

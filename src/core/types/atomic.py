@@ -130,7 +130,10 @@ class Boolean(BaseAtomicType):
 
 
 class Array(BaseAtomicType):
-    def __init__(self, value: list[BaseAtomicType]):
+    def __init__(self, value: Optional[list[BaseAtomicType]] = None):
+        if value is None:
+            value = []
+
         super().__init__(value)
         self.visited = set()
 
