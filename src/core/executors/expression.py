@@ -12,7 +12,9 @@ from src.core.exceptions import (
     NameNotDefine,
     MaxRecursionError,
     DivisionByZeroError,
-    ErrorOverflow, OverWaitTaskError
+    ErrorOverflow,
+    OverWaitTaskError,
+    OperationError
 )
 from src.core.executors.base import Executor
 from src.core.tokens import Tokens, ServiceTokens, ALL_TOKENS
@@ -251,13 +253,13 @@ class ExpressionExecutor(Executor):
         )
 
     def call_procedure(self, procedure: Procedure, evaluate_stack: list[Union[BaseAtomicType, Procedure]]):
-        from src.core.executors.body import Stop
+        from src.core.executors.body import STOP
 
         executor = self.procedure_executor(procedure, self.compiled)
 
         result = executor.execute()
 
-        if isinstance(result, Stop):
+        if result is STOP:
             result = VOID
 
         evaluate_stack.append(result)
@@ -323,7 +325,7 @@ class ExpressionExecutor(Executor):
                 args.append(operand)
 
         if args is not None:
-            args = list(reversed(args))
+            args = args[::-1]
 
         return ProcedureWrapper(
             procedure=py_extend_procedure,
@@ -700,6 +702,11 @@ class ExpressionExecutor(Executor):
                     return exc.value
 
                 return exc
+            except OperationError as e:
+                if e.info is None:
+                    e.info = self.expression.meta_info
+
+                raise e.__class__(e.operation, e.type, self.expression.meta_info)
             except BaseError:
                 raise
             except TypeError:
@@ -732,6 +739,11 @@ class ExpressionExecutor(Executor):
                     next(gen)
             except StopIteration as exc:
                 return exc.value
+        except OperationError as e:
+            if e.info is None:
+                e.info = self.expression.meta_info
+
+            raise e.__class__(e.operation, e.type, e.info)
         except BaseError:
             raise
         except TypeError:

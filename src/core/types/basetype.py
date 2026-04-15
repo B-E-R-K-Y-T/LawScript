@@ -14,6 +14,10 @@ class BaseType:
     def set_info(self, meta_info: Info):
         self.meta_info = meta_info
 
+    @classmethod
+    def type_name(cls):
+        return f"{cls.__name__}"
+
     def __repr__(self):
         return f"Служебное имя: <{self.name if self.name else 'ОТСУТСТВУЕТ'}>"
 
@@ -82,10 +86,6 @@ class BaseAtomicType(BaseType):
             return self.value.get_attribute(name)
 
         return self.fields.setdefault(name, ClassField())
-
-    @classmethod
-    def type_name(cls):
-        return f"{cls.__name__}"
 
     def __str__(self):
         return str(self.value)

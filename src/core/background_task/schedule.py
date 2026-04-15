@@ -1,8 +1,9 @@
 import atexit
+import random
 import time
 from itertools import cycle
 from threading import Lock, Thread, Event
-from typing import Optional
+from typing import Optional, Final, Generator
 
 from config import settings
 from src.core.background_task.task import AbstractBackgroundTask
@@ -10,23 +11,26 @@ from src.core.exceptions import BaseError, create_law_script_exception_class_ins
 from src.core.types.atomic import VOID
 from src.util.console_worker import printer
 
+_GLOBAL_TASKS_LOCK: Final[Lock] = Lock()
+
 
 class ThreadWorker:
     def __init__(self):
         self.thread: Optional[Thread] = None
         self.tasks: list[AbstractBackgroundTask] = []
         self._stop_event = Event()
-        self._lock = Lock()
+        self.lock = Lock()
         self._task_added_event = Event()
-        self._start_time = time.time()
+        self._start_time = time.monotonic()
         self._is_active = True
+        self._scheduler = get_task_scheduler()
 
     def add_task(self, task: AbstractBackgroundTask):
-        with self._lock:
+        with _GLOBAL_TASKS_LOCK:
             self.tasks.append(task)
 
     def start(self):
-        self.thread = Thread(target=self._work)
+        self.thread = Thread(target=self._work, daemon=True)
         self.thread.start()
         printer.logging(f"{self.thread=} Запущен")
 
@@ -50,18 +54,29 @@ class ThreadWorker:
     def is_active(self):
         return self._is_active
 
-    def done_task(self, task: AbstractBackgroundTask, task_id: int):
-        with self._lock:
+    def done_task(self, task: AbstractBackgroundTask):
+        with _GLOBAL_TASKS_LOCK:
             task.done = True
-            self.tasks.pop(task_id)
+            self.tasks.remove(task)
+            printer.logging(f"{self.thread=} Завершил задачу {task.name=} {task.id=}")
 
     def _work(self):
         while not self._stop_event.is_set():
-            current_time = time.time()
+            current_time = time.monotonic()
             elapsed = current_time - self._start_time
 
+            if not self.tasks:
+                printer.logging(f"{self.thread=} Голоден. Попытка получить задачу...")
+                task = self._scheduler.get_free_task()
+
+                if task is not None:
+                    printer.logging(f"{self.thread=} Забрал задачу {task.name=} {task.id=}")
+                    self.add_task(task)
+                else:
+                    time.sleep(settings.ttl_check_free_tasks)
+
             if not self.tasks and elapsed > settings.ttl_thread:
-                with self._lock:
+                with self.lock:
                     self._is_active = False
                 self._stop_event.set()
                 printer.logging(
@@ -69,15 +84,19 @@ class ThreadWorker:
                 )
                 break
 
-            if len(self.tasks) == 0:
-                self._task_added_event.wait(timeout=settings.wait_task_time)
-                self._task_added_event.clear()
-                continue
+            with _GLOBAL_TASKS_LOCK:
+                if len(self.tasks) == 0:
+                    self._task_added_event.wait(timeout=settings.wait_task_time)
+                    self._task_added_event.clear()
+                    continue
 
-            self._start_time = time.time()
+                task: AbstractBackgroundTask = random.choice(self.tasks)
 
-            for idx, task in enumerate(self.tasks):
+            self._start_time = time.monotonic()
+
+            with task.exec_lock:
                 try:
+                    task.is_active = True
                     next(task.next_command())
                 except StopIteration:
                     from src.core.executors.body import Stop
@@ -85,25 +104,30 @@ class ThreadWorker:
                     if isinstance(task.result, Stop):
                         task.result = VOID
 
-                    self.done_task(task, idx)
+                    self.done_task(task)
                 except BaseError as e:
                     task.result = create_law_script_exception_class_instance(e.exc_name, e)
                     task.is_error_result = True
                     task.error = e
-                    self.done_task(task, idx)
+                    self.done_task(task)
                 except Exception as e:
                     task.result = VOID
-                    self.done_task(task, idx)
+                    self.done_task(task)
 
-                    err_message = f"{self.thread.name}: Ошибка при выполнении задачи: [{idx}] '{task.name}'.\n\nДетали: {e}"
+                    err_message = (
+                        f"{self.thread.name}: Ошибка при выполнении задачи: [{task.id}] '{task.name}'."
+                        f"\n\nДетали: {e}"
+                    )
 
                     printer.print_error(err_message)
+                finally:
+                    task.is_active = False
 
 
 class TaskScheduler:
     def __init__(self):
-        self.threads = []
-        self._round_robin_process_list = None
+        self.threads: list[ThreadWorker] = []
+        self._round_robin_process_list: Optional[Generator[ThreadWorker]] = None
         self._lock = Lock()
         atexit.register(self.shutdown)
 
@@ -112,6 +136,22 @@ class TaskScheduler:
             for worker in self.threads:
                 worker.stop()
             self.threads.clear()
+
+    def get_free_task(self) -> Optional[AbstractBackgroundTask]:
+        with self._lock:
+            for worker in self.threads:
+                if not worker.is_active():
+                    continue
+
+                if len(worker.tasks) > 1:
+                    for idx, task in enumerate(worker.tasks):
+                        if task.is_active:
+                            continue
+
+                        printer.logging(f"{worker.thread=} Отдал задачу {task.name=} {task.id=}")
+                        return worker.tasks.pop(idx)
+
+        return None
 
     def schedule_task(self, task: AbstractBackgroundTask):
         worker = self.next_worker()
@@ -123,9 +163,17 @@ class TaskScheduler:
 
     def next_worker(self) -> ThreadWorker:
         with self._lock:
-            for idx, worker in enumerate(self.threads):
-                if not worker.is_active():
-                    self.threads.pop(idx)
+            i = len(self.threads) - 1
+            while i >= 0:
+                if not self.threads[i].is_active():
+                    self.threads.pop(i)
+                i -= 1
+
+            if self.threads and self._round_robin_process_list is not None:
+                worker = next(self._round_robin_process_list)
+
+                if len(worker.tasks) < settings.task_on_thread_step:
+                    return worker
 
             if len(self.threads) >= settings.max_running_threads_tasks:
                 if self._round_robin_process_list is None:

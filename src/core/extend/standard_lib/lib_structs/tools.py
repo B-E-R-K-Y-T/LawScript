@@ -7,6 +7,7 @@ from src.core.types.procedure import Procedure, LinkedProcedure
 
 _ALLOW_TYPES = (BaseAtomicType, BaseDeclarativeType, Procedure, PyExtendWrapper, LinkedProcedure)
 
+
 def parse_arr_args_two(args):
     array = args[0]
 

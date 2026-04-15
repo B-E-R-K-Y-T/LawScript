@@ -45,7 +45,7 @@ class Sleep(PyExtendWrapper):
         return VOID
 
 
-@builder.collect(func_name='спать_в_фоне')
+@builder.collect(func_name='асинхронный_сон')
 class BackgroundSleep(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
@@ -70,12 +70,19 @@ class BackgroundSleep(PyExtendWrapper):
                 self._done = False
                 self._lock = Lock()
                 self._gen_sleep = self.sleep()
+                self._delta_sleep_time = 0.0001
+                self._switch_point = 100
                 super().__init__(name, self.sleep_time)
 
             def sleep(self):
-                start_time = time.time()
+                start_time = time.monotonic()
+                switch = 0
 
-                while time.time() - start_time < self.sleep_time:
+                while time.monotonic() - start_time < self.sleep_time:
+                    if switch >= self._switch_point:
+                        time.sleep(self._delta_sleep_time)
+                        switch = 0
+
                     yield YIELD
 
                 return VOID

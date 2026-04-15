@@ -36,6 +36,23 @@ class GetType(PyExtendWrapper):
         raise ErrorType(f"Аргумент: '{arg}' имеет неизвестный тип!")
 
 
+@builder.collect(func_name='это_процедура')
+class GetType(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[BaseAtomicType]] = None):
+        from src.core.types.atomic import Boolean
+        from src.core.types.procedure import Procedure, LinkedProcedure
+        from src.core.extend.function_wrap import PyExtendWrapper
+
+        arg = args[0]
+
+        return Boolean(isinstance(arg, (Procedure, LinkedProcedure, PyExtendWrapper)))
+
+
 def build_module():
     builder.build_python_extend(f"{standard_lib_path}{MOD_NAME}")
 

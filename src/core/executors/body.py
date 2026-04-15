@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Union, Generator, Final
 from src.core.exceptions import (
     ErrorType,
     NameNotDefine,
+    InvalidExpression,
     BaseError,
     create_law_script_exception_class_instance,
     InvalidExceptionType,
@@ -121,6 +122,13 @@ class BodyExecutor(Executor):
                     target = yield from target_expr_executor.execute(self.async_mode)
                 else:
                     target = target_expr_executor.execute()
+
+                if not isinstance(target, (ClassField, Variable)):
+                    raise InvalidExpression(
+                        f"Для выражения '{target_expr_executor.expression.raw_expr}' "
+                        f"не поддерживается оператор '{Tokens.equal}'",
+                        info=command.meta_info
+                    )
 
                 if isinstance(target, ClassField):
                     target.value = override_expr_result

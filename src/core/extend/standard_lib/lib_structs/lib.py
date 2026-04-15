@@ -54,8 +54,13 @@ class ArrayRemove(PyExtendWrapper):
 
         array, item = parse_arr_args_two(args)
 
-        if not isinstance(item, Number) and item.is_int():
-            raise ErrorType("Индекс должен быть целым числом.")
+        err_msg = "Индекс должен быть целым числом."
+
+        if not isinstance(item, Number):
+            raise ErrorType(err_msg)
+
+        if not item.is_int():
+            raise ErrorType(err_msg)
 
         try:
             array.remove(item)
@@ -79,11 +84,13 @@ class ArrayGetItem(PyExtendWrapper):
 
         array, item = parse_arr_args_two(args)
 
-        if isinstance(item, Number) and not item.is_int():
-            raise ErrorType("Индекс должен быть целым числом.")
+        err_msg = "Индекс должен быть целым числом."
 
         if not isinstance(item, Number):
-            raise ErrorType("Индекс должен быть целым числом.")
+            raise ErrorType(err_msg)
+
+        if not item.is_int():
+            raise ErrorType(err_msg)
 
         try:
             return array[item.value]
@@ -139,8 +146,30 @@ class ArrayLen(PyExtendWrapper):
 
         return Number(len(arr.value))
 
+
+@builder.collect(func_name='сумма_массива')
+class ArraySum(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[Array]] = None):
+        from src.core.types.atomic import Number, Array
+        from src.core.exceptions import ErrorValue
+
+        arr = args[0]
+
+        if not isinstance(arr, Array):
+            raise ErrorValue("Аргумент должен быть массивом.")
+
+        parsed_args = self.parse_args(args)
+
+        return Number(sum(parsed_args[0]))
+
+
 @builder.collect(func_name='сортировать_массив')
-class ArrayLen(PyExtendWrapper):
+class ArraySort(PyExtendWrapper):
     def __init__(self, func_name: str):
         super().__init__(func_name)
         self.empty_args = False
@@ -168,7 +197,7 @@ class ArrayLen(PyExtendWrapper):
                 raise ErrorValue("Невозможно отсортировать массив в массиве.")
 
             if not isinstance(item, BaseAtomicType):
-                raise ErrorValue("Аргументы массива должны быть атомарными типами.")
+                raise ErrorValue("Элементы массива должны быть атомарными типами.")
 
         arr.value = sorted(arr.value, key=lambda i: i.value, reverse=is_reverse)
 
@@ -193,6 +222,46 @@ class ArrayClear(PyExtendWrapper):
 
         arr = arr.value
         arr.clear()
+
+        return VOID
+
+@builder.collect(func_name='добавить_в_начало_массива')
+class ArrayPrepend(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 2
+
+    def call(self, args: Optional[list[Array]] = None):
+        from src.core.extend.standard_lib.lib_structs.tools import parse_arr_args_two
+        from src.core.types.atomic import VOID
+
+        array, item = parse_arr_args_two(args)
+        array.value.insert(0, item)
+
+        return VOID
+
+
+@builder.collect(func_name='убрать_последний_из_массива')
+class ArrayPopLast(PyExtendWrapper):
+    def __init__(self, func_name: str):
+        super().__init__(func_name)
+        self.empty_args = False
+        self.count_args = 1
+
+    def call(self, args: Optional[list[Array]] = None):
+        from src.core.types.atomic import Array, VOID
+        from src.core.exceptions import ErrorValue, ErrorIndex
+
+        arr = args[0]
+
+        if not isinstance(arr, Array):
+            raise ErrorValue("Аргумент должен быть массивом.")
+
+        if len(arr.value) == 0:
+            raise ErrorIndex("Нельзя удалить элемент из пустого массива.")
+
+        arr.value.pop()
 
         return VOID
 

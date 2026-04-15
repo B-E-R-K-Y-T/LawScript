@@ -2,7 +2,7 @@ import sys
 import time
 from pathlib import Path
 
-from config import settings, WORKING_DIR, script_dir_storage
+from config import settings, WORKING_DIR, global_storage
 from src.core.background_task.schedule import get_task_scheduler
 from src.core.call_func_stack import get_stack_pretty_str
 from src.core.exceptions import BaseError
@@ -18,6 +18,7 @@ def create_absolute_path_to_file(filename: str) -> Path:
     """Создает абсолютный путь к файлу относительно рабочей директории."""
     return (WORKING_DIR / filename).resolve()
 
+
 class Law:
     @staticmethod
     def run():
@@ -29,8 +30,9 @@ class Law:
 
             command = sys.argv[1]
             filename = sys.argv[2]
+            global_storage.SYS_ARGS = sys.argv[3:]
             absolute_file_path = create_absolute_path_to_file(filename)
-            script_dir_storage.LW_SCRIPT_DIR = absolute_file_path.parent
+            global_storage.LW_SCRIPT_DIR = absolute_file_path.parent
 
             if command == '--build':
                 printer.debug = True
@@ -79,6 +81,6 @@ class Law:
 if __name__ == '__main__':
     law = Law()
     law.run()
-    # file = "tests\\err_test_1.raw"
+    # file = "tests\\test_53.raw"
     # run_file(file)
     # build(file)
