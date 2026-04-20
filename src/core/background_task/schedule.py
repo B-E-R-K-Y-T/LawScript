@@ -91,12 +91,12 @@ class ThreadWorker:
                     continue
 
                 task: AbstractBackgroundTask = random.choice(self.tasks)
+                task.is_active = True
 
             self._start_time = time.monotonic()
 
             with task.exec_lock:
                 try:
-                    task.is_active = True
                     next(task.next_command())
                 except StopIteration:
                     from src.core.executors.body import Stop
@@ -138,7 +138,7 @@ class TaskScheduler:
             self.threads.clear()
 
     def get_free_task(self) -> Optional[AbstractBackgroundTask]:
-        with self._lock:
+        with _GLOBAL_TASKS_LOCK:
             for worker in self.threads:
                 if not worker.is_active():
                     continue
