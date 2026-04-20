@@ -59,6 +59,8 @@ class Tokens(StrEnum):
     and_ = "И"
     or_ = "ИЛИ"
     bool_equal = "РАВНО"
+    bool_equal_1 = "РАВЕН"
+    bool_equal_2 = "РАВНЫ"
     bool_not_equal = "НЕРАВНО"
     less = "МЕНЬШЕ"
     greater = "БОЛЬШЕ"
@@ -114,4 +116,7 @@ NOT_ALLOWED_TOKENS = set(Tokens) - {
     Tokens.div, Tokens.end_expr, Tokens.quotation, Tokens.not_,Tokens.and_, Tokens.or_,
     Tokens.bool_equal, Tokens.bool_not_equal, Tokens.less, Tokens.greater, Tokens.true, Tokens.false,
     Tokens.in_, Tokens.background, Tokens.wait, Tokens.attr_access, Tokens.void
+}
+ALIASES_MAP = {
+    Tokens.bool_equal: [Tokens.bool_equal_1, Tokens.bool_equal_2],
 }

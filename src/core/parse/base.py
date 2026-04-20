@@ -4,7 +4,7 @@ from typing import Type, Sequence, Union
 
 from src.core.exceptions import InvalidSyntaxError
 from src.core.types.basetype import BaseType
-from src.core.tokens import Tokens
+from src.core.tokens import Tokens, ALIASES_MAP
 from src.core.types.line import Line, Info
 
 
@@ -146,7 +146,20 @@ class Parser(ABC):
                 else:
                     tokens[-1] = end
 
-        return tokens
+        return self._convert_aliases_to_token(tokens)
+
+    @staticmethod
+    def _convert_aliases_to_token(tokens: list[str]) -> list[str]:
+        converted_tokens = []
+
+        for token in tokens:
+            for target, aliases in ALIASES_MAP.items():
+                if token in aliases:
+                    token = target
+
+            converted_tokens.append(token)
+
+        return converted_tokens
 
     @staticmethod
     def _check_quotes(line: Line) -> None:
