@@ -151,8 +151,16 @@ class Parser(ABC):
     @staticmethod
     def _convert_aliases_to_token(tokens: list[str]) -> list[str]:
         converted_tokens = []
+        is_string = False
 
         for token in tokens:
+            if token == Tokens.quotation:
+                is_string = not is_string
+
+            if is_string:
+                converted_tokens.append(token)
+                continue
+
             for target, aliases in ALIASES_MAP.items():
                 if token in aliases:
                     token = target
