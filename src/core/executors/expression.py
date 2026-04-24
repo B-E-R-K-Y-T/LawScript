@@ -615,15 +615,16 @@ class ExpressionExecutor(Executor):
 
                     continue
 
-                old = func
+                visited = set()
 
                 while isinstance(func, ClassField):
-                    func = func.value
-
-                    if old is func:
+                    if id(func) in visited:
                         raise ErrorValue(
-                            f"Циклическая ссылка! '{func.name}' ссылается сам на себя!", info=self.expression.meta_info
+                            f"Циклическая ссылка! Обнаружен цикл в поле '{func.name}'!",
+                            info=self.expression.meta_info
                         )
+                    visited.add(id(func))
+                    func = func.value
 
                 if not isinstance(func, Procedure):
                     if isinstance(func, Operator):
