@@ -8,7 +8,7 @@ from src.core.types.basetype import BaseType
 from src.core.types.docs import Docs
 from src.core.types.line import Line, Info
 from src.core.types.procedure import Body, AssignField, Expression, When, Loop, Print, Else, Return, Continue, Break, \
-    AssignOverrideVariable, While, ElseWhen, Context, ExceptionHandler, BlockSync, ErrorThrow
+    AssignOverrideVariable, While, ElseWhen, Context, ExceptionHandler, BlockSync, ErrorThrow, Defer
 from src.core.util import is_ignore_line
 from src.util.console_worker import printer
 
@@ -260,6 +260,9 @@ class BodyParser(Parser):
                 case [Tokens.return_, *expr, Tokens.end_expr]:
                     self.commands.append(Return(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Return с выражением: {expr}", level="INFO")
+                case [Tokens.defer, *expr, Tokens.end_expr]:
+                    self.commands.append(Defer(str(), Expression(str(), expr, self.info)))
+                    printer.logging(f"Добавлена команда Defer с выражением: {expr}", level="INFO")
                 case [Tokens.continue_, Tokens.end_expr]:
                     self.commands.append(Continue(str(), self.info))
                     printer.logging(f"Добавлена команда Continue", level="INFO")

@@ -7,7 +7,7 @@ from src.core.exceptions import (
     NameAlreadyExist,
     FieldNotDefine,
     InvalidSyntaxError,
-    ErrorType, EXCEPTIONS, create_define_class_wrap, BaseError, is_def_err,
+    ErrorType, EXCEPTIONS, create_define_class_wrap, is_def_err,
 )
 from src.core.extend.function_wrap import PyExtendWrapper
 from src.core.parse.base import MetaObject
@@ -43,7 +43,9 @@ from src.core.types.procedure import (
     AssignOverrideVariable,
     When,
     While,
-    Context, ErrorThrow
+    Context,
+    ErrorThrow,
+    Defer
 )
 from src.core.types.rules import Rule
 from src.core.types.sanction_types import SanctionType
@@ -545,6 +547,10 @@ class Compiler:
 
             elif isinstance(statement, Return):
                 printer.logging("Компиляция Return выражения", level="DEBUG")
+                self.expr_compile(statement.expression, statements)
+
+            elif isinstance(statement, Defer):
+                printer.logging("Компиляция Defer выражения", level="DEBUG")
                 self.expr_compile(statement.expression, statements)
 
             elif isinstance(statement, ErrorThrow):

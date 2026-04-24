@@ -14,7 +14,8 @@ from src.core.exceptions import (
     DivisionByZeroError,
     ErrorOverflow,
     OverWaitTaskError,
-    OperationError
+    OperationError,
+    ErrorValue
 )
 from src.core.executors.base import Executor
 from src.core.tokens import Tokens, ServiceTokens, ALL_TOKENS
@@ -613,6 +614,16 @@ class ExpressionExecutor(Executor):
                         evaluate_stack.append(background_task)
 
                     continue
+
+                old = func
+
+                while isinstance(func, ClassField):
+                    func = func.value
+
+                    if old is func:
+                        raise ErrorValue(
+                            f"Циклическая ссылка! '{func.name}' ссылается сам на себя!", info=self.expression.meta_info
+                        )
 
                 if not isinstance(func, Procedure):
                     if isinstance(func, Operator):

@@ -98,6 +98,8 @@ class Tokens(StrEnum):
     as_ = "КАК"
     blocking = "БЛОКИРОВАТЬ"
     error = "ОШИБКА"
+    defer = "ОТЛОЖИТЬ"
+    defer_1 = "ОТЛОЖЕННО"
 
 
 class ServiceTokens(StrEnum):
@@ -119,4 +121,5 @@ NOT_ALLOWED_TOKENS = set(Tokens) - {
 }
 ALIASES_MAP = {
     Tokens.bool_equal: [Tokens.bool_equal_1, Tokens.bool_equal_2],
+    Tokens.defer: [Tokens.defer_1],
 }

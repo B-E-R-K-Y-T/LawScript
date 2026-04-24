@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from src.core.extend.function_wrap import PyExtendWrapper, PyExtendBuilder
+from src.core.types.atomic import String
 from src.core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
@@ -16,6 +17,7 @@ class Print(PyExtendWrapper):
         self.empty_args = False
         self.count_args = 3
         self.offset_required_args = 1
+        self.signature = (BaseAtomicType, String, String)
         self.replace_map = {
             "\\n": "\n",      # Новая строка
             "\\t": "\t",      # Табуляция

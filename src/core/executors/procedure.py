@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from src.core.executors.body import BodyExecutor
+from src.core.executors.expression import ExpressionExecutor
 from src.core.types.basetype import BaseAtomicType
 from src.core.types.procedure import Procedure
 from src.core.executors.base import Executor
@@ -15,9 +16,11 @@ class ProcedureExecutor(Executor):
         self.compiled = compiled
 
     def execute(self) -> BaseAtomicType:
-        body = BodyExecutor(self.procedure.body, self.procedure.tree_variables, self.compiled)
-        return body.execute()
+        return self._execute()
 
     def async_execute(self):
+        return self._execute(is_async=True)
+
+    def _execute(self, is_async=False):
         body = BodyExecutor(self.procedure.body, self.procedure.tree_variables, self.compiled)
-        return body.async_execute()
+        return body.async_execute() if is_async else body.execute()

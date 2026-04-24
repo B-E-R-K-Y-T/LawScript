@@ -149,6 +149,15 @@ class Return(BaseType):
         self.expression = expression
 
 
+class Defer(BaseType):
+    __slots__ = ('expression',)
+
+    def __init__(self, name: str, expression: Expression):
+        super().__init__(name)
+
+        self.expression = expression
+
+
 class Loop(CodeBlock):
     __slots__ = ('expression_from', 'expression_to', 'name_loop_var')
 
