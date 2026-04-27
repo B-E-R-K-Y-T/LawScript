@@ -1,5 +1,7 @@
 from typing import Type, Union
 
+from click import command
+
 from config import settings
 from src.core.exceptions import (
     NameNotDefine,
@@ -217,7 +219,7 @@ class Compiler:
             return meta
 
         if not isinstance(meta, MetaObject):
-            printer.logging("Объект не является метаданными, возвращаем его", level="INFO")
+            printer.logging("Объект не является MetaObject, возвращаем его", level="INFO")
             return meta
 
         compiled_obj = meta.create_image().build()
@@ -330,9 +332,13 @@ class Compiler:
                 compiled_obj.parent = self.compiled[compiled_obj.parent]
 
             if compiled_obj.constructor is None:
-                raise InvalidSyntaxError(
-                    f"У класса '{compiled_obj.name}' не определен конструктор!",
-                    info=compiled_obj.meta_info
+                compiled_obj.constructor = Constructor(
+                    str(),
+                    body=Body(
+                        str(),
+                        commands=[]
+                    ),
+                    arguments_names=[]
                 )
 
             return compiled_obj
@@ -622,7 +628,7 @@ class Compiler:
         compiled_without_build_modules = self.compiled
         self.compiled = {**compiled_modules, **self.compiled}
 
-        for name, compiled in compiled_without_build_modules.items():
+        for compiled in compiled_without_build_modules.values():
             if isinstance(compiled, Procedure):
                 self.body_compile(compiled.body)
 

@@ -171,6 +171,13 @@ class ExpressionExecutor(Executor):
             evaluate_stack.append(procedure)
             return ProcedureWrapper()
 
+        procedure_type = type(procedure)
+        callable_obj_name = {
+            Constructor: 'Конструктор',
+            Method: 'Метод',
+            Procedure: 'Процедура',
+        }
+
         procedure.tree_variables = ScopeStack()
 
         rev_arguments_names = procedure.arguments_names[::-1]
@@ -210,7 +217,7 @@ class ExpressionExecutor(Executor):
 
                 if not procedure.arguments_names:
                     raise InvalidExpression(
-                        f"Процедура {procedure.name} не принимает аргументов.",
+                        f"{callable_obj_name.get(procedure_type, 'Процедура')} {procedure.name} не принимает аргументов.",
                         info=self.expression.meta_info
                     )
 
