@@ -364,6 +364,9 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     if any(conditions) and not any(ignores):
                         previous_tok = expr[offset_]
 
+                        if previous_tok == Tokens.left_bracket:
+                            break
+
                         printer.logging(
                             f"Токен '{token_}' является операндом. Предыдущий токен: '{previous_tok}'",
                             level="DEBUG"

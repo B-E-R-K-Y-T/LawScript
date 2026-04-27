@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     task_thread_switch_interval: float = Field(default=.00001)
     step_task_size_to_sleep: int = Field(default=10)
     time_to_join_thread: float = Field(default=0)
+    force_overwrite_module: bool = Field(default=False)
 
     @field_validator("std_name")
     def validate_std_name(cls, value: str) -> str:

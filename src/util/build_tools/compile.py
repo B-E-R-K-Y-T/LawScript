@@ -1,5 +1,6 @@
 from typing import Type, Union
 
+from config import settings
 from src.core.exceptions import (
     NameNotDefine,
     InvalidType,
@@ -570,6 +571,30 @@ class Compiler:
         for expr in default_arguments.values():
             self.expr_compile(expr)
 
+    def check_constructor_return(self, body: Body, class_definition_name: str):
+        for cmd in body.commands:
+            if isinstance(cmd, Return) and cmd.expression.operations:
+                raise InvalidSyntaxError(
+                    f"Конструктор класса '{class_definition_name}' "
+                    f"не может содержать '{Tokens.return_}' со значением",
+                    info=cmd.expression.meta_info
+                )
+
+            if isinstance(cmd, CodeBlock):
+                self.check_constructor_return(cmd.body, class_definition_name)
+
+                if isinstance(cmd, Context):
+                    for handler in cmd.handlers:
+                        self.check_constructor_return(handler.body, class_definition_name)
+
+                if isinstance(cmd, When):
+                    if cmd.else_whens is not None:
+                        for else_when in cmd.else_whens:
+                            self.check_constructor_return(else_when.body, class_definition_name)
+
+                    if cmd.else_ is not None:
+                        self.check_constructor_return(cmd.else_.body, class_definition_name)
+
     def compile(self) -> Compiled:
         compiled_modules = {}
 
@@ -587,7 +612,7 @@ class Compiler:
 
             printer.logging(f"Команда компиляции №{idx + 1}", level="INFO")
 
-            if compiled.name in self.compiled:
+            if compiled.name in self.compiled and not settings.force_overwrite_module:
                 printer.logging(f"Ошибка: {compiled.name} уже существует", level="ERROR")
                 raise NameAlreadyExist(compiled.name, info=compiled.meta_info)
 
@@ -621,11 +646,6 @@ class Compiler:
                 if compiled.constructor.default_arguments is not None:
                     self.compile_default_args(compiled.constructor.default_arguments)
 
-                for cmd in compiled.constructor.body.commands:
-                    if isinstance(cmd, Return):
-                        raise InvalidSyntaxError(
-                            f"Конструктор класса '{compiled.name}' не может содержать '{Tokens.return_}'",
-                            info=cmd.expression.meta_info
-                        )
+                self.check_constructor_return(compiled.constructor.body, compiled.name)
 
         return Compiled(self.compiled)

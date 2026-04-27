@@ -1,9 +1,14 @@
-from typing import Iterable, Callable, Generator
+import os
+from typing import Iterable, Callable, Generator, Union
+
+from config import settings
+from src.util.build_tools.build import build
+from src.util.console_worker import printer
 
 try:
     from rich.progress import track
 except ImportError:
-    def track(seq: Iterable[Callable], *, description=None) -> Generator[Callable, None, None]:
+    def track(seq: Iterable[Union[Callable, str]], *, description=None) -> Generator[Union[Callable, str], None, None]:
         yield from seq
         print("Done!")
 
@@ -35,7 +40,16 @@ _BUILDERS = [
 ]
 
 if __name__ == '__main__':
+    settings.force_overwrite_module = True
+
     for builder in track(_BUILDERS, description="[green]Building..."):
         builder()
+
+    file_dirs = ['modules/структуры/', 'modules/']
+
+    for file_dir in track(file_dirs, description="[green]Raw module building..."):
+        for file in os.listdir(file_dir):
+            if file.endswith(settings.raw_postfix):
+                build(f'{file_dir}{file}')
 
     print("Done!")

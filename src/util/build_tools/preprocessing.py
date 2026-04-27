@@ -45,12 +45,13 @@ def import_preprocess(path, byte_mode: Optional[bool] = True) -> Union[Compiled,
         raise e
 
 
+imports = set()
+
+
 def preprocess(raw_code, path: str) -> list:
     folder = os.path.dirname(path)
 
     prepared_code = [line.strip() for line in raw_code.split("\n")]
-    imports = set()
-
     code = []
 
     for offset, line in enumerate(prepared_code):

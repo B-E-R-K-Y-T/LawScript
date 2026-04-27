@@ -117,7 +117,8 @@ class ViewNodesEntity(PyExtendWrapper):
         from src.core.types.procedure import (
             Loop, Print, When, While, ElseWhen,
             Else, Break, Continue, Context, Expression,
-            AssignField, AssignOverrideVariable, ExceptionHandler, ErrorThrow
+            AssignField, AssignOverrideVariable, ExceptionHandler, ErrorThrow,
+            Return, Defer,
         )
 
         if not isinstance(entity, CodeBlock):
@@ -131,6 +132,12 @@ class ViewNodesEntity(PyExtendWrapper):
 
             elif isinstance(cmd, Print):
                 value = ["Print", "EXPR", cmd.expression.operations]
+
+            elif isinstance(cmd, Return):
+                value = ["Return", "EXPR", cmd.expression.operations]
+
+            elif isinstance(cmd, Defer):
+                value = ["Defer", "EXPR", cmd.expression.operations]
 
             elif isinstance(cmd, ErrorThrow):
                 value = ["ErrorThrow", "EXPR", cmd.expression.operations]

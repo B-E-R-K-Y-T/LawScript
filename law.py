@@ -7,7 +7,7 @@ from src.core.background_task.schedule import get_task_scheduler
 from src.core.call_func_stack import get_stack_pretty_str
 from src.core.exceptions import BaseError
 from src.core.util import kill_process, success_process, yellow_print
-from src.util.build_tools.build import build
+from src.util.build_tools.build import build, generate_docs
 from src.util.console_worker import printer
 from src.util.build_tools.starter import run_file
 
@@ -40,7 +40,10 @@ class Law:
                 if not filename.endswith(f'.{settings.raw_postfix}'):
                     kill_process(f"Файл для сборки должен иметь расширение '.{settings.raw_postfix}'.")
 
-                build(str(absolute_file_path))
+                compiled = build(str(absolute_file_path))
+
+                generate_docs(str(absolute_file_path), compiled)
+
             elif command == '--run':
                 run_file(str(absolute_file_path))
             else:

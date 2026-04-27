@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from src.core.executors.body import BodyExecutor
-from src.core.executors.expression import ExpressionExecutor
 from src.core.types.basetype import BaseAtomicType
 from src.core.types.procedure import Procedure
 from src.core.executors.base import Executor

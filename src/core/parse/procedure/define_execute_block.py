@@ -97,4 +97,4 @@ class DefineExecuteBlockParser(Parser):
                     raise InvalidSyntaxError(line=line, info=line_info)
 
         printer.logging("Ошибка парсинга ExecuteBlock: не найден закрывающий токен", level="ERROR")
-        raise InvalidSyntaxError
+        raise InvalidSyntaxError("Не найден закрывающий токен.", info=self.info)

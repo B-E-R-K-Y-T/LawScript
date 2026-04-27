@@ -1,10 +1,10 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Type, Sequence, Union
+from typing import Type, Sequence, Union, Optional
 
 from src.core.exceptions import InvalidSyntaxError
 from src.core.types.basetype import BaseType
-from src.core.tokens import Tokens, ALIASES_MAP
+from src.core.tokens import Tokens, ALIASES_MAP, ServiceTokens
 from src.core.types.line import Line, Info
 
 
@@ -51,6 +51,7 @@ class MetaObject(ABC):
 class Parser(ABC):
     def __init__(self):
         self.jump: int = -1
+        self.info: Optional[Info] = None
 
     @abstractmethod
     def parse(self, body: list[str], jump: int) -> int: ...
@@ -146,7 +147,15 @@ class Parser(ABC):
                 else:
                     tokens[-1] = end
 
+        self._check_tokens(tokens)
         return self._convert_aliases_to_token(tokens)
+
+    def _check_tokens(self, tokens: list[str]):
+        for token in tokens:
+            if token in ServiceTokens:
+                raise InvalidSyntaxError(
+                    f"Ошибка синтаксиса. Недопустимый токен: '{token}'", info=self.info
+                )
 
     @staticmethod
     def _convert_aliases_to_token(tokens: list[str]) -> list[str]:

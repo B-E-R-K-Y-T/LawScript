@@ -25,7 +25,7 @@ def build(path: str):
     with open(f"{new_path}", 'wb') as write_file:
         dill.dump(compiled, write_file)
 
-    generate_docs(path, compiled)
+    return compiled
 
 
 def generate_docs(path: str, compiled):
