@@ -82,6 +82,7 @@ class ProcedureModifyWrapper(Modify):
     def __repr__(self):
         return self.nested_modify.__repr__()
 
+
 class ResultCondition:
     def __init__(self, name_criteria: str, value_fact_data: BaseAtomicType, result: bool, modify: Modify):
         self.name_criteria = name_criteria
