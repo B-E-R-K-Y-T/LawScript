@@ -7,6 +7,7 @@ from src.core.background_task.schedule import get_task_scheduler
 from src.core.call_func_stack import get_stack_pretty_str
 from src.core.exceptions import BaseError
 from src.core.tokens import Tokens
+from src.core.types.execute_block import ExecuteBlock
 from src.core.util import kill_process, success_process, yellow_print
 from src.util.build_tools.build import build, generate_docs
 from src.util.build_tools.compile import Compiled
@@ -86,7 +87,9 @@ class Law:
 
     @staticmethod
     def run_interactive():
+        printer.print_info(settings.repl_title)
         start_str = ">>>"
+        shift_str = " "
         all_code = Compiled({})
 
         while True:
@@ -101,7 +104,7 @@ class Law:
                 next_command = ""
 
                 while not next_command.endswith(Tokens.right_bracket) or count_left_brackets != 0:
-                    next_command = input("...")
+                    next_command = input(shift_str * 4 * count_left_brackets)
 
                     if next_command.endswith(Tokens.left_bracket):
                         count_left_brackets += 1
@@ -113,6 +116,12 @@ class Law:
                 code = "\n".join(code_storage)
 
             compiled_code = compile_string(code)
+            last_command = list(compiled_code.compiled_code.values())[-1]
+
+            if isinstance(last_command, ExecuteBlock):
+                run_compiled_code(Compiled({**all_code.compiled_code, **compiled_code.compiled_code}))
+                continue
+
             all_code.compiled_code.update(compiled_code.compiled_code)
             run_compiled_code(all_code)
 

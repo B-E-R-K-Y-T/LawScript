@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Any, TYPE_CHECKING
 
 from src.core.call_func_stack import call_func_stack_builder
-from src.core.exceptions import NameNotDefine
+from src.core.exceptions import NameNotDefine, ErrorType
+from src.core.executors.body import STOP
 from src.core.executors.procedure import ProcedureExecutor
-from src.core.types.atomic import String
+from src.core.types.atomic import String, Boolean, VOID
 from src.core.types.base_declarative_type import BaseDeclarativeType
 from src.core.types.basetype import BaseAtomicType
 from src.core.types.criteria import Criteria
@@ -129,6 +130,13 @@ class Condition(BaseDeclarativeType):
                 call_func_stack_builder.push(executor.procedure.name, procedure.meta_info)
 
                 returned_value = executor.execute()
+
+                if returned_value is STOP:
+                    raise ErrorType(
+                        f"При проверке документа через '{self.name}' "
+                        f"процедура: '{procedure.name}' не вернула значение для выполнения сравнения по критерию: "
+                        f"'{name_fact_data}'"
+                    )
 
                 modify.nested_modify.value = returned_value
                 call_func_stack_builder.pop()
