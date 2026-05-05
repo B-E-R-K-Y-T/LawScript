@@ -73,6 +73,22 @@ VALID_TYPES = (
     ProcedureContextName
 )
 
+_T_OPERATOR = Operator
+_T_CLASS_FIELD = ClassField
+_T_LINKED_PROCEDURE = LinkedProcedure
+_T_ABSTRACT_BG_TASK = AbstractBackgroundTask
+_T_PROCEDURE_CTX_NAME = ProcedureContextName
+_T_PROCEDURE = Procedure
+_T_PY_EXTEND = PyExtendWrapper
+_T_CLASS_DEFINITION = ClassDefinition
+_T_CONSTRUCTOR = Constructor
+_T_METHOD = Method
+_T_CLASS_INSTANCE = ClassInstance
+_T_BOOLEAN = Boolean
+_T_YIELD = Yield
+_T_BASE_ATOMIC = BaseAtomicType
+_T_BASE_DECLARATIVE = BaseDeclarativeType
+
 
 class Operands(NamedTuple):
     left: BaseAtomicType
@@ -94,11 +110,10 @@ class ExpressionExecutor(Executor):
         self.task_scheduler = get_task_scheduler()
 
     def prepare_operations(self) -> list[Union[BaseAtomicType, Operator]]:
-        scope_vars = {}
-
-        for var in traverse_scope(self.tree_variable.scopes[-1]):
-            if var.name not in scope_vars:
-                scope_vars[var.name] = var.value
+        scope_vars = {
+            name: var.value
+            for name, var in self.tree_variable.get_all_variables().items()
+        }
 
         new_expression_stack = []
 
