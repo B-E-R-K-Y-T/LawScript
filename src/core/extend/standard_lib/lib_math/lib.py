@@ -262,6 +262,9 @@ class ToNumber(PyExtendWrapper):
             return arg
 
         try:
+            if isinstance(arg.value, str) and arg.value.isdigit():
+                return Number(int(arg.value))
+
             return Number(float(arg.value))
         except TypeError:
             raise ErrorType(f"Невозможно преобразовать тип '{arg.type_name()}' к числу")

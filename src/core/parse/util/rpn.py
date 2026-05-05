@@ -132,8 +132,10 @@ def check_correct_expr(expr: list[str]):
 
         if op not in allowed_ops:
             if not is_integer(op) and not is_float(op) and not is_identifier(op):
+                res_expr = " ".join(str(i) for i in expr)
                 raise InvalidExpression(
-                    f"В выражении: '{' '.join(str(item) for item in expr)}' не может быть оператора: '{op}'"
+                    f"В выражении: '{res_expr}' не может быть оператора: '{op}'\n"
+                    f"\n{res_expr}\n{" " * (sum(len(t) for o, t in enumerate(res_expr) if o < res_expr.index(op)))}^\n"
                 )
 
     count_double_comma = 0
