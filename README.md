@@ -29,7 +29,7 @@ py law.py --run hello_world.raw
 ## Сборка:
 
 ```
-pyinstaller --onedir --hidden-import=requests .\law.py
+pyinstaller --onedir --hidden-import=requests --hidden-import=pygame .\law.py
 ```
 
 ### Запуск exe
