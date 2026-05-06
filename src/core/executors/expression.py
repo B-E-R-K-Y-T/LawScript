@@ -223,10 +223,6 @@ class ExpressionExecutor(Executor):
                 if rev_arguments_names and arg_position < len(rev_arguments_names):
                     argument = rev_arguments_names[arg_position]
 
-                    # Странный код, не помню, зачем он тут. Если его закомментировать, тесты не падают, но пока оставлю
-                    # if not operand.name:
-                    #     operand.name = argument
-
                     procedure.tree_variables.set(Variable(argument, operand))
                     arg_position += 1
 
@@ -256,9 +252,6 @@ class ExpressionExecutor(Executor):
                 fact_default_args_count += 1
 
                 value = ExpressionExecutor(expr, self.tree_variable, self.compiled).execute()
-
-                # Странный код, не помню, зачем он тут. Если его закомментировать, тесты не падают, но пока оставлю
-                # value.name = name
 
                 procedure.tree_variables.set(Variable(name, value))
 
