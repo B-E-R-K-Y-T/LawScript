@@ -188,6 +188,9 @@ class DefineProcedureParser(Parser):
             printer.logging(f"Финальный список аргументов: {self.arguments_name}", level="INFO")
 
     def parse_define_procedure(self, body: list[Line], name: str, arguments: list[str], num, info_line: Info) -> None:
+        if not is_identifier(name):
+            raise InvalidSyntaxError(f"Имя процедуры имеет некорректное значение: '{name}'", info=info_line)
+
         self.parse_args(arguments, info_line)
 
         for arg in self.arguments_name:
