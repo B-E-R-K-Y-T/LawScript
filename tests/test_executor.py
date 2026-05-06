@@ -117,3 +117,43 @@ def test_background_task_execution():
 
     assert not result.done, \
         "Background task should not be done immediately without waiting"
+
+
+def test_classes_execution():
+    code = """
+    ВКЛЮЧИТЬ стандартная_библиотека.*
+
+    ОПРЕДЕЛИТЬ КЛАСС Базовый (
+        ОПРЕДЕЛИТЬ КОНСТРУКТОР (ссылка) () (
+            ссылка:а = 1;
+        )
+        ОПРЕДЕЛИТЬ МЕТОД (ссылка) метод (а, б) (
+            НАПЕЧАТАТЬ форматировать_строку("{}, {}, {}", ссылка:а, а, б);
+            ВЕРНУТЬ ссылка:а + а + б;
+        )
+    )
+    
+    ОПРЕДЕЛИТЬ КЛАСС Наследник НАСЛЕДОВАТЬ ОТ  Базовый(
+        ОПРЕДЕЛИТЬ КОНСТРУКТОР (ссылка) () (
+            ссылка:__родитель__:__конструктор__();
+        )
+    )
+    
+    ОПРЕДЕЛИТЬ ПРОЦЕДУРУ test () (
+        ЗАДАТЬ н = Наследник();
+        
+        ВЕРНУТЬ ЖДАТЬ В ФОНЕ н:метод(1, 2);
+    )
+    """
+
+    result = _run_procedure(code, "test")
+
+
+    assert isinstance(result, Number), \
+        f"Expected type Number, got {type(result).__name__}"
+
+    result_py = convert_atomic_type_to_py_type(result)
+    expected_py = 4
+
+    assert result_py == expected_py, \
+        f"Expected value {expected_py!r}, got {result_py!r}"
