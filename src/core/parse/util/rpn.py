@@ -319,6 +319,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                 dont_repeat_flag = False
                 unary_ops = {ServiceTokens.in_background, Tokens.wait}
+                sub_expr = expr[offset:]
 
                 for offset_, token_ in enumerate(expr[offset:]):
                     printer.logging(
@@ -327,7 +328,6 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                     )
 
                     if token_ == Tokens.right_bracket:
-                        sub_expr = expr[offset:]
                         previous_tok = sub_expr[offset_ - 1]
 
                         if previous_tok == Tokens.comma:
@@ -359,15 +359,12 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                         token_ in {
                             Tokens.bool_equal, Tokens.bool_not_equal,
                             Tokens.or_, Tokens.not_, Tokens.and_,
-                            Tokens.less, Tokens.greater, Tokens.wait
+                            Tokens.less, Tokens.greater
                         },
                     )
 
                     if any(conditions) and not any(ignores):
-                        previous_tok = expr[offset_]
-
-                        if previous_tok == Tokens.left_bracket:
-                            break
+                        previous_tok = sub_expr[offset_ - 1]
 
                         printer.logging(
                             f"Токен '{token_}' является операндом. Предыдущий токен: '{previous_tok}'",
@@ -397,6 +394,8 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
 
                             len_path_to_err = len(' '.join(str(i) for i in expr[:offset_ + 1]))
                             res_expr = ' '.join(str(i) for i in expr)
+
+                            print(previous_tok, token_, expr[offset:], offset_)
 
                             raise InvalidExpression(
                                 f"В выражении: '{' '.join(str(i) for i in expr)}' не хватает запятой: '{Tokens.comma}' "
