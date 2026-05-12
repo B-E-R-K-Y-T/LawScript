@@ -85,7 +85,7 @@ class ThreadWorker:
                 break
 
             with _GLOBAL_TASKS_LOCK:
-                if len(self.tasks) == 0:
+                if not self.tasks:
                     self._task_added_event.wait(timeout=settings.wait_task_time)
                     self._task_added_event.clear()
                     continue
