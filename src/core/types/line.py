@@ -11,16 +11,22 @@ class Line(str):
     def __new__(cls, value: str, num: int = 0, file: str = ""):
         obj = str.__new__(cls, value)
         obj.raw_data = value
+        obj.raw_line = None
         obj.num = num
         obj.file = file
 
         return obj
 
     def get_file_info(self) -> Info:
+        raw_line = self.raw_line
+
+        if raw_line is None:
+            raw_line = self.raw_data
+
         return Info(
             num=self.num,
             file=self.file,
-            raw_line=self.raw_data
+            raw_line=raw_line
         )
 
     def __str__(self) -> str:

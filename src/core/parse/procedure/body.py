@@ -3,7 +3,7 @@ from typing import Union, Optional
 from src.core.exceptions import InvalidSyntaxError
 from src.core.parse.base import MetaObject, Image, Parser, is_identifier
 from src.core.parse.procedure.docs_block import DocsBlockParser
-from src.core.tokens import Tokens, NOT_ALLOWED_TOKENS
+from src.core.tokens import Tokens, NOT_ALLOWED_TOKENS, END_LINE_TOKENS
 from src.core.types.basetype import BaseType
 from src.core.types.docs import Docs
 from src.core.types.line import Line, Info
@@ -133,6 +133,7 @@ class BodyParser(Parser):
                 continue
 
             self.info = line.get_file_info()
+            self.auto_added_end_token_for_expr(line)
             line = self.separate_line_to_token(line)
             printer.logging(f"Парсинг строки: {line}", level="INFO")
 

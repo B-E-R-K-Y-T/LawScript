@@ -56,6 +56,42 @@ class Preprocessor:
         code = []
 
         for offset, line in enumerate(prepared_code):
+            if Tokens.end_expr in line and not line.startswith(Tokens.comment):
+                count_end_expr = 0
+                is_string = False
+                current_expr = ""
+                exprs = []
+
+                for offset_, symbol in enumerate(line):
+                    current_expr += symbol
+
+                    if symbol == Tokens.quotation:
+                        is_string = not is_string
+
+                    if is_string:
+                        continue
+
+                    if symbol == Tokens.comment:
+                        break
+
+                    if symbol == Tokens.end_expr:
+                        count_end_expr += 1
+                        exprs.append(current_expr)
+                        current_expr = ""
+
+                if exprs:
+                    for offset_, expr in enumerate(exprs):
+                        end = ""
+
+                        if not expr.endswith(Tokens.end_expr):
+                            end = Tokens.end_expr
+
+                        line_ = Line(expr.strip() + end, num=offset+1, file=path)
+                        line_.raw_line = line
+                        code.append(line_)
+
+                    continue
+
             code.append(Line(line.strip(), num=offset+1, file=path))
 
         preprocessed = []

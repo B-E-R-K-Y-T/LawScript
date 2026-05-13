@@ -689,7 +689,7 @@ class ExpressionExecutor(Executor):
 
         if len(evaluate_stack) > 1:
             raise ErrorType(
-                f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                f"Некорректное выражение: '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
 

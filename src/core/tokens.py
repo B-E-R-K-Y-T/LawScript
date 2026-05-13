@@ -123,3 +123,4 @@ ALIASES_MAP = {
     Tokens.bool_equal: [Tokens.bool_equal_1, Tokens.bool_equal_2],
     Tokens.defer: [Tokens.defer_1],
 }
+END_LINE_TOKENS = (Tokens.left_bracket, Tokens.right_bracket, Tokens.comma, Tokens.end_expr)

@@ -4,7 +4,7 @@ from typing import Type, Sequence, Union, Optional
 
 from src.core.exceptions import InvalidSyntaxError
 from src.core.types.basetype import BaseType
-from src.core.tokens import Tokens, ALIASES_MAP, ServiceTokens
+from src.core.tokens import Tokens, ALIASES_MAP, ServiceTokens, END_LINE_TOKENS
 from src.core.types.line import Line, Info
 
 
@@ -78,6 +78,19 @@ class Parser(ABC):
     def previous_num_line(num_line: int) -> int:
         return num_line - 1
 
+    @staticmethod
+    def auto_added_end_token_for_expr(line: Line):
+        raw_data = line.raw_data.rstrip()
+
+        if raw_data in (Tokens.left_bracket, Tokens.right_bracket):
+            return
+
+        if raw_data.endswith(Tokens.left_bracket):
+            return
+
+        if not raw_data.endswith(Tokens.end_expr):
+            line.raw_data = raw_data + Tokens.end_expr
+
     def separate_line_to_token(self, line: Line) -> list[str]:
         self._check_quotes(line)
         raw_line = line.raw_data
@@ -97,7 +110,7 @@ class Parser(ABC):
                     raw_line = raw_line[:offset].rstrip()
                     break
 
-        end_symbols = (Tokens.left_bracket, Tokens.right_bracket, Tokens.comma, Tokens.end_expr)
+        end_symbols = END_LINE_TOKENS
 
         for end_symbol in end_symbols:
             if raw_line.endswith(end_symbol):

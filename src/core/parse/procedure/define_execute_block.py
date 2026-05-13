@@ -3,7 +3,7 @@ from typing import Optional
 
 from src.core.exceptions import InvalidSyntaxError
 from src.core.parse.base import Parser, MetaObject, Image
-from src.core.tokens import Tokens
+from src.core.tokens import Tokens, END_LINE_TOKENS
 from src.core.types.execute_block import ExecuteBlock
 from src.core.types.line import Line, Info
 from src.core.types.procedure import Expression
@@ -68,6 +68,7 @@ class DefineExecuteBlockParser(Parser):
                 printer.logging(f"Установка информации о файле: {self.info}", level="DEBUG")
 
             line_info = line.get_file_info()
+            self.auto_added_end_token_for_expr(line)
             line = self.separate_line_to_token(line)
             printer.logging(f"Обработка строки {num}: {line}", level="DEBUG")
 
