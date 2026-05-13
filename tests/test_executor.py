@@ -1,7 +1,6 @@
 import pytest
 
 from src.core.background_task.task import ProcedureBackgroundTask
-from src.core.executors.procedure import ProcedureExecutor
 from src.core.types.atomic import (
     convert_atomic_type_to_py_type,
     Number,
@@ -10,17 +9,7 @@ from src.core.types.atomic import (
     String,
     Table,
 )
-from src.core.types.procedure import Procedure
-from src.core.types.variable import ScopeStack
-from src.util.build_tools.starter import compile_string
-
-
-def _run_procedure(code: str, name_proc: str = "test"):
-    compiled_code = compile_string(code)
-    procedure: Procedure = compiled_code.compiled_code.get(name_proc)
-    procedure.tree_variables = ScopeStack()
-    return ProcedureExecutor(procedure, compiled_code).execute()
-
+from tests.conftest import run_procedure_for_test
 
 code_template = """
 ВКЛЮЧИТЬ стандартная_библиотека.*
@@ -83,7 +72,7 @@ test_data = [
 @pytest.mark.parametrize("expression,expected_type,expected_value", test_data)
 def test_execute_expr(expression, expected_type, expected_value):
     code = code_template.format(expression=expression)
-    result = _run_procedure(code, "test")
+    result = run_procedure_for_test(code, "test")
 
     assert isinstance(result, expected_type), \
         f"Expected type {expected_type.__name__}, got {type(result).__name__}"
@@ -107,7 +96,7 @@ def test_background_task_execution():
     )
     """
 
-    result = _run_procedure(code, "test")
+    result = run_procedure_for_test(code, "test")
 
     assert isinstance(result, ProcedureBackgroundTask), \
         f"Expected ProcedureBackgroundTask, got {type(result).__name__}"
@@ -146,7 +135,7 @@ def test_classes_execution():
     )
     """
 
-    result = _run_procedure(code, "test")
+    result = run_procedure_for_test(code, "test")
 
 
     assert isinstance(result, Number), \
