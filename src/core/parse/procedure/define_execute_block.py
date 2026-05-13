@@ -2,8 +2,9 @@ import uuid
 from typing import Optional
 
 from src.core.exceptions import InvalidSyntaxError
-from src.core.parse.base import Parser, MetaObject, Image
-from src.core.tokens import Tokens, END_LINE_TOKENS
+from src.core.parse.base import MetaObject, Image
+from src.core.parse.procedure.body import BodyParser
+from src.core.tokens import Tokens
 from src.core.types.execute_block import ExecuteBlock
 from src.core.types.line import Line, Info
 from src.core.types.procedure import Expression
@@ -31,7 +32,7 @@ class DefineExecuteBlockMetaObject(MetaObject):
         )
 
 
-class DefineExecuteBlockParser(Parser):
+class DefineExecuteBlockParser(BodyParser):
     def __init__(self):
         super().__init__()
         self.info = None
