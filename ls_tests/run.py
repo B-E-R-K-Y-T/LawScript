@@ -4,6 +4,7 @@ import os
 
 from src.util.build_tools.starter import run_file
 
+
 def extract_number(filename):
     match = re.search(r'test_(\d+)\.raw', filename)
     return int(match.group(1)) if match else 0

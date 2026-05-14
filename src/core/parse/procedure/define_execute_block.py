@@ -73,6 +73,7 @@ class DefineExecuteBlockParser(BodyParser):
             line_info = line.get_file_info()
             self.auto_added_end_token_for_expr(line)
             line = self.separate_line_to_token(line)
+            self.body_check_tokens(line)
             printer.logging(f"Обработка строки {num}: {line}", level="DEBUG")
 
             match line:

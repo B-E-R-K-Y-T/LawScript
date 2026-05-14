@@ -228,7 +228,8 @@ class ExpressionExecutor(Executor):
 
                 if not procedure.arguments_names:
                     raise InvalidExpression(
-                        f"{callable_obj_name.get(procedure_type, 'Процедура')} {procedure.name} не принимает аргументов.",
+                        f"{callable_obj_name.get(procedure_type, 'Процедура')} "
+                        f"'{procedure.name}' не принимает аргументов.",
                         info=self.expression.meta_info
                     )
 

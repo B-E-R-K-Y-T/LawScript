@@ -14,7 +14,7 @@ raw_code = """
 ОПРЕДЕЛИТЬ ПРОЦЕДУРУ главная() (
     ЗАДАТЬ с = Список();
 
-    ЦИКЛ i ОТ 1 ДО 10000 (
+    ЦИКЛ i ОТ 1 ДО 100 (
         с:добавить(1);
     )
 
@@ -42,5 +42,5 @@ profiler.disable()
 # Выводим результаты
 s = io.StringIO()
 ps = pstats.Stats(profiler, stream=s).sort_stats('cumtime')
-ps.print_stats(200)  # Топ-20 самых медленных функций
+ps.print_stats(20)  # Топ-20 самых медленных функций
 print(s.getvalue())

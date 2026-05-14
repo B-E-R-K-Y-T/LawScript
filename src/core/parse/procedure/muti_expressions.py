@@ -1,6 +1,6 @@
 from src.core.exceptions import InvalidSyntaxError
 from src.core.parse.base import MetaObject, Image, Parser
-from src.core.tokens import Tokens
+from src.core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from src.core.types.line import Line, Info
 from src.core.types.procedure import Body, Expression
 from src.core.util import is_ignore_line
@@ -45,8 +45,8 @@ class MultiExpressionParser(Parser):
         )
 
     def clean_comma(self):
-        if len(self.expressions) and self.expressions[-1] == Tokens.comma:
-            self.expressions.pop(-1)
+        if len(self.expressions) > 1 and self.expressions[-2] == Tokens.comma and self.expressions[-1] == Tokens.right_bracket:
+            self.expressions.pop(-2)
 
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
@@ -66,52 +66,35 @@ class MultiExpressionParser(Parser):
             line = self.separate_line_to_token(line)
             printer.logging(f"Парсинг строки: {line}", level="INFO")
 
-            match line:
-                case [*_, Tokens.left_bracket]:
+            is_string = False
+
+            for token in line:
+                if token == Tokens.quotation:
+                    is_string = not is_string
+
+                if is_string:
+                    self.expressions.append(token)
+                    continue
+
+                if token in NOT_ALLOWED_TOKENS:
+                    raise InvalidSyntaxError(
+                        msg=f"Обнаружен недопустимый токен '{token}' в многострочном выражении.",
+                        line=line, info=self.info
+                    )
+
+                if token == Tokens.right_bracket:
+                    right_bracket += 1
+
+                if token == Tokens.left_bracket:
                     left_bracket += 1
-                    self.expressions.extend(line)
 
-                case [*expr, Tokens.right_bracket, Tokens.comma]:
-                    right_bracket += 1
-                    printer.logging(f"Найдена ')', с запятой. right={right_bracket}, left={left_bracket}",
-                                    level="DEBUG")
-
+                if right_bracket == left_bracket:
+                    self.expressions.append(token)
                     self.clean_comma()
-                    self.expressions.extend([*expr, Tokens.right_bracket])
-
-                    if right_bracket == left_bracket:
-                        return num
-
-                case [*expr, Tokens.comma]:
-                    self.expressions.extend([*expr, Tokens.comma])
-
-                case [*expr, Tokens.right_bracket]:
-                    right_bracket += 1
-                    printer.logging(f"Найдена ')' без запятой. right={right_bracket}, left={left_bracket}, expr={expr}",
-                                    level="DEBUG")
-
-                    self.clean_comma()
-                    self.expressions.extend([*expr, Tokens.right_bracket])
-                    if right_bracket == left_bracket:
-                        printer.logging("Парсинг выражений завершен: 'right_bracket' найден", level="INFO")
-                        return num
-
-                case [*expr, Tokens.right_bracket, Tokens.end_expr]:
-                    self.clean_comma()
-                    self.expressions.extend([*expr, Tokens.right_bracket])
-
-                    printer.logging("Парсинг выражений завершен: 'right_bracket' найден", level="INFO")
                     return num
 
-                case [*expr, Tokens.end_expr]:
-                    self.clean_comma()
-                    self.expressions.extend(expr)
-                    printer.logging("Парсинг выражений завершен: 'end_expr' найден", level="INFO")
-                    return num
+                self.expressions.append(token)
+                self.clean_comma()
 
-                case _:
-                    printer.logging(f"Неверный синтаксис: {line}", level="ERROR")
-                    raise InvalidSyntaxError(line=line, info=self.info)
-
-        printer.logging("Парсинг выражений с ошибкой: неверный синтаксис", level="ERROR")
-        raise InvalidSyntaxError(info=self.info)
+        if right_bracket != left_bracket:
+            raise InvalidSyntaxError(info=self.info)

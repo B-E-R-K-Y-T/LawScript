@@ -1,7 +1,7 @@
 from typing import Union, Optional
 
 from src.core.exceptions import InvalidSyntaxError
-from src.core.parse.base import MetaObject, Image, Parser, is_identifier
+from src.core.parse.base import MetaObject, Image, Parser, is_identifier, is_float, is_integer
 from src.core.parse.procedure.docs_block import DocsBlockParser
 from src.core.parse.procedure.muti_expressions import MultiExpressionParser
 from src.core.tokens import Tokens, NOT_ALLOWED_TOKENS
@@ -160,6 +160,21 @@ class BodyParser(Parser):
             )
         )
 
+    def body_check_tokens(self, tokens: list[str]):
+        is_string = False
+
+        for token in tokens:
+            if token == Tokens.quotation:
+                is_string = not is_string
+
+            if is_string:
+                continue
+
+            if token not in Tokens and not any([is_float(token), is_integer(token), is_identifier(token)]):
+                raise InvalidSyntaxError(
+                    f"Ошибка синтаксиса. Недопустимый токен: '{token}'", info=self.info
+                )
+
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга тела с jump={self.jump} {Body.__name__}", level="INFO")
@@ -175,6 +190,7 @@ class BodyParser(Parser):
             self.info = line.get_file_info()
             self.auto_added_end_token_for_expr(line)
             line = self.separate_line_to_token(line)
+            self.body_check_tokens(line)
             printer.logging(f"Парсинг строки: {line}", level="INFO")
 
             match line:

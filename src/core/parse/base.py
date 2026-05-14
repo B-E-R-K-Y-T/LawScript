@@ -4,7 +4,7 @@ from typing import Type, Sequence, Union, Optional
 
 from src.core.exceptions import InvalidSyntaxError
 from src.core.types.basetype import BaseType
-from src.core.tokens import Tokens, ALIASES_MAP, ServiceTokens, END_LINE_TOKENS
+from src.core.tokens import Tokens, ALIASES_MAP, ServiceTokens, END_LINE_TOKENS, ALL_TOKENS
 from src.core.types.line import Line, Info
 
 
