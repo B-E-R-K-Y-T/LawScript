@@ -3,7 +3,6 @@ from typing import Iterable, Callable, Generator, Union
 
 from config import settings
 from src.util.build_tools.build import build
-from src.util.console_worker import printer
 
 try:
     from rich.progress import track
