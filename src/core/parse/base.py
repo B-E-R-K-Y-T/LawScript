@@ -74,9 +74,15 @@ class Parser(ABC):
     def next_num_line(num_line: int) -> int:
         return num_line + 1
 
+    def jump_to_next_line(self):
+        self.jump = self.next_num_line(self.jump)
+
     @staticmethod
     def previous_num_line(num_line: int) -> int:
         return num_line - 1
+
+    def jump_to_previous_line(self):
+        self.jump = self.previous_num_line(self.jump)
 
     @staticmethod
     def auto_added_end_token_for_expr(line: Line):

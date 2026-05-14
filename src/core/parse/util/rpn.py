@@ -321,7 +321,7 @@ def _build_rpn(expr: list[str]) -> list[Union[Operator, BaseAtomicType]]:
                 unary_ops = {ServiceTokens.in_background, Tokens.wait}
                 sub_expr = expr[offset:]
 
-                for offset_, token_ in enumerate(expr[offset:]):
+                for offset_, token_ in enumerate(sub_expr):
                     printer.logging(
                         f"Проверка токена '{token_}' на позиции {offset_} относительно скобки",
                         level="DEBUG"

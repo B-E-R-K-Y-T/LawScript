@@ -3,7 +3,8 @@ from typing import Union, Optional
 from src.core.exceptions import InvalidSyntaxError
 from src.core.parse.base import MetaObject, Image, Parser, is_identifier
 from src.core.parse.procedure.docs_block import DocsBlockParser
-from src.core.tokens import Tokens, NOT_ALLOWED_TOKENS, END_LINE_TOKENS
+from src.core.parse.procedure.muti_expressions import MultiExpressionParser
+from src.core.tokens import Tokens, NOT_ALLOWED_TOKENS
 from src.core.types.basetype import BaseType
 from src.core.types.docs import Docs
 from src.core.types.line import Line, Info
@@ -120,6 +121,45 @@ class BodyParser(Parser):
         printer.logging(f"Добавлена команда AssignField с именем: {name} и выражением: {expr}",
                         level="INFO")
 
+    def parse_assign_override(self, expr: list[str], line, body, num):
+        is_string = False
+        eq_count = 0
+
+        for symbol in expr:
+            if symbol == Tokens.quotation:
+                eq_count = 0
+                is_string = not is_string
+
+            if is_string:
+                continue
+
+            if symbol == Tokens.equal:
+                eq_count += 1
+
+            if eq_count > 1:
+                raise InvalidSyntaxError(
+                    f"Оператор '{Tokens.equal}' должен встречаться в определении выражения только 1 раз!",
+                    line=line,
+                    info=self.info
+                )
+
+        equal_idx = expr.index(Tokens.equal)
+        target = expr[:equal_idx]
+        override = expr[equal_idx + 1:]
+
+        match override:
+            case [_, Tokens.left_bracket]:
+                override.extend(self.execute_parse(MultiExpressionParser, body, self.next_num_line(num)).expressions)
+
+        self.commands.append(
+            AssignOverrideVariable(
+                str(),
+                Expression(str(), target, self.info),
+                Expression(str(), override, self.info),
+                self.info
+            )
+        )
+
     def parse(self, body: list[Line], jump) -> int:
         self.jump = jump
         printer.logging(f"Начало парсинга тела с jump={self.jump} {Body.__name__}", level="INFO")
@@ -146,6 +186,15 @@ class BodyParser(Parser):
                 case [Tokens.print_, *expr, Tokens.end_expr]:
                     self.commands.append(Print(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Print с выражением: {expr}", level="INFO")
+
+                case [Tokens.print_, *expr]:
+                    res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    expr.extend(res_expr.expressions)
+
+                    self.commands.append(Print(str(), Expression(str(), expr, self.info)))
+                    printer.logging(f"Добавлена команда Print с выражением: {expr}", level="INFO")
+
                 case [Tokens.when, *expr, Tokens.then, Tokens.left_bracket]:
                     if not expr:
                         raise InvalidSyntaxError(
@@ -218,6 +267,15 @@ class BodyParser(Parser):
                 case [Tokens.assign, name, Tokens.equal, *expr, Tokens.end_expr]:
                     self.parse_assign(name, expr, line)
                     printer.logging(f"Добавлено объявление переменной '{name}'", level="INFO")
+
+                case [Tokens.assign, name, Tokens.equal, *expr]:
+                    res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    expr.extend(res_expr.expressions)
+                    self.parse_assign(name, expr, line)
+
+                    printer.logging(f"Добавлено объявление переменной '{name}'", level="INFO")
+
                 case [Tokens.while_, *expr, Tokens.left_bracket]:
                     if not expr:
                         raise InvalidSyntaxError(
@@ -261,9 +319,21 @@ class BodyParser(Parser):
                 case [Tokens.return_, *expr, Tokens.end_expr]:
                     self.commands.append(Return(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Return с выражением: {expr}", level="INFO")
+                case [Tokens.return_, *expr]:
+                    res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    expr.extend(res_expr.expressions)
+
+                    self.commands.append(Return(str(), Expression(str(), expr, self.info)))
                 case [Tokens.defer, *expr, Tokens.end_expr]:
                     self.commands.append(Defer(str(), Expression(str(), expr, self.info)))
                     printer.logging(f"Добавлена команда Defer с выражением: {expr}", level="INFO")
+                case [Tokens.defer, *expr]:
+                    res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    expr.extend(res_expr.expressions)
+
+                    self.commands.append(Defer(str(), Expression(str(), expr, self.info)))
                 case [Tokens.continue_, Tokens.end_expr]:
                     self.commands.append(Continue(str(), self.info))
                     printer.logging(f"Добавлена команда Continue", level="INFO")
@@ -300,40 +370,15 @@ class BodyParser(Parser):
                 case [Tokens.error, *expr, Tokens.end_expr]:
                     self.commands.append(ErrorThrow(str(), Expression(str(), expr, self.info)))
                     printer.logging("Парсинг тела завершен: 'ErrorThrow' найден", level="INFO")
+                case [Tokens.error, *expr]:
+                    res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    expr.extend(res_expr.expressions)
+
+                    self.commands.append(ErrorThrow(str(), Expression(str(), expr, self.info)))
                 case [*expr, Tokens.end_expr]:
                     if Tokens.equal in expr:
-                        is_string = False
-                        eq_count = 0
-
-                        for symbol in expr:
-                            if symbol == Tokens.quotation:
-                                eq_count = 0
-                                is_string = not is_string
-
-                            if is_string:
-                                continue
-
-                            if symbol == Tokens.equal:
-                                eq_count += 1
-
-                            if eq_count > 1:
-                                raise InvalidSyntaxError(
-                                    f"Оператор '{Tokens.equal}' должен встречаться в определении выражения только 1 раз!",
-                                    line=line,
-                                    info=self.info
-                                )
-
-                        equal_idx = expr.index(Tokens.equal)
-                        target, override = expr[:equal_idx], expr[equal_idx + 1:]
-
-                        self.commands.append(
-                            AssignOverrideVariable(
-                                str(),
-                                Expression(str(), target, self.info),
-                                Expression(str(), override, self.info),
-                                self.info
-                            )
-                        )
+                        self.parse_assign_override(expr, line, body, num)
                         continue
 
                     self.commands.append(Expression(str(), expr, self.info))
@@ -345,6 +390,18 @@ class BodyParser(Parser):
 
                     self.commands.append(block)
                     printer.logging(f"Добавлена команда BlockSync", level="INFO")
+                case [*expr, Tokens.left_bracket]:
+                    expr = [*expr, Tokens.left_bracket]
+
+                    if Tokens.equal in expr:
+                        self.parse_assign_override(expr, line, body, num)
+                        continue
+
+                    res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    expr.extend(res_expr.expressions)
+                    self.commands.append(Expression(str(), expr, self.info))
+                    printer.logging(f"Добавлена команда Expression", level="INFO")
                 case [Tokens.right_bracket]:
                     printer.logging("Парсинг тела завершен: 'right_bracket' найден", level="INFO")
                     return num
@@ -353,4 +410,4 @@ class BodyParser(Parser):
                     raise InvalidSyntaxError(line=line, info=self.info)
 
         printer.logging("Парсинг тела завершен с ошибкой: неверный синтаксис", level="ERROR")
-        raise InvalidSyntaxError
+        raise InvalidSyntaxError(info=self.info)

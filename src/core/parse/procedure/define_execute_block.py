@@ -4,6 +4,7 @@ from typing import Optional
 from src.core.exceptions import InvalidSyntaxError
 from src.core.parse.base import MetaObject, Image
 from src.core.parse.procedure.body import BodyParser
+from src.core.parse.procedure.muti_expressions import MultiExpressionParser
 from src.core.tokens import Tokens
 from src.core.types.execute_block import ExecuteBlock
 from src.core.types.line import Line, Info
@@ -53,10 +54,11 @@ class DefineExecuteBlockParser(BodyParser):
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
+        self.jump = jump
         printer.logging(f"Начало парсинга ExecuteBlock с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
-            if num < jump:
+            if num < self.jump:
                 printer.logging(f"Пропуск строки {num} (jump={jump})", level="DEBUG")
                 continue
 
@@ -82,6 +84,21 @@ class DefineExecuteBlockParser(BodyParser):
                 case [*expr, Tokens.end_expr]:
                     expression = Expression(str(), expr, line_info)
                     self.expressions.append(expression)
+                    printer.logging(
+                        f"Добавлено выражение в ExecuteBlock: {expression}, всего выражений: {len(self.expressions)}",
+                        level="INFO"
+                    )
+
+                case [*expr, Tokens.left_bracket]:
+                    expr = [*expr, Tokens.left_bracket]
+
+                    res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    expr.extend(res_expr.expressions)
+
+                    expression = Expression(str(), expr, line_info)
+                    self.expressions.append(expression)
+
                     printer.logging(
                         f"Добавлено выражение в ExecuteBlock: {expression}, всего выражений: {len(self.expressions)}",
                         level="INFO"
