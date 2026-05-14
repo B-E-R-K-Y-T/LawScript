@@ -2,6 +2,9 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/B-E-R-K-Y-T/LawScript)
 
+[![Хабр](https://habr.com/favicon.ico) Статья на Habr](https://habr.com/ru/articles/1025306/)
+
+
 ## Сырой запуск:
 
 
