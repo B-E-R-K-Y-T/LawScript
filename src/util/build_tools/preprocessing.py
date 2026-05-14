@@ -52,10 +52,37 @@ class Preprocessor:
     def preprocess(self, raw_code, path: str) -> list:
         folder = os.path.dirname(path)
 
-        prepared_code = [line.strip() for line in raw_code.split("\n")]
+        raw_prepared_code = [line.strip() for line in raw_code.split("\n")]
+        prepared_code = []
         code = []
 
+        for line in raw_prepared_code:
+            is_string = False
+            clean_line = ""
+
+            if line.startswith(Tokens.comment):
+                continue
+
+            for symbol in line:
+                clean_line += symbol
+
+                if symbol == Tokens.quotation:
+                    is_string = not is_string
+
+                if is_string:
+                    continue
+
+                if symbol == Tokens.comment:
+                    clean_line = clean_line[:-1]
+                    prepared_code.append(clean_line)
+                    break
+            else:
+                prepared_code.append(clean_line)
+
         for offset, line in enumerate(prepared_code):
+            if not line:
+                continue
+
             if Tokens.end_expr in line and not line.startswith(Tokens.comment):
                 count_end_expr = 0
                 is_string = False
@@ -72,18 +99,30 @@ class Preprocessor:
                         continue
 
                     if symbol == Tokens.comment:
+                        exprs.append(current_expr[:-1])
                         break
 
                     if symbol == Tokens.end_expr:
                         count_end_expr += 1
                         exprs.append(current_expr)
                         current_expr = ""
+                else:
+                    exprs.append(current_expr)
 
                 if exprs:
                     for offset_, expr in enumerate(exprs):
+                        if not expr:
+                            continue
+
                         end = ""
 
-                        if not expr.endswith(Tokens.end_expr):
+                        add_expr_conditions = (
+                            not expr.endswith(Tokens.end_expr),
+                            not expr.endswith(Tokens.left_bracket),
+                            not expr.endswith(Tokens.comma),
+                        )
+
+                        if all(add_expr_conditions):
                             end = Tokens.end_expr
 
                         line_ = Line(expr.strip() + end, num=offset+1, file=path)

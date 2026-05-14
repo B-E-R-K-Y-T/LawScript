@@ -92,8 +92,11 @@ class DefineExecuteBlockParser(BodyParser):
 
                 case [*expr, Tokens.left_bracket]:
                     expr = [*expr, Tokens.left_bracket]
+                    MultiExpressionParser.init_left_bracket(expr)
 
                     res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    MultiExpressionParser.set_default_left_bracket()
 
                     expr.extend(res_expr.expressions)
 
