@@ -44,22 +44,44 @@ class Scope:
 
 
 class ScopeStack:
-    __slots__ = ('scopes',)
+    __slots__ = ('scopes', '_version', '_flat_cache')
 
     def __init__(self):
         self.scopes: List[Scope] = [Scope()]
+        self._version = 0
+        self._flat_cache = ({}, self._version)  # (кеш, версия)
 
     def push(self) -> None:
         self.scopes.append(Scope(self.scopes[-1]))
+        self._version += 1
 
     def pop(self) -> None:
         self.scopes.pop()
+        self._version += 1
 
     def set(self, variable: Variable) -> None:
         self.scopes[-1].set(variable)
+        self._version += 1
 
     def get(self, name: str) -> Variable:
         return self.scopes[-1].get(name)
+
+    def get_all_variables(self) -> Dict[str, Variable]:
+        """Возвращает ВСЕ видимые переменные как плоский словарь"""
+        cache_dict, cache_version = self._flat_cache
+
+        # Если кеш актуален — возвращаем его
+        if cache_version == self._version:
+            return cache_dict
+
+        # Строим новый плоский словарь
+        flat = {}
+        # Идём от внешнего scope к внутреннему, чтобы внутренние перезаписывали внешние
+        for scope in self.scopes:
+            flat.update(scope.variables)
+
+        self._flat_cache = (flat, self._version)
+        return flat
 
 
 class VariableContextCreator:

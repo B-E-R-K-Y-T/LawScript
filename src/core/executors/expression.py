@@ -14,7 +14,8 @@ from src.core.exceptions import (
     DivisionByZeroError,
     ErrorOverflow,
     OverWaitTaskError,
-    OperationError
+    OperationError,
+    ErrorValue
 )
 from src.core.executors.base import Executor
 from src.core.tokens import Tokens, ServiceTokens, ALL_TOKENS
@@ -72,6 +73,22 @@ VALID_TYPES = (
     ProcedureContextName
 )
 
+_T_OPERATOR = Operator
+_T_CLASS_FIELD = ClassField
+_T_LINKED_PROCEDURE = LinkedProcedure
+_T_ABSTRACT_BG_TASK = AbstractBackgroundTask
+_T_PROCEDURE_CTX_NAME = ProcedureContextName
+_T_PROCEDURE = Procedure
+_T_PY_EXTEND = PyExtendWrapper
+_T_CLASS_DEFINITION = ClassDefinition
+_T_CONSTRUCTOR = Constructor
+_T_METHOD = Method
+_T_CLASS_INSTANCE = ClassInstance
+_T_BOOLEAN = Boolean
+_T_YIELD = Yield
+_T_BASE_ATOMIC = BaseAtomicType
+_T_BASE_DECLARATIVE = BaseDeclarativeType
+
 
 class Operands(NamedTuple):
     left: BaseAtomicType
@@ -93,11 +110,10 @@ class ExpressionExecutor(Executor):
         self.task_scheduler = get_task_scheduler()
 
     def prepare_operations(self) -> list[Union[BaseAtomicType, Operator]]:
-        scope_vars = {}
-
-        for var in traverse_scope(self.tree_variable.scopes[-1]):
-            if var.name not in scope_vars:
-                scope_vars[var.name] = var.value
+        scope_vars = {
+            name: var.value
+            for name, var in self.tree_variable.get_all_variables().items()
+        }
 
         new_expression_stack = []
 
@@ -170,6 +186,13 @@ class ExpressionExecutor(Executor):
             evaluate_stack.append(procedure)
             return ProcedureWrapper()
 
+        procedure_type = type(procedure)
+        callable_obj_name = {
+            Constructor: 'Конструктор',
+            Method: 'Метод',
+            Procedure: 'Процедура',
+        }
+
         procedure.tree_variables = ScopeStack()
 
         rev_arguments_names = procedure.arguments_names[::-1]
@@ -200,16 +223,13 @@ class ExpressionExecutor(Executor):
                 if rev_arguments_names and arg_position < len(rev_arguments_names):
                     argument = rev_arguments_names[arg_position]
 
-                    # Странный код, не помню, зачем он тут. Если его закомментировать, тесты не падают, но пока оставлю
-                    # if not operand.name:
-                    #     operand.name = argument
-
                     procedure.tree_variables.set(Variable(argument, operand))
                     arg_position += 1
 
                 if not procedure.arguments_names:
                     raise InvalidExpression(
-                        f"Процедура {procedure.name} не принимает аргументов.",
+                        f"{callable_obj_name.get(procedure_type, 'Процедура')} "
+                        f"'{procedure.name}' не принимает аргументов.",
                         info=self.expression.meta_info
                     )
 
@@ -233,9 +253,6 @@ class ExpressionExecutor(Executor):
                 fact_default_args_count += 1
 
                 value = ExpressionExecutor(expr, self.tree_variable, self.compiled).execute()
-
-                # Странный код, не помню, зачем он тут. Если его закомментировать, тесты не падают, но пока оставлю
-                # value.name = name
 
                 procedure.tree_variables.set(Variable(name, value))
 
@@ -614,6 +631,17 @@ class ExpressionExecutor(Executor):
 
                     continue
 
+                visited = set()
+
+                while isinstance(func, ClassField):
+                    if id(func) in visited:
+                        raise ErrorValue(
+                            f"Циклическая ссылка! Обнаружен цикл в поле '{func.name}'!",
+                            info=self.expression.meta_info
+                        )
+                    visited.add(id(func))
+                    func = func.value
+
                 if not isinstance(func, Procedure):
                     if isinstance(func, Operator):
                         err_msg = (
@@ -662,7 +690,7 @@ class ExpressionExecutor(Executor):
 
         if len(evaluate_stack) > 1:
             raise ErrorType(
-                f"Некорректное выражение: '{self.expression.meta_info.raw_line}'!",
+                f"Некорректное выражение: '{self.expression.raw_expr}'!",
                 info=self.expression.meta_info
             )
 

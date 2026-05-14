@@ -54,6 +54,13 @@ class Settings(BaseSettings):
     task_thread_switch_interval: float = Field(default=.00001)
     step_task_size_to_sleep: int = Field(default=10)
     time_to_join_thread: float = Field(default=0)
+    force_overwrite_module: bool = Field(default=False)
+    repl_title: str = Field(
+        default="Язык написания контрактов: LawScript!\n\n"
+                "LawScript объединяет юридическую точность с вычислительной мощностью, "
+                "позволяя превращать правовые нормы в исполняемый код."
+    )
+
 
     @field_validator("std_name")
     def validate_std_name(cls, value: str) -> str:

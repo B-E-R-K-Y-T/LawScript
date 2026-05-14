@@ -1,10 +1,10 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Type, Sequence, Union
+from typing import Type, Sequence, Union, Optional
 
 from src.core.exceptions import InvalidSyntaxError
 from src.core.types.basetype import BaseType
-from src.core.tokens import Tokens
+from src.core.tokens import Tokens, ALIASES_MAP, ServiceTokens, END_LINE_TOKENS, ALL_TOKENS
 from src.core.types.line import Line, Info
 
 
@@ -51,6 +51,7 @@ class MetaObject(ABC):
 class Parser(ABC):
     def __init__(self):
         self.jump: int = -1
+        self.info: Optional[Info] = None
 
     @abstractmethod
     def parse(self, body: list[str], jump: int) -> int: ...
@@ -73,9 +74,28 @@ class Parser(ABC):
     def next_num_line(num_line: int) -> int:
         return num_line + 1
 
+    def jump_to_next_line(self):
+        self.jump = self.next_num_line(self.jump)
+
     @staticmethod
     def previous_num_line(num_line: int) -> int:
         return num_line - 1
+
+    def jump_to_previous_line(self):
+        self.jump = self.previous_num_line(self.jump)
+
+    @staticmethod
+    def auto_added_end_token_for_expr(line: Line):
+        raw_data = line.raw_data.rstrip()
+
+        if raw_data in (Tokens.left_bracket, Tokens.right_bracket):
+            return
+
+        if raw_data.endswith(Tokens.left_bracket):
+            return
+
+        if not raw_data.endswith(Tokens.end_expr):
+            line.raw_data = raw_data + Tokens.end_expr
 
     def separate_line_to_token(self, line: Line) -> list[str]:
         self._check_quotes(line)
@@ -96,7 +116,7 @@ class Parser(ABC):
                     raw_line = raw_line[:offset].rstrip()
                     break
 
-        end_symbols = (Tokens.left_bracket, Tokens.right_bracket, Tokens.comma, Tokens.end_expr)
+        end_symbols = END_LINE_TOKENS
 
         for end_symbol in end_symbols:
             if raw_line.endswith(end_symbol):
@@ -146,7 +166,36 @@ class Parser(ABC):
                 else:
                     tokens[-1] = end
 
-        return tokens
+        self._check_tokens(tokens)
+        return self._convert_aliases_to_token(tokens)
+
+    def _check_tokens(self, tokens: list[str]):
+        for token in tokens:
+            if token in ServiceTokens:
+                raise InvalidSyntaxError(
+                    f"Ошибка синтаксиса. Недопустимый токен: '{token}'", info=self.info
+                )
+
+    @staticmethod
+    def _convert_aliases_to_token(tokens: list[str]) -> list[str]:
+        converted_tokens = []
+        is_string = False
+
+        for token in tokens:
+            if token == Tokens.quotation:
+                is_string = not is_string
+
+            if is_string:
+                converted_tokens.append(token)
+                continue
+
+            for target, aliases in ALIASES_MAP.items():
+                if token in aliases:
+                    token = target
+
+            converted_tokens.append(token)
+
+        return converted_tokens
 
     @staticmethod
     def _check_quotes(line: Line) -> None:

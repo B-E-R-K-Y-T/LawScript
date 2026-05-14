@@ -71,10 +71,14 @@ class DefineProcedureParser(Parser):
                 required_arguments.pop(-1)
                 default = arguments[offset - 1:]
                 printer.logging(f"Выделена часть для обработки значений по умолчанию: {default}", level="DEBUG")
+                is_string = False
 
                 for default_offset, default_argument_token in enumerate(default):
                     printer.logging(f"Обработка default токена [{default_offset}]: '{default_argument_token}'",
                                     level="DEBUG")
+
+                    if default_argument_token == Tokens.quotation:
+                        is_string = not is_string
 
                     if default_argument_token == Tokens.equal and default_offset > 0:
                         name = default[default_offset - 1]
@@ -98,7 +102,7 @@ class DefineProcedureParser(Parser):
                             next_tok = default[default_offset + 1]
                             sep = ""
 
-                            if next_tok == " " or next_tok in Tokens:
+                            if next_tok == " " or next_tok in Tokens and not is_string:
                                 sep = " "
 
                             default_arguments_expressions[-1] += sep
@@ -184,6 +188,9 @@ class DefineProcedureParser(Parser):
             printer.logging(f"Финальный список аргументов: {self.arguments_name}", level="INFO")
 
     def parse_define_procedure(self, body: list[Line], name: str, arguments: list[str], num, info_line: Info) -> None:
+        if not is_identifier(name):
+            raise InvalidSyntaxError(f"Имя процедуры имеет некорректное значение: '{name}'", info=info_line)
+
         self.parse_args(arguments, info_line)
 
         for arg in self.arguments_name:

@@ -2,7 +2,9 @@ import uuid
 from typing import Optional
 
 from src.core.exceptions import InvalidSyntaxError
-from src.core.parse.base import Parser, MetaObject, Image
+from src.core.parse.base import MetaObject, Image
+from src.core.parse.procedure.body import BodyParser
+from src.core.parse.procedure.muti_expressions import MultiExpressionParser
 from src.core.tokens import Tokens
 from src.core.types.execute_block import ExecuteBlock
 from src.core.types.line import Line, Info
@@ -31,7 +33,7 @@ class DefineExecuteBlockMetaObject(MetaObject):
         )
 
 
-class DefineExecuteBlockParser(Parser):
+class DefineExecuteBlockParser(BodyParser):
     def __init__(self):
         super().__init__()
         self.info = None
@@ -52,10 +54,11 @@ class DefineExecuteBlockParser(Parser):
         )
 
     def parse(self, body: list[Line], jump: int) -> int:
+        self.jump = jump
         printer.logging(f"Начало парсинга ExecuteBlock с jump={jump}", level="INFO")
 
         for num, line in enumerate(body):
-            if num < jump:
+            if num < self.jump:
                 printer.logging(f"Пропуск строки {num} (jump={jump})", level="DEBUG")
                 continue
 
@@ -68,7 +71,9 @@ class DefineExecuteBlockParser(Parser):
                 printer.logging(f"Установка информации о файле: {self.info}", level="DEBUG")
 
             line_info = line.get_file_info()
+            self.auto_added_end_token_for_expr(line)
             line = self.separate_line_to_token(line)
+            self.body_check_tokens(line)
             printer.logging(f"Обработка строки {num}: {line}", level="DEBUG")
 
             match line:
@@ -80,6 +85,24 @@ class DefineExecuteBlockParser(Parser):
                 case [*expr, Tokens.end_expr]:
                     expression = Expression(str(), expr, line_info)
                     self.expressions.append(expression)
+                    printer.logging(
+                        f"Добавлено выражение в ExecuteBlock: {expression}, всего выражений: {len(self.expressions)}",
+                        level="INFO"
+                    )
+
+                case [*expr, Tokens.left_bracket]:
+                    expr = [*expr, Tokens.left_bracket]
+                    MultiExpressionParser.init_left_bracket(expr)
+
+                    res_expr = self.execute_parse(MultiExpressionParser, body, self.next_num_line(num))
+
+                    MultiExpressionParser.set_default_left_bracket()
+
+                    expr.extend(res_expr.expressions)
+
+                    expression = Expression(str(), expr, line_info)
+                    self.expressions.append(expression)
+
                     printer.logging(
                         f"Добавлено выражение в ExecuteBlock: {expression}, всего выражений: {len(self.expressions)}",
                         level="INFO"
@@ -97,4 +120,4 @@ class DefineExecuteBlockParser(Parser):
                     raise InvalidSyntaxError(line=line, info=line_info)
 
         printer.logging("Ошибка парсинга ExecuteBlock: не найден закрывающий токен", level="ERROR")
-        raise InvalidSyntaxError
+        raise InvalidSyntaxError("Не найден закрывающий токен.", info=self.info)

@@ -10,6 +10,7 @@ class BaseType:
     def __init__(self, name: str):
         self.meta_info: Optional[Info] = None
         self.name = name
+        self.self_type = type(self)
 
     def set_info(self, meta_info: Info):
         self.meta_info = meta_info

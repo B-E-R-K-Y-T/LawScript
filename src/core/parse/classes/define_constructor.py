@@ -85,7 +85,7 @@ class DefineConstructorParser(DefineMethodParser):
                     printer.logging(f"Ключевое слово для this: {this}", level="DEBUG")
                     printer.logging(f"Аргументы конструктора: {arguments}", level="DEBUG")
 
-                    self.parse_define_procedure(body, "", arguments, num, info_line)
+                    self.parse_define_procedure(body, "_", arguments, num, info_line)
                     self.this = this
                     printer.logging("Парсинг тела конструктора завершен", level="DEBUG")
 

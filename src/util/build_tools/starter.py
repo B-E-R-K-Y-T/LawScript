@@ -6,11 +6,12 @@ from src.core.util import kill_process
 from src.util.build_tools.ast import AbstractSyntaxTreeBuilder
 from src.util.build_tools.compile import Compiler, Compiled
 from src.util.build_tools.interpreter import Interpreter
-from src.util.build_tools.preprocessing import preprocess
+from src.util.build_tools.preprocessing import Preprocessor
 
 
 def compile_string(raw_code: str) -> Compiled:
-    code = preprocess(raw_code, "")
+    preprocessor = Preprocessor()
+    code = preprocessor.preprocess(raw_code, "")
 
     ast_builder = AbstractSyntaxTreeBuilder(code)
     ast: list[MetaObject] = ast_builder.build()
@@ -25,7 +26,8 @@ def run_compiled_code(compiled: Compiled):
 
 
 def run(raw_code: str, path: str):
-    code = preprocess(raw_code, path)
+    preprocessor = Preprocessor()
+    code = preprocessor.preprocess(raw_code, path)
 
     ast_builder = AbstractSyntaxTreeBuilder(code)
     ast: list[MetaObject] = ast_builder.build()

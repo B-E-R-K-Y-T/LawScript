@@ -5,8 +5,8 @@ from src.core.extend.function_wrap import PyExtendWrapper, PyExtendBuilder
 from src.core.types.basetype import BaseAtomicType
 
 builder = PyExtendBuilder()
-standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/"
-MOD_NAME = "типы"
+standard_lib_path = f"{Path(__file__).resolve().parent.parent}/modules/_/"
+MOD_NAME = "types"
 
 
 @builder.collect(func_name='получить_тип')

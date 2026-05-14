@@ -30,7 +30,8 @@ from src.core.types.procedure import (
     While,
     Context,
     BlockSync,
-    ErrorThrow
+    ErrorThrow,
+    Defer
 )
 from src.core.executors.base import Executor
 from src.core.types.variable import Variable, ScopeStack, VariableContextCreator, traverse_scope
@@ -54,6 +55,7 @@ class BodyExecutor(Executor):
         self.compiled = compiled
         self.catch_comprehensive_procedures()
         self.async_mode = False
+        self.defers: list[Defer] = []
 
     def catch_comprehensive_procedures(self):
         local_vars_names = {lv.name for lv in traverse_scope(self.tree_variables.scopes[-1])}
@@ -72,18 +74,28 @@ class BodyExecutor(Executor):
                 self.tree_variables.set(Variable(var.name, var))
 
     def execute(self) -> Union[Generator, Union[BaseAtomicType, Continue, Break]]:
-        gen = self._execute()
-
         try:
-            while True:
-                next(gen)
-        except StopIteration as exc:
-            return exc.value
+            gen = self._execute()
+
+            try:
+                while True:
+                    next(gen)
+            except StopIteration as exc:
+                return exc.value
+        finally:
+            for defer in reversed(self.defers):
+                executor = ExpressionExecutor(defer.expression, self.tree_variables, self.compiled)
+                executor.execute_with_atomic_type()
 
     def async_execute(self):
         self.async_mode = True
 
-        return self._execute()
+        try:
+            return self._execute()
+        finally:
+            for defer in reversed(self.defers):
+                executor = ExpressionExecutor(defer.expression, self.tree_variables, self.compiled)
+                executor.execute_with_atomic_type()
 
     def _execute(self) -> Union[Generator, Union[BaseAtomicType, Continue, Break]]:
         for command in self.body.commands:
@@ -112,8 +124,6 @@ class BodyExecutor(Executor):
                     except NameNotDefine as e:
                         raise NameNotDefine(str(e), info=command.meta_info)
 
-                    # Странный код, не помню, зачем он тут. Если его закомментировать, тесты.raw не падают, но пока оставлю
-                    # override_expr_result.name = target_name
                     var.set_value(override_expr_result)
 
                     continue
@@ -407,6 +417,9 @@ class BodyExecutor(Executor):
 
                 if not isinstance(executed, Stop):
                     return executed
+
+            elif isinstance(command, Defer):
+                self.defers.append(command)
 
             else:
                 raise ErrorType(f"Неизвестная команда '{command.name}'!", info=command.meta_info)
