@@ -19,7 +19,7 @@ from src.core.exceptions import (
 )
 from src.core.executors.base import Executor
 from src.core.tokens import Tokens, ServiceTokens, ALL_TOKENS
-from src.core.types.atomic import Boolean, Yield, VOID, YIELD
+from src.core.types.atomic import Boolean, Yield, VOID, YIELD, Array
 from src.core.types.base_declarative_type import BaseDeclarativeType
 from src.core.types.basetype import BaseAtomicType, BaseType
 from src.core.types.classes import ClassDefinition, ClassInstance, Method, ClassField, Constructor
@@ -195,6 +195,12 @@ class ExpressionExecutor(Executor):
 
         procedure.tree_variables = ScopeStack()
 
+        inf_arg_container = None
+
+        if procedure.is_inf_args:
+            procedure.tree_variables.set(Variable(procedure.inf_args_name, Array()))
+            inf_arg_container = []
+
         rev_arguments_names = procedure.arguments_names[::-1]
         arg_position = 0
         count_args = 0
@@ -226,7 +232,10 @@ class ExpressionExecutor(Executor):
                     procedure.tree_variables.set(Variable(argument, operand))
                     arg_position += 1
 
-                if not procedure.arguments_names:
+                if procedure.inf_args_name:
+                    inf_arg_container.append(operand)
+
+                if not procedure.arguments_names and not procedure.inf_args_name:
                     raise InvalidExpression(
                         f"{callable_obj_name.get(procedure_type, 'Процедура')} "
                         f"'{procedure.name}' не принимает аргументов.",
@@ -259,11 +268,16 @@ class ExpressionExecutor(Executor):
             count_args += fact_default_args_count
 
         if count_args != len(procedure.arguments_names):
-            raise InvalidExpression(
-                f"Функция '{procedure.name}' принимает '{len(procedure.arguments_names)}' "
-                f"аргумента(ов), но передано: '{count_args}'",
-                info=self.expression.meta_info
-            )
+            if procedure.is_inf_args:
+                procedure.tree_variables.set(
+                    Variable(procedure.inf_args_name, Array(list(reversed(inf_arg_container))))
+                )
+            else:
+                raise InvalidExpression(
+                    f"Функция '{procedure.name}' принимает '{len(procedure.arguments_names)}' "
+                    f"аргумента(ов), но передано: '{count_args}'",
+                    info=self.expression.meta_info
+                )
 
         return ProcedureWrapper(
             procedure=procedure,

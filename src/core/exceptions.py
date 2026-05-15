@@ -122,7 +122,7 @@ class BaseError(Exception):
             msg = f"{msg} Строка: '{" ".join(line)}'"
 
         if info is not None:
-            msg = f"{msg} Файл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
+            msg = f"{msg}\n\nФайл: {info.file}, Номер строки: {info.num}, Строка: {info.raw_line}"
 
         self.msg = msg
         self.line = line

@@ -109,27 +109,29 @@ class Preprocessor:
                 else:
                     exprs.append(current_expr)
 
-                if exprs:
-                    for offset_, expr in enumerate(exprs):
-                        if not expr:
-                            continue
-
-                        end = ""
-
-                        add_expr_conditions = (
-                            not expr.endswith(Tokens.end_expr),
-                            not expr.endswith(Tokens.left_bracket),
-                            not expr.endswith(Tokens.comma),
-                        )
-
-                        if all(add_expr_conditions):
-                            end = Tokens.end_expr
-
-                        line_ = Line(expr.strip() + end, num=offset+1, file=path)
-                        line_.raw_line = line
-                        code.append(line_)
-
+                if not exprs:
                     continue
+
+                for offset_, expr in enumerate(exprs):
+                    if not expr:
+                        continue
+
+                    end = ""
+
+                    add_expr_conditions = (
+                        not expr.endswith(Tokens.end_expr),
+                        not expr.endswith(Tokens.left_bracket),
+                        not expr.endswith(Tokens.comma),
+                    )
+
+                    if all(add_expr_conditions):
+                        end = Tokens.end_expr
+
+                    line_ = Line(expr.strip() + end, num=offset+1, file=path)
+                    line_.raw_line = line
+                    code.append(line_)
+
+                continue
 
             code.append(Line(line.strip(), num=offset+1, file=path))
 

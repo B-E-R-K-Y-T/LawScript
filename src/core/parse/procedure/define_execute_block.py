@@ -120,4 +120,4 @@ class DefineExecuteBlockParser(BodyParser):
                     raise InvalidSyntaxError(line=line, info=line_info)
 
         printer.logging("Ошибка парсинга ExecuteBlock: не найден закрывающий токен", level="ERROR")
-        raise InvalidSyntaxError("Не найден закрывающий токен.", info=self.info)
+        raise InvalidSyntaxError(f"Не найден закрывающий токен: '{Tokens.right_bracket}'", info=self.info)

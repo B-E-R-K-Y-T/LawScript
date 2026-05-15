@@ -14,16 +14,20 @@ from src.util.console_worker import printer
 class DefineMethodMetaObject(DefineProcedureMetaObject):
     def __init__(
             self, stop_num: int, name: str, body: Optional[MetaObject], arguments_name: list[Optional[str]],
+            inf_args_name: Optional[str], is_inf_args: bool,
             info: Info, default_arguments: Optional[dict[str, Expression]], this: str
     ):
-        super().__init__(stop_num, name, body, arguments_name, info, default_arguments)
+        super().__init__(stop_num, name, body, arguments_name, inf_args_name, is_inf_args, info, default_arguments)
         self.this = this
 
     def create_image(self) -> Image:
         return Image(
             name=self.name,
             obj=Method,
-            image_args=(self.body, self.arguments_name, self.default_arguments, self.this),
+            image_args=(
+                self.body, self.arguments_name, self.default_arguments,
+                self.inf_args_name, self.is_inf_args, self.this
+            ),
             info=self.info
         )
 
@@ -35,6 +39,8 @@ class DefineMethodParser(DefineProcedureParser):
         self.procedure_name: Optional[str] = None
         self.arguments_name: list[Optional[str]] = []
         self.default_arguments: Optional[dict[str, Expression]] = None
+        self.inf_args_name: Optional[str] = None
+        self.is_inf_args: bool = False
         self.body: Optional[MetaObject] = None
         self.this: Optional[str] = None
 
@@ -45,6 +51,8 @@ class DefineMethodParser(DefineProcedureParser):
             body=self.body,
             arguments_name=self.arguments_name,
             default_arguments=self.default_arguments,
+            inf_args_name=self.inf_args_name,
+            is_inf_args=self.is_inf_args,
             this=self.this,
             info=self.info
         )
