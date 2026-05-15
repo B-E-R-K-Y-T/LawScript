@@ -235,13 +235,6 @@ class Compiler:
             for expression in compiled_obj.expressions:
                 self.expr_compile(expression, [])
 
-                for op in expression.operations:
-                    if isinstance(op, Operator) and op.operator == Tokens.wait:
-                        raise InvalidSyntaxError(
-                            f"Оператор '{Tokens.wait}' не разрешен в блоке '{Tokens.execute}'",
-                            info=expression.meta_info
-                        )
-
             return compiled_obj
 
         elif isinstance(compiled_obj, CheckerSituation):
