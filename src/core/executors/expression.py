@@ -295,8 +295,12 @@ class ExpressionExecutor(Executor):
 
         evaluate_stack.append(result)
 
-    def call_method(self, method: Method, evaluate_stack: list[Union[BaseAtomicType, Procedure]], instance: ClassInstance):
-        this = Variable(instance.metadata.constructor.this_name, instance)
+    def call_method(
+            self, method: Method, evaluate_stack: list[Union[BaseAtomicType, Procedure]],
+            instance: ClassInstance, this: Optional[Variable[ClassInstance]] = None
+    ):
+        if this is None:
+            this = Variable(method.this_name, instance)
 
         method.tree_variables.set(this)
         self.call_procedure(method, evaluate_stack)
@@ -305,7 +309,9 @@ class ExpressionExecutor(Executor):
             self, constructor: Constructor, evaluate_stack: list[Union[BaseAtomicType, Procedure]],
             instance: ClassInstance, children: Optional[ClassInstance] = None
     ):
-        self.call_method(constructor, evaluate_stack, instance)
+        self.call_method(
+            constructor, evaluate_stack, instance, this=Variable(instance.metadata.constructor.this_name, instance)
+        )
 
         if children is not None:
             children.fields.update(

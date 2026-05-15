@@ -6,7 +6,9 @@ from src.core.types.variable import ScopeStack, Variable
 from src.util.build_tools.starter import compile_string
 
 
-def run_procedure_for_test(code: str, name_proc: str = "test", args: dict[str, BaseAtomicType] = None) -> BaseAtomicType:
+def run_procedure_for_test(
+        code: str, name_proc: str = "test", args: dict[str, BaseAtomicType] = None
+) -> BaseAtomicType:
     compiled_code = compile_string(code)
     procedure: Procedure = compiled_code.compiled_code.get(name_proc)
     procedure.tree_variables = ScopeStack()
